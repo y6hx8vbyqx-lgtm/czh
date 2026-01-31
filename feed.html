@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
-    
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    
+
     <style>
         * {
             box-sizing: border-box;
@@ -397,6 +397,204 @@
             background: rgba(255, 59, 48, 0.2);
         }
 
+        /* ===== КОММЕНТАРИИ В СТИЛЕ INSTAGRAM ===== */
+        .comments-section {
+            margin-top: 15px;
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+        }
+
+        .comments-toggle {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+        }
+
+        .comments-toggle:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .comments-toggle svg {
+            transition: transform 0.3s ease;
+        }
+
+        .comments-toggle.active svg {
+            transform: rotate(180deg);
+        }
+
+        .comments-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .comments-list.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #48c6ef, #6f86d6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .comment-username {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .comment-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .comment-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+            word-wrap: break-word;
+        }
+
+        .delete-comment {
+            background: none;
+            border: none;
+            color: rgba(255, 59, 48, 0.6);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .comment-item:hover .delete-comment {
+            opacity: 1;
+        }
+
+        .delete-comment:hover {
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: flex-start;
+        }
+
+        .comment-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            min-height: 44px;
+            max-height: 100px;
+            font-family: inherit;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .comment-submit {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: transform 0.2s, opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .comment-submit:hover:not(:disabled) {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .comment-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Иконка комментариев в футере */
+        .comment-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .comment-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .comment-count {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         /* Сообщения */
         .message {
             position: fixed;
@@ -473,641 +671,691 @@
                 top: 65px;
                 padding: 10px 15px;
             }
-            
+
             .container {
                 padding: 130px 15px 80px;
             }
-            
+
             .dynamic-island {
                 width: 110px;
                 height: 32px;
                 top: 10px;
             }
-            
+
             .post-ios {
                 padding: 16px;
             }
-            
-            /* Кнопки навигации для мобильных */
+
             .nav-buttons {
                 gap: 6px;
             }
-            
+
             .btn {
                 padding: 8px 12px;
                 font-size: 13px;
             }
-            
-            .btn span:not(.btn-icon) {
-                display: none; /* Скрываем текст на мобильных */
-            }
-            
-            .btn-icon {
-                display: inline-block;
-                font-size: 16px;
-            }
-            
-            /* Кнопка профиля на мобильных - ТОЛЬКО АВАТАРКА */
-            .profile-btn {
-                padding: 6px;
-                min-width: 44px;
-                justify-content: center;
-            }
-            
-            .profile-avatar {
-                width: 32px;
-                height: 32px;
-                margin: 0;
-            }
-            
-            .profile-info {
-                display: none; /* Скрываем текст на мобильных */
-            }
-            
-            /* Кнопка выхода - с иконкой дверь */
-            .btn-logout {
-                padding: 8px 12px;
-                min-width: 44px;
-                justify-content: center;
-            }
-            
-            /* Кнопка админа - с иконкой короны */
-            .btn-admin {
-                padding: 8px 12px;
-                min-width: 44px;
-                justify-content: center;
-            }
-            
-            /* Уменьшаем логотип */
-            .logo {
-                font-size: 18px;
-            }
-        }
 
-        @media (max-width: 480px) {
-            .navbar {
-                padding: 8px 12px;
+            .comment-form {
+                flex-direction: column;
+                gap: 8px;
             }
-            
-            .logo {
-                font-size: 16px;
-            }
-            
-            .btn {
-                padding: 6px 10px;
-            }
-            
-            .profile-btn,
-            .btn-logout,
-            .btn-admin {
-                min-width: 40px;
-                padding: 6px 8px;
-            }
-            
-            .profile-avatar {
-                width: 28px;
-                height: 28px;
-                font-size: 13px;
-            }
-            
-            .user-avatar {
-                width: 36px;
-                height: 36px;
-                font-size: 16px;
-            }
-            
-            .username {
-                font-size: 15px;
-            }
-            
-            .post-content {
-                font-size: 15px;
-            }
-        }
 
-        /* Для очень маленьких экранов */
-        @media (max-width: 360px) {
-            .navbar {
-                padding: 6px 10px;
+            .comment-input {
+                width: 100%;
             }
-            
-            .logo {
-                font-size: 14px;
-            }
-            
-            .nav-buttons {
-                gap: 4px;
-            }
-            
-            .profile-btn,
-            .btn-logout,
-            .btn-admin {
-                min-width: 36px;
-                padding: 5px 6px;
-            }
-            
-            .dynamic-island {
-                width: 100px;
-                height: 30px;
-                font-size: 13px;
+
+            .comment-submit {
+                width: 100%;
+                height: 40px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- iOS Динамический островок -->
+    <!-- Динамический островок с временем -->
     <div class="dynamic-island">
-        <span class="island-time" id="currentTime">--:--</span>
+        <div class="island-time" id="currentTime">00:00</div>
     </div>
 
     <!-- Навигация -->
     <nav class="navbar">
-        <div class="logo">czhmass</div>
+        <div class="logo">czhmass.com</div>
         <div class="nav-buttons">
-            <!-- Кнопка профиля -->
-            <button class="profile-btn" onclick="window.location.href='profile.html'" id="profileBtn" title="Профиль">
-                <div class="profile-avatar" id="profileAvatar">
-                    <span class="btn-icon">👤</span>
-                </div>
+            <button class="btn btn-admin" onclick="showMessage('Админ-панель в разработке', 'info')">
+                <span>👑 Админ</span>
+            </button>
+            <div class="profile-btn" id="profileBtn" onclick="showMessage('Профиль в разработке', 'info')">
+                <div class="profile-avatar" id="userAvatar">U</div>
                 <div class="profile-info">
-                    <span class="profile-username" id="profileUsername">Профиль</span>
-                    <span class="profile-label">Мой аккаунт</span>
+                    <div class="profile-username" id="userName">Гость</div>
+                    <div class="profile-label">Профиль</div>
                 </div>
-            </button>
-            
-            <!-- Кнопка администратора -->
-            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;" title="Админ панель">
-                <span class="btn-icon">👑</span>
-                <span>Админ</span>
-            </button>
-            
-            <!-- Кнопка выхода -->
-            <button class="btn btn-logout" onclick="logout()" title="Выйти">
-                <span class="btn-icon">🚪</span>
+            </div>
+            <button class="btn btn-logout" onclick="logout()">
                 <span>Выйти</span>
             </button>
         </div>
     </nav>
 
-    <!-- Основной контейнер -->
+    <!-- Сообщения -->
+    <div class="message" id="message"></div>
+
+    <!-- Основной контент -->
     <div class="container">
         <!-- Форма создания поста -->
         <div class="create-post">
             <textarea 
-                id="postText" 
                 class="post-input" 
-                placeholder="Что у вас нового? Пишите анонимно..."
-                maxlength="500"
-            ></textarea>
-            <button id="postButton" class="post-button" onclick="createPost()">
-                📝 Опубликовать
-            </button>
+                id="postInput" 
+                placeholder="Что у вас нового?" 
+                maxlength="1000"></textarea>
+            <button class="post-button" id="postButton" onclick="createPost()">Опубликовать</button>
         </div>
 
         <!-- Лента постов -->
-        <div id="postsContainer">
-            <div class="loading">Загрузка ленты...</div>
-        </div>
+        <div id="feed"></div>
     </div>
 
-    <!-- Сообщения -->
-    <div id="message" class="message"></div>
-
     <script>
-        // ===== КОНФИГУРАЦИЯ FIREBASE =====
+        // Конфигурация Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-            authDomain: "czhmass.firebaseapp.com",
-            projectId: "czhmass",
-            storageBucket: "czhmass.firebasestorage.app",
-            messagingSenderId: "1064257019843",
-            appId: "1:1064257019843:web:65488b45be2f86838ca776"
+            apiKey: "AIzaSyCg7qL9lLgGQfSgJ5Y5q5Z5Z5Z5Z5Z5Z5Z5Z5",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
         };
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        let db, auth;
+        // Инициализация Firebase
+        let app, db, auth;
         let currentUser = null;
-        let currentUserData = null;
-        let postsCache = new Map();
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            console.log("Firebase инициализирован");
+        } catch (error) {
+            console.error("Ошибка инициализации Firebase:", error);
+            showMessage("Ошибка подключения к базе данных", "error");
         }
 
-        db = firebase.firestore();
-        auth = firebase.auth();
+        // Обновление времени
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
 
-        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type;
-            messageDiv.style.display = 'block';
-            setTimeout(() => { messageDiv.style.display = 'none'; }, 3000);
+        // Показать сообщение
+        function showMessage(text, type = 'success') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
         }
 
-        function formatTime(timestamp) {
-            if (!timestamp) return 'Только что';
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                const now = new Date();
-                const diff = now - date;
-                
-                if (diff < 60000) return 'Только что';
-                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
-                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
-                if (diff < 604800000) return `${Math.floor(diff / 86400000)} дн назад`;
-                
-                return date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'short'
-                });
-            } catch (e) {
-                return 'Недавно';
+        // Вход/выход пользователя (заглушка)
+        function login() {
+            currentUser = {
+                uid: 'user_' + Date.now(),
+                displayName: 'Пользователь ' + Math.floor(Math.random() * 1000),
+                email: 'user@example.com'
+            };
+            updateUserInfo();
+            showMessage('Вход выполнен успешно', 'success');
+            loadPosts();
+        }
+
+        function logout() {
+            currentUser = null;
+            updateUserInfo();
+            document.getElementById('feed').innerHTML = '';
+            showMessage('Вы вышли из системы', 'success');
+        }
+
+        function updateUserInfo() {
+            const userNameEl = document.getElementById('userName');
+            const userAvatarEl = document.getElementById('userAvatar');
+            
+            if (currentUser) {
+                const name = currentUser.displayName || 'Пользователь';
+                userNameEl.textContent = name;
+                userAvatarEl.textContent = name.charAt(0).toUpperCase();
+                document.getElementById('postButton').disabled = false;
+            } else {
+                userNameEl.textContent = 'Гость';
+                userAvatarEl.textContent = 'G';
+                document.getElementById('postButton').disabled = true;
             }
         }
 
+        // Создание поста
+        async function createPost() {
+            if (!currentUser) {
+                showMessage('Войдите, чтобы опубликовать пост', 'error');
+                return;
+            }
+
+            const postInput = document.getElementById('postInput');
+            const content = postInput.value.trim();
+            
+            if (!content) {
+                showMessage('Введите текст поста', 'error');
+                return;
+            }
+
+            if (content.length > 1000) {
+                showMessage('Пост слишком длинный (макс. 1000 символов)', 'error');
+                return;
+            }
+
+            const button = document.getElementById('postButton');
+            button.disabled = true;
+            button.textContent = 'Публикация...';
+
+            try {
+                const postData = {
+                    content: content,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || 'Аноним',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: 0,
+                    likedBy: [],
+                    commentsCount: 0
+                };
+
+                // Здесь будет запись в Firestore
+                // await db.collection('posts').add(postData);
+                
+                showMessage('Пост опубликован!', 'success');
+                postInput.value = '';
+                
+                // Добавляем пост локально для демонстрации
+                addPostToFeed({
+                    id: 'post_' + Date.now(),
+                    ...postData,
+                    createdAt: new Date()
+                });
+                
+            } catch (error) {
+                console.error('Ошибка создания поста:', error);
+                showMessage('Ошибка при публикации', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Опубликовать';
+            }
+        }
+
+        // Загрузка постов
+        async function loadPosts() {
+            const feedEl = document.getElementById('feed');
+            feedEl.innerHTML = '<div class="loading">Загрузка ленты...</div>';
+
+            try {
+                // Здесь будет загрузка из Firestore
+                // const snapshot = await db.collection('posts')
+                //     .orderBy('createdAt', 'desc')
+                //     .limit(20)
+                //     .get();
+                
+                // Для демонстрации создаем тестовые посты
+                setTimeout(() => {
+                    const testPosts = [
+                        {
+                            id: 'post1',
+                            content: 'Привет! Это первый пост в нашей социальной сети. Как вам дизайн? 🎨',
+                            authorName: 'Администратор',
+                            authorId: 'admin',
+                            createdAt: new Date(Date.now() - 3600000),
+                            likes: 15,
+                            likedBy: [],
+                            commentsCount: 3
+                        },
+                        {
+                            id: 'post2',
+                            content: 'Только что добавил систему комментариев! Теперь можно обсуждать посты как в Instagram 💬',
+                            authorName: 'Разработчик',
+                            authorId: 'dev',
+                            createdAt: new Date(Date.now() - 7200000),
+                            likes: 42,
+                            likedBy: [],
+                            commentsCount: 7
+                        },
+                        {
+                            id: 'post3',
+                            content: 'Кто уже пробовал новые функции? Пишите в комментариях ваши впечатления! 👇',
+                            authorName: 'Тестировщик',
+                            authorId: 'tester',
+                            createdAt: new Date(Date.now() - 10800000),
+                            likes: 28,
+                            likedBy: [],
+                            commentsCount: 12
+                        }
+                    ];
+                    
+                    feedEl.innerHTML = '';
+                    testPosts.forEach(post => addPostToFeed(post));
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки постов:', error);
+                feedEl.innerHTML = '<div class="error">Ошибка загрузки ленты</div>';
+            }
+        }
+
+        // Добавление поста в ленту
+        function addPostToFeed(post) {
+            const feedEl = document.getElementById('feed');
+            
+            const timeAgo = getTimeAgo(post.createdAt);
+            const isAuthor = currentUser && currentUser.uid === post.authorId;
+            
+            const postEl = document.createElement('div');
+            postEl.className = 'post-ios';
+            postEl.id = `post-${post.id}`;
+            
+            postEl.innerHTML = `
+                <div class="post-header">
+                    <div class="user-avatar">${post.authorName.charAt(0).toUpperCase()}</div>
+                    <div class="post-user">
+                        <div class="username">${post.authorName}</div>
+                        <div class="post-time">${timeAgo}</div>
+                    </div>
+                </div>
+                
+                <div class="post-content">${escapeHtml(post.content)}</div>
+                
+                <div class="post-footer">
+                    <div class="like-container">
+                        <button class="like-btn ${post.likedBy.includes(currentUser?.uid) ? 'liked' : ''}" 
+                                onclick="toggleLike('${post.id}')">
+                            ${post.likedBy.includes(currentUser?.uid) ? '❤️' : '🤍'}
+                        </button>
+                        <span class="like-count">${post.likes}</span>
+                    </div>
+                    
+                    <button class="comment-btn" onclick="toggleComments('${post.id}')">
+                        <span>💬</span>
+                        <span class="comment-count">${post.commentsCount}</span>
+                    </button>
+                </div>
+                
+                ${isAuthor ? `
+                    <button class="delete-post" onclick="deletePost('${post.id}')">
+                        🗑️
+                    </button>
+                ` : ''}
+                
+                <!-- Секция комментариев -->
+                <div class="comments-section" id="comments-${post.id}">
+                    <button class="comments-toggle" onclick="toggleComments('${post.id}')">
+                        <span>Комментарии (${post.commentsCount})</span>
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="currentColor">
+                            <path d="M1.41 0L6 4.58L10.59 0L12 1.41L6 7.41L0 1.41L1.41 0Z"/>
+                        </svg>
+                    </button>
+                    
+                    <div class="comments-list" id="comments-list-${post.id}">
+                        <!-- Комментарии загружаются здесь -->
+                    </div>
+                    
+                    <form class="comment-form" onsubmit="addComment('${post.id}'); return false;">
+                        <textarea class="comment-input" id="comment-input-${post.id}" 
+                                  placeholder="Добавить комментарий..." 
+                                  maxlength="500" required></textarea>
+                        <button type="submit" class="comment-submit" id="comment-submit-${post.id}">
+                            ➤
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            // Вставляем пост в начало ленты
+            if (feedEl.firstChild) {
+                feedEl.insertBefore(postEl, feedEl.firstChild);
+            } else {
+                feedEl.appendChild(postEl);
+            }
+            
+            // Загружаем комментарии для этого поста
+            loadComments(post.id);
+        }
+
+        // Функции для комментариев
+        async function loadComments(postId) {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            
+            try {
+                // Здесь будет загрузка комментариев из Firestore
+                // const snapshot = await db.collection('posts').doc(postId)
+                //     .collection('comments').orderBy('createdAt').get();
+                
+                // Тестовые комментарии для демонстрации
+                const testComments = postId === 'post1' ? [
+                    {
+                        id: 'comment1',
+                        text: 'Отличный дизайн! Очень похоже на iOS',
+                        authorName: 'Дизайнер',
+                        authorId: 'designer',
+                        createdAt: new Date(Date.now() - 1800000)
+                    },
+                    {
+                        id: 'comment2',
+                        text: 'Нравится темная тема',
+                        authorName: 'Пользователь',
+                        authorId: 'user1',
+                        createdAt: new Date(Date.now() - 2400000)
+                    },
+                    {
+                        id: 'comment3',
+                        text: 'Когда будут стикеры? 😄',
+                        authorName: 'Весёлый',
+                        authorId: 'funny',
+                        createdAt: new Date(Date.now() - 3000000)
+                    }
+                ] : postId === 'post2' ? [
+                    {
+                        id: 'comment4',
+                        text: 'Крутая функция! Теперь можно общаться',
+                        authorName: 'Комментатор',
+                        authorId: 'commenter',
+                        createdAt: new Date(Date.now() - 3600000)
+                    },
+                    {
+                        id: 'comment5',
+                        text: 'Работает очень плавно, молодцы!',
+                        authorName: 'Технолог',
+                        authorId: 'tech',
+                        createdAt: new Date(Date.now() - 4200000)
+                    }
+                ] : [];
+                
+                commentsList.innerHTML = '';
+                
+                if (testComments.length === 0) {
+                    commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5);">Пока нет комментариев</div>';
+                    return;
+                }
+                
+                testComments.forEach(comment => {
+                    const commentEl = document.createElement('div');
+                    commentEl.className = 'comment-item';
+                    commentEl.id = `comment-${comment.id}`;
+                    
+                    const timeAgo = getTimeAgo(comment.createdAt);
+                    const isAuthor = currentUser && currentUser.uid === comment.authorId;
+                    
+                    commentEl.innerHTML = `
+                        <div class="comment-avatar">${comment.authorName.charAt(0).toUpperCase()}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <div class="comment-username">${comment.authorName}</div>
+                                <div class="comment-time">${timeAgo}</div>
+                            </div>
+                            <div class="comment-text">${escapeHtml(comment.text)}</div>
+                        </div>
+                        ${isAuthor ? `
+                            <button class="delete-comment" onclick="deleteComment('${postId}', '${comment.id}')">
+                                ✕
+                            </button>
+                        ` : ''}
+                    `;
+                    
+                    commentsList.appendChild(commentEl);
+                });
+                
+            } catch (error) {
+                console.error('Ошибка загрузки комментариев:', error);
+                commentsList.innerHTML = '<div style="color: #ff3b30; padding: 10px;">Ошибка загрузки комментариев</div>';
+            }
+        }
+
+        async function addComment(postId) {
+            if (!currentUser) {
+                showMessage('Войдите, чтобы комментировать', 'error');
+                return;
+            }
+
+            const input = document.getElementById(`comment-input-${postId}`);
+            const text = input.value.trim();
+            
+            if (!text) {
+                showMessage('Введите текст комментария', 'error');
+                return;
+            }
+
+            if (text.length > 500) {
+                showMessage('Комментарий слишком длинный (макс. 500 символов)', 'error');
+                return;
+            }
+
+            const button = document.getElementById(`comment-submit-${postId}`);
+            button.disabled = true;
+
+            try {
+                const commentData = {
+                    text: text,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || 'Аноним',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    postId: postId
+                };
+
+                // Здесь будет запись в Firestore
+                // await db.collection('posts').doc(postId).collection('comments').add(commentData);
+                // await db.collection('posts').doc(postId).update({
+                //     commentsCount: firebase.firestore.FieldValue.increment(1)
+                // });
+                
+                // Добавляем комментарий локально
+                const commentsList = document.getElementById(`comments-list-${postId}`);
+                const commentId = 'comment_' + Date.now();
+                
+                const commentEl = document.createElement('div');
+                commentEl.className = 'comment-item';
+                commentEl.id = `comment-${commentId}`;
+                
+                commentEl.innerHTML = `
+                    <div class="comment-avatar">${commentData.authorName.charAt(0).toUpperCase()}</div>
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <div class="comment-username">${commentData.authorName}</div>
+                            <div class="comment-time">только что</div>
+                        </div>
+                        <div class="comment-text">${escapeHtml(text)}</div>
+                    </div>
+                    <button class="delete-comment" onclick="deleteComment('${postId}', '${commentId}')">
+                        ✕
+                    </button>
+                `;
+                
+                // Если список пустой, очищаем сообщение "нет комментариев"
+                if (commentsList.innerHTML.includes('Пока нет комментариев')) {
+                    commentsList.innerHTML = '';
+                }
+                
+                commentsList.appendChild(commentEl);
+                
+                // Обновляем счетчик комментариев
+                const commentBtn = document.querySelector(`#post-${postId} .comment-count`);
+                const commentsToggle = document.querySelector(`#post-${postId} .comments-toggle span`);
+                
+                const currentCount = parseInt(commentBtn.textContent) || 0;
+                const newCount = currentCount + 1;
+                
+                commentBtn.textContent = newCount;
+                commentsToggle.textContent = `Комментарии (${newCount})`;
+                
+                showMessage('Комментарий добавлен', 'success');
+                input.value = '';
+                
+                // Автоматически раскрываем комментарии
+                toggleComments(postId, true);
+                
+            } catch (error) {
+                console.error('Ошибка добавления комментария:', error);
+                showMessage('Ошибка при добавлении комментария', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function deleteComment(postId, commentId) {
+            if (!confirm('Удалить комментарий?')) return;
+
+            try {
+                // Здесь будет удаление из Firestore
+                // await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                // await db.collection('posts').doc(postId).update({
+                //     commentsCount: firebase.firestore.FieldValue.increment(-1)
+                // });
+                
+                // Удаляем локально
+                const commentEl = document.getElementById(`comment-${commentId}`);
+                if (commentEl) {
+                    commentEl.remove();
+                }
+                
+                // Обновляем счетчик
+                const commentBtn = document.querySelector(`#post-${postId} .comment-count`);
+                const commentsToggle = document.querySelector(`#post-${postId} .comments-toggle span`);
+                
+                const currentCount = parseInt(commentBtn.textContent) || 0;
+                const newCount = Math.max(0, currentCount - 1);
+                
+                commentBtn.textContent = newCount;
+                commentsToggle.textContent = `Комментарии (${newCount})`;
+                
+                showMessage('Комментарий удален', 'success');
+                
+            } catch (error) {
+                console.error('Ошибка удаления комментария:', error);
+                showMessage('Ошибка при удалении комментария', 'error');
+            }
+        }
+
+        function toggleComments(postId, forceOpen = false) {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            const toggleBtn = document.querySelector(`#comments-${postId} .comments-toggle`);
+            
+            if (forceOpen || !commentsList.classList.contains('expanded')) {
+                commentsList.classList.add('expanded');
+                toggleBtn.classList.add('active');
+                
+                // Прокручиваем к комментариям на мобильных
+                if (window.innerWidth < 768) {
+                    commentsList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } else {
+                commentsList.classList.remove('expanded');
+                toggleBtn.classList.remove('active');
+            }
+        }
+
+        // Функции для лайков
+        async function toggleLike(postId) {
+            if (!currentUser) {
+                showMessage('Войдите, чтобы ставить лайки', 'error');
+                return;
+            }
+
+            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
+            const likeCount = document.querySelector(`#post-${postId} .like-count`);
+            
+            const isLiked = likeBtn.classList.contains('liked');
+            const currentLikes = parseInt(likeCount.textContent) || 0;
+            
+            try {
+                if (isLiked) {
+                    // Убираем лайк
+                    // await db.collection('posts').doc(postId).update({
+                    //     likes: firebase.firestore.FieldValue.increment(-1),
+                    //     likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                    // });
+                    
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '🤍';
+                    likeCount.textContent = currentLikes - 1;
+                } else {
+                    // Ставим лайк
+                    // await db.collection('posts').doc(postId).update({
+                    //     likes: firebase.firestore.FieldValue.increment(1),
+                    //     likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    // });
+                    
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '❤️';
+                    likeCount.textContent = currentLikes + 1;
+                    
+                    // Анимация
+                    likeBtn.classList.add('like-pop');
+                    setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
+                }
+                
+            } catch (error) {
+                console.error('Ошибка обновления лайка:', error);
+                showMessage('Ошибка при обновлении лайка', 'error');
+            }
+        }
+
+        async function deletePost(postId) {
+            if (!confirm('Удалить этот пост?')) return;
+
+            try {
+                // Здесь будет удаление из Firestore
+                // await db.collection('posts').doc(postId).delete();
+                
+                // Удаляем локально
+                const postEl = document.getElementById(`post-${postId}`);
+                if (postEl) {
+                    postEl.remove();
+                    showMessage('Пост удален', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка удаления поста:', error);
+                showMessage('Ошибка при удалении поста', 'error');
+            }
+        }
+
+        // Вспомогательные функции
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - new Date(date);
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'только что';
+            if (minutes < 60) return `${minutes} мин назад`;
+            if (hours < 24) return `${hours} ч назад`;
+            if (days < 7) return `${days} дн назад`;
+            
+            return new Date(date).toLocaleDateString('ru-RU');
+        }
+
         function escapeHtml(text) {
-            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        function getAvatarLetter(username) {
-            return username ? username.charAt(0).toUpperCase() : 'А';
-        }
-
-        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ В ОСТРОВКЕ =====
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            document.getElementById('currentTime').textContent = timeString;
-        }
-
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
-        function updateProfileButton(userData) {
-            const avatar = document.getElementById('profileAvatar');
-            
-            if (userData && userData.username) {
-                // На десктопе показываем букву, на мобильных - иконку
-                if (window.innerWidth > 768) {
-                    avatar.textContent = getAvatarLetter(userData.username);
-                    avatar.querySelector('.btn-icon')?.remove();
-                } else {
-                    const icon = avatar.querySelector('.btn-icon');
-                    if (!icon) {
-                        avatar.innerHTML = '<span class="btn-icon">👤</span>';
-                    }
-                }
-            }
-        }
-
-        // ===== АДАПТИВНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА =====
-        function updateMobileUI() {
-            const profileBtn = document.getElementById('profileBtn');
-            const adminBtn = document.getElementById('adminBtn');
-            const logoutBtn = document.querySelector('.btn-logout');
-            
-            if (window.innerWidth <= 768) {
-                // Мобильная версия - показываем только иконки
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'none', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-            } else {
-                // Десктоп версия - показываем текст
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'flex', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-            }
-        }
-
-        // Слушаем изменение размера окна
-        window.addEventListener('resize', updateMobileUI);
-
-        // ===== СОЗДАНИЕ ПОСТА =====
-        async function createPost() {
-            const postText = document.getElementById('postText').value.trim();
-            const postButton = document.getElementById('postButton');
-            
-            if (!postText) {
-                showMessage('Введите текст поста', 'error');
-                return;
-            }
-            
-            if (postText.length > 500) {
-                showMessage('Пост слишком длинный (макс. 500 символов)', 'error');
-                return;
-            }
-            
-            if (!currentUser) {
-                showMessage('Вы не авторизованы', 'error');
-                return;
-            }
-            
-            postButton.disabled = true;
-            postButton.textContent = 'Публикация...';
-            
-            try {
-                await db.collection('posts').add({
-                    text: postText,
-                    userId: currentUser.uid,
-                    username: currentUserData.username,
-                    createdAt: new Date(),
-                    likes: 0,
-                    likedBy: []
-                });
-                
-                await db.collection('users').doc(currentUser.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(1)
-                });
-                
-                document.getElementById('postText').value = '';
-                
-                showMessage('Пост опубликован!', 'success');
-                
-                setTimeout(loadPosts, 300);
-                
-            } catch (error) {
-                console.error('Ошибка создания поста:', error);
-                showMessage('Ошибка: ' + error.message, 'error');
-            } finally {
-                postButton.disabled = false;
-                postButton.textContent = '📝 Опубликовать';
-            }
-        }
-
-        // ===== СУПЕР БЫСТРЫЕ ЛАЙКИ =====
-        async function toggleLike(postId, likeBtn) {
-            if (!currentUser) {
-                showMessage('Войдите, чтобы ставить лайки', 'error');
-                return;
-            }
-            
-            // МГНОВЕННО обновляем UI
-            const countSpan = likeBtn.nextElementSibling;
-            let currentCount = parseInt(countSpan.textContent) || 0;
-            const isLiked = likeBtn.classList.contains('liked');
-            
-            // Оптимистичное обновление UI
-            if (isLiked) {
-                likeBtn.classList.remove('liked');
-                likeBtn.textContent = '🤍';
-                countSpan.textContent = Math.max(0, currentCount - 1);
-            } else {
-                likeBtn.classList.add('liked');
-                likeBtn.textContent = '❤️';
-                countSpan.textContent = currentCount + 1;
-            }
-            
-            // Анимация
-            likeBtn.classList.add('like-pop');
-            setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
-            
-            // Фоновая операция в Firestore
-            updateLikeInFirestore(postId, !isLiked).catch(error => {
-                console.error('Ошибка синхронизации лайка:', error);
-                // Откатываем UI если ошибка
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.textContent = '❤️';
-                    countSpan.textContent = currentCount;
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.textContent = '🤍';
-                    countSpan.textContent = Math.max(0, currentCount - 1);
-                }
-                showMessage('Ошибка синхронизации', 'error');
-            });
-        }
-
-        // Фоновая функция для обновления лайка в Firestore
-        async function updateLikeInFirestore(postId, shouldLike) {
-            const postRef = db.collection('posts').doc(postId);
-            
-            try {
-                if (shouldLike) {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(1),
-                        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                    });
-                } else {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(-1),
-                        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                    });
-                }
-            } catch (error) {
-                throw error;
-            }
-        }
-
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        async function loadPosts() {
-            try {
-                const snapshot = await db.collection('posts')
-                    .orderBy('createdAt', 'desc')
-                    .limit(30)
-                    .get();
-                    
-                const postsContainer = document.getElementById('postsContainer');
-                
-                if (snapshot.empty) {
-                    postsContainer.innerHTML = '<div class="empty">Пока нет постов. Будьте первым!</div>';
-                    return;
-                }
-                
-                let postsHTML = '';
-                postsCache.clear();
-                
-                snapshot.forEach((doc) => {
-                    const post = doc.data();
-                    const postId = doc.id;
-                    const likes = post.likes || 0;
-                    const likedBy = post.likedBy || [];
-                    const isLiked = likedBy.includes(currentUser?.uid);
-                    
-                    postsCache.set(postId, {
-                        ...post,
-                        id: postId,
-                        isLiked: isLiked
-                    });
-                    
-                    postsHTML += `
-                        <div class="post-ios" data-post-id="${postId}">
-                            <div class="post-header">
-                                <div class="user-avatar">${getAvatarLetter(post.username)}</div>
-                                <div class="post-user">
-                                    <div class="username">@${escapeHtml(post.username)}</div>
-                                    <div class="post-time">${formatTime(post.createdAt)}</div>
-                                </div>
-                                ${post.userId === currentUser?.uid ? `
-                                    <button class="delete-post" onclick="deletePost('${postId}')" title="Удалить пост">
-                                        🗑️
-                                    </button>
-                                ` : ''}
-                            </div>
-                            <div class="post-content">${escapeHtml(post.text)}</div>
-                            <div class="post-footer">
-                                <div class="like-container">
-                                    <button class="like-btn ${isLiked ? 'liked' : ''}" 
-                                            onclick="toggleLike('${postId}', this)">
-                                        ${isLiked ? '❤️' : '🤍'}
-                                    </button>
-                                    <span class="like-count">${likes}</span>
-                                </div>
-                                <div class="post-time">${formatTime(post.createdAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                postsContainer.innerHTML = postsHTML;
-                
-            } catch (error) {
-                console.error('Ошибка загрузки постов:', error);
-                document.getElementById('postsContainer').innerHTML = 
-                    '<div class="error">Ошибка загрузки ленты</div>';
-            }
-        }
-
-        // ===== УДАЛЕНИЕ ПОСТА =====
-        async function deletePost(postId) {
-            if (!confirm('Удалить этот пост?')) return;
-            
-            try {
-                await db.collection('posts').doc(postId).delete();
-                
-                if (currentUser) {
-                    await db.collection('users').doc(currentUser.uid).update({
-                        postsCount: firebase.firestore.FieldValue.increment(-1)
-                    });
-                }
-                
-                showMessage('Пост удален', 'success');
-                
-                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                if (postElement) {
-                    postElement.style.opacity = '0';
-                    postElement.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        postElement.remove();
-                    }, 300);
-                }
-                
-            } catch (error) {
-                console.error('Ошибка удаления поста:', error);
-                showMessage('Ошибка: ' + error.message, 'error');
-            }
-        }
-
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        currentUserData = userDoc.data();
-                        
-                        updateProfileButton(currentUserData);
-                        updateMobileUI(); // Обновляем UI для текущего размера экрана
-                        
-                        // ПОКАЗЫВАЕМ КНОПКУ АДМИНА ЕСЛИ ПОЛЬЗОВАТЕЛЬ АДМИН
-                        if (currentUserData.isAdmin) {
-                            document.getElementById('adminBtn').style.display = 'flex';
-                        }
-                        
-                        loadPosts();
-                    } else {
-                        showMessage('Профиль не найден', 'error');
-                        setTimeout(() => window.location.href = 'profile.html', 2000);
-                    }
-                } catch (error) {
-                    console.error('Ошибка загрузки профиля:', error);
-                    showMessage('Ошибка загрузки', 'error');
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
-
-        // ===== REAL-TIME ОБНОВЛЕНИЕ ЛАЙКОВ =====
-        function setupRealtimeUpdates() {
-            if (!currentUser) return;
-            
-            db.collection('posts')
-                .orderBy('createdAt', 'desc')
-                .limit(30)
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        const postId = change.doc.id;
-                        const postData = change.doc.data();
-                        
-                        postsCache.set(postId, {
-                            ...postData,
-                            id: postId,
-                            isLiked: (postData.likedBy || []).includes(currentUser?.uid)
-                        });
-                        
-                        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                        if (postElement && change.type === 'modified') {
-                            const countSpan = postElement.querySelector('.like-count');
-                            const likeBtn = postElement.querySelector('.like-btn');
-                            
-                            if (countSpan) {
-                                countSpan.textContent = postData.likes || 0;
-                            }
-                            
-                            if (likeBtn) {
-                                const isLiked = (postData.likedBy || []).includes(currentUser?.uid);
-                                if (isLiked) {
-                                    likeBtn.classList.add('liked');
-                                    likeBtn.textContent = '❤️';
-                                } else {
-                                    likeBtn.classList.remove('liked');
-                                    likeBtn.textContent = '🤍';
-                                }
-                            }
-                        }
-                    });
-                });
-        }
-
-        setTimeout(setupRealtimeUpdates, 2000);
-
-        // ===== ВЫХОД =====
-        function logout() {
-            if (confirm('Выйти из аккаунта?')) {
-                auth.signOut().then(() => {
-                    window.location.href = 'index.html';
-                });
-            }
-        }
-
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        window.addEventListener('load', () => {
-            console.log('🚀 Лента загружена');
-            
-            // Инициализируем мобильный UI
-            updateMobileUI();
-            
-            document.getElementById('postText').focus();
-            
-            document.getElementById('postText').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    createPost();
-                }
-            });
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUserInfo();
+            login(); // Автоматический вход для демонстрации
         });
     </script>
 </body>

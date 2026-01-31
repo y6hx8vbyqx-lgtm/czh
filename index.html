@@ -1,13 +1,3 @@
-// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    console.log('🚨 Ошибка поймана:', {msg, url, lineNo, error});
-    alert('Ошибка: ' + msg + '\nСтрока: ' + lineNo + '\nОбновите страницу');
-    return true;
-};
-
-// Отключаем строгий режим если он вызывает проблемы
-// "use strict";
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -130,12 +120,12 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             <h1>czhmass.com</h1>
             <p>Мини-социальная сеть</p>
         </div>
-        
+
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('login')">Вход</button>
-            <button class="tab" onclick="switchTab('register')">Регистрация</button>
+            <button class="tab active" onclick="switchTab('login', event)">Вход</button>
+            <button class="tab" onclick="switchTab('register', event)">Регистрация</button>
         </div>
-        
+
         <div class="form-container">
             <!-- ФОРМА ВХОДА -->
             <div id="loginForm" class="form active">
@@ -148,7 +138,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
                 <button class="btn" onclick="login()">Войти</button>
                 <div id="loginMessage" class="message"></div>
             </div>
-            
+
             <!-- ФОРМА РЕГИСТРАЦИИ -->
             <div id="registerForm" class="form">
                 <div class="input-group">
@@ -167,7 +157,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
                 <div id="registerMessage" class="message"></div>
             </div>
         </div>
-        
+
         <div class="footer">
             <p>После входа вы попадёте в ленту постов</p>
         </div>
@@ -175,21 +165,21 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 
     <script>
         // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
-        function switchTab(tabName) {
+        function switchTab(tabName, event) {
             // Скрыть все формы
             document.getElementById('loginForm').classList.remove('active');
             document.getElementById('registerForm').classList.remove('active');
-            
+
             // Убрать активность со всех табов
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
+
             // Показать нужную форму и активировать таб
             document.getElementById(tabName + 'Form').classList.add('active');
             event.target.classList.add('active');
         }
-        
+
         // ===== РЕГИСТРАЦИЯ =====
         function register() {
             const username = document.getElementById('regUsername').value.trim();
@@ -197,41 +187,41 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             const password = document.getElementById('regPassword').value;
             const confirm = document.getElementById('regConfirm').value;
             const message = document.getElementById('registerMessage');
-            
+
             // Сброс сообщения
             message.style.display = 'none';
             message.className = 'message';
-            
+
             // Валидация
             if (!username || !email || !password || !confirm) {
                 showMessage(message, 'Заполните все поля', 'error');
                 return;
             }
-            
+
             if (password !== confirm) {
                 showMessage(message, 'Пароли не совпадают', 'error');
                 return;
             }
-            
+
             if (username.length < 3) {
                 showMessage(message, 'Имя пользователя минимум 3 символа', 'error');
                 return;
             }
-            
+
             if (password.length < 6) {
                 showMessage(message, 'Пароль минимум 6 символов', 'error');
                 return;
             }
-            
+
             // Получаем существующих пользователей
             let users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            
+
             // Проверка на существование
             if (users[username]) {
                 showMessage(message, 'Пользователь уже существует', 'error');
                 return;
             }
-            
+
             // Создание пользователя
             users[username] = {
                 email: email,
@@ -241,65 +231,65 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
                 createdAt: new Date().toISOString(),
                 isAdmin: false
             };
-            
+
             // Сохранение
             localStorage.setItem('czhmass_users', JSON.stringify(users));
             localStorage.setItem('czhmass_currentUser', username);
-            
+
             showMessage(message, '✅ Регистрация успешна! Перенаправляем...', 'success');
-            
+
             setTimeout(() => {
                 window.location.href = 'feed.html';
             }, 1500);
         }
-        
+
         // ===== ВХОД =====
         function login() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             const message = document.getElementById('loginMessage');
-            
+
             // Сброс сообщения
             message.style.display = 'none';
             message.className = 'message';
-            
+
             // Валидация
             if (!username || !password) {
                 showMessage(message, 'Заполните все поля', 'error');
                 return;
             }
-            
+
             // Получаем пользователей
             let users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            
+
             // Проверка
             if (!users[username]) {
                 showMessage(message, 'Пользователь не найден', 'error');
                 return;
             }
-            
+
             if (users[username].password !== password) {
                 showMessage(message, 'Неверный пароль', 'error');
                 return;
             }
-            
+
             // Успешный вход
             localStorage.setItem('czhmass_currentUser', username);
-            
+
             showMessage(message, '✅ Вход успешен! Перенаправляем...', 'success');
-            
+
             setTimeout(() => {
                 window.location.href = 'feed.html';
             }, 1000);
         }
-        
+
         // ===== ПОКАЗ СООБЩЕНИЙ =====
         function showMessage(element, text, type) {
             element.textContent = text;
             element.className = 'message ' + type;
             element.style.display = 'block';
         }
-        
+
         // ===== ENTER ДЛЯ ВХОДА =====
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -310,7 +300,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
                 }
             }
         });
-        
+
         // ===== АВТОВХОД ПРИ ПЕРЕЗАГРУЗКЕ =====
         window.addEventListener('load', function() {
             const currentUser = localStorage.getItem('czhmass_currentUser');

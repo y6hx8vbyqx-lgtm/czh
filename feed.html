@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -294,13 +293,6 @@
             transition: all 0.3s;
         }
 
-        .privacy-note {
-            color: #65676b;
-            font-size: 14px;
-            margin-top: 8px;
-            text-align: center;
-        }
-
         @media (max-width: 768px) {
             .post {
                 padding: 20px;
@@ -323,7 +315,6 @@
         <div class="nav-buttons">
             <button class="btn" onclick="window.location.href='profile.html'">👤 Профиль</button>
             <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
-            <button class="btn" onclick="window.location.href='profile-settings.html'">⚙️ Приватность</button>
             <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
         </div>
     </nav>
@@ -332,9 +323,6 @@
         <h2>💬 О чем думаете?</h2>
         <textarea class="post-textarea" id="postText" placeholder="Поделитесь чем-нибудь с сообществом..."></textarea>
         <button class="btn" onclick="createPost()">📤 Опубликовать</button>
-        <div class="privacy-note">
-            Ваш email будет скрыт от других пользователей
-        </div>
         <div id="message" class="message"></div>
     </div>
 
@@ -444,22 +432,12 @@
                         email: user.email,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         isAdmin: false,
-                        displayEmail: false,
-                        allowMentions: true,
-                        profileVisible: true,
-                        showPostsCount: true,
-                        showJoinDate: true,
                         postsCount: 0,
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
                     console.log('✅ Документ создан для:', username);
-                    currentUserData = { 
-                        username: username, 
-                        email: user.email, 
-                        isAdmin: false,
-                        displayEmail: false
-                    };
+                    currentUserData = { username: username, email: user.email, isAdmin: false };
                 } else {
                     const data = userDoc.data();
                     currentUserData = data;
@@ -470,10 +448,9 @@
                     });
                 }
 
-                localStorage.setItem('czhmass_currentUser', currentUserData.username);
                 localStorage.setItem('czhmass_userId', user.uid);
+                localStorage.setItem('czhmass_currentUser', currentUserData.username);
                 localStorage.setItem('czhmass_userEmail', user.email);
-                localStorage.setItem('czhmass_isAdmin', currentUserData.isAdmin ? 'true' : 'false');
 
                 if (currentUserData.isAdmin) {
                     document.getElementById('adminBtn').style.display = 'inline-block';
@@ -584,17 +561,21 @@
             try {
                 console.log('🗑️ Удаление поста:', postId);
                 
+                // Показываем анимацию удаления
                 const postElement = document.getElementById(`post-${postId}`);
                 if (postElement) {
                     postElement.classList.add('deleting');
                 }
                 
+                // Удаляем пост из Firestore
                 await db.collection('posts').doc(postId).delete();
                 
+                // Уменьшаем счетчик постов у пользователя
                 await db.collection('users').doc(user.uid).update({
                     postsCount: firebase.firestore.FieldValue.increment(-1)
                 });
                 
+                // Удаляем из DOM с задержкой для анимации
                 setTimeout(() => {
                     if (postElement) {
                         postElement.remove();
@@ -602,6 +583,7 @@
                     showMessage('✅ Пост удален', 'success');
                 }, 300);
                 
+                // Удаляем из кэша
                 postsCache.delete(postId);
                 
                 console.log('✅ Пост удален успешно');
@@ -609,6 +591,7 @@
             } catch (error) {
                 console.error('❌ Ошибка удаления поста:', error);
                 
+                // Отменяем анимацию удаления при ошибке
                 const postElement = document.getElementById(`post-${postId}`);
                 if (postElement) {
                     postElement.classList.remove('deleting');
@@ -654,23 +637,28 @@
 
                 console.log('📝 Создание поста от:', username);
 
+                // Создаем пост
                 await db.collection('posts').add({
                     text: text,
                     userId: user.uid,
                     username: username,
+                    userEmail: user.email,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     likes: 0,
                     likedBy: [],
                     comments: []
                 });
 
+                // Увеличиваем счетчик постов у пользователя
                 await db.collection('users').doc(user.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(1)
+                    postsCount: firebase.firestore.FieldValue.increment(1),
+                    lastPostTime: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 textInput.value = '';
-                showMessage('✅ Пост опубликован! (Ваш email скрыт)', 'success');
+                showMessage('✅ Пост опубликован!', 'success');
 
+                // Обновляем ленту через 1 сек
                 setTimeout(loadPosts, 1000);
 
             } catch (error) {

@@ -890,12 +890,36 @@
                     photoURL = await uploadPhoto(selectedPhoto);
                 }
 
+                // Получаем username из Firestore или используем email
+                let username = 'Анонимный пользователь';
+                let userInitial = 'А';
+                
+                if (currentUser) {
+                    try {
+                        // Пробуем получить username из Firestore
+                        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                        if (userDoc.exists && userDoc.data().username) {
+                            username = userDoc.data().username;
+                        } else if (currentUser.displayName) {
+                            username = currentUser.displayName;
+                        } else if (currentUser.email) {
+                            username = currentUser.email.split('@')[0];
+                        }
+                        
+                        userInitial = username.charAt(0).toUpperCase();
+                    } catch (userError) {
+                        console.log('Не удалось получить username, используем email');
+                        username = currentUser.email ? currentUser.email.split('@')[0] : 'Пользователь';
+                        userInitial = username.charAt(0).toUpperCase();
+                    }
+                }
+
                 // Создаем пост в Firestore
                 const postData = {
                     text: text,
-                    userId: currentUser.uid,
-                    username: currentUser.displayName || 'Анонимный пользователь',
-                    userInitial: (currentUser.displayName || 'А').charAt(0).toUpperCase(),
+                    userId: currentUser ? currentUser.uid : 'anonymous',
+                    username: username,
+                    userInitial: userInitial,
                     likes: 0,
                     likedBy: [],
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -912,7 +936,18 @@
 
             } catch (error) {
                 console.error('Ошибка создания поста:', error);
-                showMessage('Ошибка при публикации поста', 'error');
+                
+                // Показываем детальную ошибку
+                let errorMessage = 'Ошибка при публикации поста';
+                if (error.code === 'storage/unauthorized') {
+                    errorMessage = 'Ошибка доступа к хранилищу. Проверьте правила Firebase Storage';
+                } else if (error.code === 'storage/retry-limit-exceeded') {
+                    errorMessage = 'Файл слишком большой или проблема с сетью';
+                } else if (error.code === 'permission-denied') {
+                    errorMessage = 'Нет прав на запись. Проверьте правила Firestore';
+                }
+                
+                showMessage(errorMessage, 'error');
             } finally {
                 // Разблокируем кнопки
                 postButton.disabled = false;
@@ -938,7 +973,7 @@
                 postElement.id = `post-${post.id}`;
 
                 // Проверяем, лайкнул ли текущий пользователь этот пост
-                const isLiked = post.likedBy && post.likedBy.includes(currentUser.uid);
+                const isLiked = post.likedBy && post.likedBy.includes(currentUser ? currentUser.uid : '');
                 
                 let photoHTML = '';
                 if (post.photoURL) {
@@ -951,9 +986,9 @@
 
                 postElement.innerHTML = `
                     <div class="post-header">
-                        <div class="user-avatar">${post.userInitial}</div>
+                        <div class="user-avatar">${post.userInitial || 'А'}</div>
                         <div class="post-user">
-                            <div class="username">${post.username}</div>
+                            <div class="username">${post.username || 'Анонимный пользователь'}</div>
                             <div class="post-time">${formatTime(post.createdAt)}</div>
                         </div>
                     </div>
@@ -966,7 +1001,7 @@
                         <div class="like-container">
                             <button 
                                 class="like-btn ${isLiked ? 'liked' : ''}" 
-                                onclick="toggleLike('${post.id}', ${post.likes}, ${JSON.stringify(post.likedBy || [])})"
+                                onclick="toggleLike('${post.id}', ${post.likes || 0}, ${JSON.stringify(post.likedBy || [])})"
                             >
                                 ${isLiked ? '❤️' : '🤍'}
                             </button>
@@ -974,7 +1009,7 @@
                         </div>
                     </div>
                     
-                    ${post.userId === currentUser.uid ? 
+                    ${post.userId === (currentUser ? currentUser.uid : '') ? 
                         `<button class="delete-post" onclick="deletePost('${post.id}')">✕</button>` : 
                         ''
                     }
@@ -990,7 +1025,10 @@
 
         // ===== ЛАЙКИ =====
         async function toggleLike(postId, currentLikes, likedByArray) {
-            if (!currentUser) return;
+            if (!currentUser) {
+                showMessage('Войдите в аккаунт чтобы ставить лайки', 'error');
+                return;
+            }
 
             const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
             const likeCount = document.querySelector(`#post-${postId} .like-count`);
@@ -1071,10 +1109,19 @@
                 currentUser = user;
                 
                 // Обновляем информацию о пользователе
-                document.getElementById('username').textContent = 
-                    user.displayName || 'Пользователь';
-                document.getElementById('userAvatar').textContent = 
-                    (user.displayName || 'U').charAt(0).toUpperCase();
+                const usernameElement = document.getElementById('username');
+                const userAvatarElement = document.getElementById('userAvatar');
+                
+                if (user.displayName) {
+                    usernameElement.textContent = user.displayName;
+                    userAvatarElement.textContent = user.displayName.charAt(0).toUpperCase();
+                } else if (user.email) {
+                    usernameElement.textContent = user.email.split('@')[0];
+                    userAvatarElement.textContent = user.email.charAt(0).toUpperCase();
+                } else {
+                    usernameElement.textContent = 'Пользователь';
+                    userAvatarElement.textContent = 'U';
+                }
 
                 loadPosts();
             });

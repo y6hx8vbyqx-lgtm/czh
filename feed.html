@@ -47,6 +47,7 @@ body{
   padding:10px 14px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
   z-index:1000;
 }
 
@@ -57,12 +58,18 @@ body{
   -webkit-text-fill-color:transparent;
 }
 
+.nav-right{
+  display:flex;
+  gap:8px;
+}
+
 .nav-btn{
   background:#1c1c1e;
   border:none;
   color:#fff;
   padding:8px 12px;
   border-radius:12px;
+  cursor:pointer;
 }
 
 .create{
@@ -89,6 +96,7 @@ body{
   background:var(--accent);
   color:#fff;
   font-weight:600;
+  cursor:pointer;
 }
 
 .search-box{
@@ -118,6 +126,7 @@ body{
   background:#1c1c1e;
   border:none;
   color:#fff;
+  cursor:pointer;
 }
 .tab.active{
   background:var(--accent);
@@ -158,6 +167,7 @@ body{
   border:none;
   color:var(--sub);
   font-size:18px;
+  cursor:pointer;
 }
 .liked{color:#ff2d55}
 
@@ -191,7 +201,10 @@ body{
 
 <div class="navbar">
   <div class="logo">czhmass</div>
-  <button class="nav-btn" onclick="logout()">🚪</button>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="openProfile(currentUser.uid, currentUser.displayName)">👤</button>
+    <button class="nav-btn" onclick="logout()">🚪</button>
+  </div>
 </div>
 
 <div class="container">
@@ -202,10 +215,10 @@ body{
   </div>
 
   <div class="search-box">
-    <input id="searchInput" placeholder="Поиск по нику">
+    <input id="searchInput" placeholder="Поиск по нику" oninput="loadPosts()">
     <div class="tabs">
-      <button class="tab active" onclick="setMode('all')">Все посты</button>
-      <button class="tab" onclick="setMode('fav')">Избранные</button>
+      <button class="tab active" onclick="setMode('all',this)">Все посты</button>
+      <button class="tab" onclick="setMode('fav',this)">Избранные</button>
     </div>
   </div>
 
@@ -218,7 +231,10 @@ body{
     <strong id="profileName"></strong>
     <button class="action" onclick="closeProfile()">✕</button>
   </div>
-  <div class="sheet-body" id="profilePosts"></div>
+  <div class="sheet-body">
+    <button class="nav-btn" onclick="toggleFavorite()" id="favBtn">⭐ В избранные</button>
+    <div id="profilePosts"></div>
+  </div>
 </div>
 
 <script>
@@ -234,58 +250,87 @@ const auth=firebase.auth();
 let currentUser;
 let mode="all";
 let favorites=[];
+let openedProfile=null;
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
   const snap=await db.collection("users").doc(u.uid).get();
-  favorites=snap.data()?.favorites||[];
+  favorites=snap.exists ? snap.data().favorites||[] : [];
   loadPosts();
 });
 
-function setMode(m){
+function setMode(m,el){
   mode=m;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   loadPosts();
 }
 
 async function loadPosts(){
   feed.innerHTML="";
-  let q=await db.collection("posts").orderBy("createdAt","desc").get();
+  const search=searchInput.value.toLowerCase();
+  const q=await db.collection("posts").orderBy("createdAt","desc").get();
+
   q.forEach(d=>{
     const p=d.data();
+    if(search && !p.username.toLowerCase().includes(search)) return;
     if(mode==="fav" && !favorites.includes(p.userId)) return;
+
+    const liked=p.likes?.includes(currentUser.uid);
+
     feed.innerHTML+=`
     <div class="post fade">
       <div class="post-header">
-        <div class="avatar">${p.username?.[0]||"A"}</div>
+        <div class="avatar">${p.username[0]}</div>
         <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">@${p.username}</div>
       </div>
       <div class="post-text">${p.text}</div>
       <div class="post-actions">
-        <button class="action" onclick="toggleLike('${d.id}')">❤️ ${p.likes||0}</button>
-        <button class="action">💬 ${p.commentsCount||0}</button>
+        <button class="action ${liked?'liked':''}" onclick="toggleLike('${d.id}')">❤️ ${p.likes?.length||0}</button>
+        <button class="action" onclick="alert('Комментарии будут позже')">💬</button>
       </div>
     </div>`;
   });
 }
 
+async function toggleLike(id){
+  const ref=db.collection("posts").doc(id);
+  const snap=await ref.get();
+  let likes=snap.data().likes||[];
+  if(likes.includes(currentUser.uid)){
+    likes=likes.filter(l=>l!==currentUser.uid);
+  }else{
+    likes.push(currentUser.uid);
+  }
+  await ref.update({likes});
+  loadPosts();
+}
+
 async function openProfile(uid,name){
+  openedProfile=uid;
   profileName.textContent="@"+name;
   profileSheet.classList.add("show");
+  favBtn.textContent=favorites.includes(uid)?"❌ Убрать из избранных":"⭐ В избранные";
   profilePosts.innerHTML="";
   const snap=await db.collection("posts").where("userId","==",uid).get();
   snap.forEach(d=>{
-    profilePosts.innerHTML+=`
-      <div class="post fade">
-        <div class="post-text">${d.data().text}</div>
-      </div>`;
+    profilePosts.innerHTML+=`<div class="post fade"><div class="post-text">${d.data().text}</div></div>`;
   });
 }
 
 function closeProfile(){
   profileSheet.classList.remove("show");
+}
+
+async function toggleFavorite(){
+  if(favorites.includes(openedProfile)){
+    favorites=favorites.filter(f=>f!==openedProfile);
+  }else{
+    favorites.push(openedProfile);
+  }
+  await db.collection("users").doc(currentUser.uid).set({favorites},{merge:true});
+  favBtn.textContent=favorites.includes(openedProfile)?"❌ Убрать из избранных":"⭐ В избранные";
 }
 
 async function createPost(){
@@ -295,8 +340,7 @@ async function createPost(){
     userId:currentUser.uid,
     username:currentUser.displayName||"anon",
     createdAt:new Date(),
-    likes:0,
-    commentsCount:0
+    likes:[]
   });
   postText.value="";
   loadPosts();

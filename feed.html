@@ -3,6 +3,27 @@
 <head>
     <title>Лента - czhmass.com</title>
     <meta charset="UTF-8">
+    <!-- ДОБАВЬТЕ ЭТОТ СКРИПТ ПЕРВЫМ -->
+    <script>
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ ДО ЗАГРУЗКИ СТРАНИЦЫ =====
+        (function() {
+            const currentUser = localStorage.getItem('czhmass_currentUser');
+            if (!currentUser) {
+                // Перенаправляем СРАЗУ, не показывая страницу
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <style>
+        /* остальные стили */
+    </style>
+</head>
+    
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Лента - czhmass.com</title>
+    <meta charset="UTF-8">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -193,62 +214,28 @@
     </div>
 
     <script>
-        // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
-        let currentUser = localStorage.getItem('czhmass_currentUser');
-        let users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-        
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+  <script>
+    // ===== ПРОВЕРКА АВТОРИЗАЦИИ СРАЗУ =====
+    (function() {
+        const currentUser = localStorage.getItem('czhmass_currentUser');
         if (!currentUser) {
             alert('❌ Сначала войдите в систему!');
             window.location.href = 'index.html';
+            return;
         }
         
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        function loadPosts() {
-            const postsDiv = document.getElementById('posts');
-            const emptyMsg = document.getElementById('emptyMsg');
-            
-            // Собираем ВСЕ посты
-            let allPosts = [];
-            for (const username in users) {
-                if (users[username] && Array.isArray(users[username].posts)) {
-                    users[username].posts.forEach((text, index) => {
-                        allPosts.push({
-                            username: username,
-                            text: text,
-                            time: users[username].postTimes ? 
-                                  (users[username].postTimes[index] || new Date().toISOString()) : 
-                                  new Date().toISOString()
-                        });
-                    });
-                }
-            }
-            
-            // Сортируем по времени (новые сверху)
-            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
-            
-            // Отображаем
-            if (allPosts.length === 0) {
-                postsDiv.innerHTML = '<h3>📰 Лента постов:</h3><div class="empty">Пока нет постов. Будьте первым!</div>';
-                return;
-            }
-            
-            let postsHTML = '<h3>📰 Лента постов:</h3>';
-            allPosts.forEach(post => {
-                postsHTML += `
-                    <div class="post">
-                        <div class="post-header">
-                            <span>@${post.username}</span>
-                            <span style="color:#a0aec0; font-size:14px;">${formatTime(post.time)}</span>
-                        </div>
-                        <div>${escapeHtml(post.text)}</div>
-                    </div>
-                `;
-            });
-            
-            postsDiv.innerHTML = postsHTML;
-        }
-        
+        // Загружаем остальные данные только если пользователь авторизован
+        window.czUsers = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+        window.czCurrentUser = currentUser;
+    })();
+    
+    // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ (после проверки) =====
+    let currentUser = window.czCurrentUser;
+    let users = window.czUsers;
+    
+    // ... остальной код без изменений ...
+</script>
+    
         // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ =====
         function searchUsers() {
             const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();

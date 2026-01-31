@@ -127,7 +127,7 @@
             background: rgba(255, 59, 48, 0.3);
         }
 
-        /* Кнопка профиля - УЛУЧШЕННАЯ ДЛЯ МОБИЛЬНЫХ */
+        /* Кнопка профиля */
         .profile-btn {
             background: rgba(255, 255, 255, 0.1);
             color: white;
@@ -638,6 +638,12 @@
             border-color: rgba(255, 59, 48, 0.3);
         }
 
+        .info {
+            background: rgba(0, 122, 255, 0.15);
+            color: #007aff;
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
         /* Загрузка */
         .loading {
             text-align: center;
@@ -757,66 +763,96 @@
     </div>
 
     <script>
-        // === ВАЖНО: Замени эти данные на свои из Firebase ===
+        // === ВАЖНО: ЗАМЕНИ ЭТОТ КОНФИГ НА СВОЙ ИЗ FIREBASE ===
         const firebaseConfig = {
-            apiKey: "AIzaSyA_wcR_XpnP3q6E_uaOyaI8y6fL-Wl2MhE", // Замени на свой
-            authDomain: "czhmass.firebaseapp.com", // Замени на свой
-            projectId: "czhmass", // Замени на свой (скорее всего "czhmass")
-            storageBucket: "czhmass.firebasestorage.app", // Замени на свой
-            messagingSenderId: "123456789012", // Замени на свой
-            appId: "1:123456789012:web:abcdef123456" // Замени на свой
+            apiKey: "AIzaSyA_wcR_XpnP3q6E_uaOyaI8y6fL-Wl2MhE",
+            authDomain: "czhmass.firebaseapp.com",
+            projectId: "czhmass",
+            storageBucket: "czhmass.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456"
         };
-
-        // Получить конфиг из Firebase:
-        // 1. Зайди в Firebase Console → Проект czhmass
-        // 2. Настройки проекта (шестеренка)
-        // 3. "Ваши приложения" → "Приложение" → Конфигурация
-        // 4. Скопируй объект firebaseConfig
 
         // Инициализация Firebase
         let app, db, auth;
         let currentUser = null;
         let unsubscribePosts = null;
+        let unsubscribeComments = {};
 
         function initializeFirebase() {
             try {
+                // Проверяем, загружены ли Firebase SDK
+                if (typeof firebase === 'undefined') {
+                    showMessage('Firebase SDK не загружен', 'error');
+                    setupLocalMode();
+                    return;
+                }
+
+                // Инициализируем Firebase
                 if (!firebase.apps.length) {
                     app = firebase.initializeApp(firebaseConfig);
-                    console.log("Firebase инициализирован");
+                    console.log("✅ Firebase инициализирован");
                 } else {
                     app = firebase.app();
-                    console.log("Firebase уже инициализирован");
                 }
-                
+
                 db = firebase.firestore();
                 auth = firebase.auth();
-                
-                // Настройка анонимного входа
+
+                // Настройка слушателя авторизации
                 auth.onAuthStateChanged(async (user) => {
+                    console.log("Состояние авторизации:", user ? "Вошел" : "Не вошел");
+                    
                     if (user) {
+                        // Пользователь вошел
                         currentUser = {
                             uid: user.uid,
                             displayName: user.displayName || `User_${user.uid.slice(0, 6)}`,
                             email: user.email
                         };
+                        
                         updateUserInfo();
-                        loadPostsRealtime(); // Загружаем посты в реальном времени
+                        loadPostsRealtime();
+                        showMessage('Вход выполнен', 'success');
                     } else {
-                        // Автоматический анонимный вход
+                        // Пробуем анонимный вход
                         try {
+                            console.log("Попытка анонимного входа...");
                             const result = await auth.signInAnonymously();
-                            console.log("Анонимный вход выполнен");
-                        } catch (error) {
-                            console.error("Ошибка анонимного входа:", error);
-                            showMessage("Ошибка входа", "error");
+                            console.log("✅ Анонимный вход успешен:", result.user.uid);
+                        } catch (authError) {
+                            console.error("❌ Ошибка анонимного входа:", authError);
+                            
+                            // Если Firebase не работает, переходим в локальный режим
+                            if (authError.code === 'auth/invalid-api-key' || 
+                                authError.code === 'auth/network-request-failed') {
+                                setupLocalMode();
+                            } else {
+                                showMessage('Ошибка входа: ' + authError.message, 'error');
+                            }
                         }
                     }
                 });
-                
+
             } catch (error) {
-                console.error("Ошибка инициализации Firebase:", error);
-                showMessage("Ошибка подключения к Firebase", "error");
+                console.error("❌ Критическая ошибка Firebase:", error);
+                showMessage('Ошибка инициализации Firebase', 'error');
+                setupLocalMode();
             }
+        }
+
+        function setupLocalMode() {
+            console.log("🔄 Включаю локальный режим");
+            
+            currentUser = {
+                uid: 'local_' + Date.now(),
+                displayName: 'Локальный пользователь',
+                email: null
+            };
+            
+            updateUserInfo();
+            loadLocalPosts();
+            showMessage('Работаю в локальном режиме', 'info');
         }
 
         // Обновление времени
@@ -826,7 +862,8 @@
                 hour: '2-digit', 
                 minute: '2-digit' 
             });
-            document.getElementById('currentTime').textContent = timeString;
+            const timeEl = document.getElementById('currentTime');
+            if (timeEl) timeEl.textContent = timeString;
         }
         setInterval(updateTime, 1000);
         updateTime();
@@ -834,6 +871,8 @@
         // Показать сообщение
         function showMessage(text, type = 'success') {
             const messageEl = document.getElementById('message');
+            if (!messageEl) return;
+            
             messageEl.textContent = text;
             messageEl.className = `message ${type}`;
             messageEl.style.display = 'block';
@@ -843,23 +882,27 @@
             }, 3000);
         }
 
+        // Обновление информации о пользователе
         function updateUserInfo() {
             const userNameEl = document.getElementById('userName');
             const userAvatarEl = document.getElementById('userAvatar');
+            const postButton = document.getElementById('postButton');
+            
+            if (!userNameEl || !userAvatarEl || !postButton) return;
             
             if (currentUser) {
                 const name = currentUser.displayName || 'Пользователь';
                 userNameEl.textContent = name;
                 userAvatarEl.textContent = name.charAt(0).toUpperCase();
-                document.getElementById('postButton').disabled = false;
+                postButton.disabled = false;
             } else {
                 userNameEl.textContent = 'Гость';
                 userAvatarEl.textContent = 'G';
-                document.getElementById('postButton').disabled = true;
+                postButton.disabled = true;
             }
         }
 
-        // Создание поста с записью в Firestore
+        // Создание поста
         async function createPost() {
             if (!currentUser) {
                 showMessage('Войдите, чтобы опубликовать пост', 'error');
@@ -874,11 +917,6 @@
                 return;
             }
 
-            if (content.length > 1000) {
-                showMessage('Пост слишком длинный (макс. 1000 символов)', 'error');
-                return;
-            }
-
             const button = document.getElementById('postButton');
             button.disabled = true;
             button.textContent = 'Публикация...';
@@ -888,21 +926,32 @@
                     content: content,
                     authorId: currentUser.uid,
                     authorName: currentUser.displayName,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdAt: new Date(),
                     likes: 0,
                     likedBy: [],
                     commentsCount: 0
                 };
 
-                // Запись в Firestore
-                await db.collection('posts').add(postData);
+                if (db) {
+                    // Режим Firebase
+                    await db.collection('posts').add({
+                        ...postData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showMessage('Пост опубликован!', 'success');
+                } else {
+                    // Локальный режим
+                    postData.id = 'local_' + Date.now();
+                    addPostToFeed(postData);
+                    savePostToLocalStorage(postData);
+                    showMessage('Пост сохранен локально', 'info');
+                }
                 
-                showMessage('Пост опубликован!', 'success');
                 postInput.value = '';
                 
             } catch (error) {
                 console.error('Ошибка создания поста:', error);
-                showMessage('Ошибка при публикации: ' + error.message, 'error');
+                showMessage('Ошибка: ' + error.message, 'error');
             } finally {
                 button.disabled = false;
                 button.textContent = 'Опубликовать';
@@ -912,14 +961,21 @@
         // Загрузка постов в реальном времени
         function loadPostsRealtime() {
             const feedEl = document.getElementById('feed');
+            if (!feedEl) return;
+            
             feedEl.innerHTML = '<div class="loading">Загрузка ленты...</div>';
 
-            // Отписываемся от предыдущего слушателя
-            if (unsubscribePosts) {
-                unsubscribePosts();
+            if (!db) {
+                loadLocalPosts();
+                return;
             }
 
             try {
+                // Отписываемся от предыдущего слушателя
+                if (unsubscribePosts) {
+                    unsubscribePosts();
+                }
+
                 unsubscribePosts = db.collection('posts')
                     .orderBy('createdAt', 'desc')
                     .limit(50)
@@ -932,33 +988,59 @@
                         }
                         
                         snapshot.forEach(doc => {
-                            addPostToFeed({
-                                id: doc.id,
-                                ...doc.data()
-                            });
+                            const post = doc.data();
+                            post.id = doc.id;
+                            addPostToFeed(post);
                         });
                     }, (error) => {
-                        console.error('Ошибка загрузки постов:', error);
-                        feedEl.innerHTML = '<div class="error">Ошибка загрузки ленты. Проверьте консоль.</div>';
+                        console.error('Ошибка Firestore:', error);
+                        showMessage('Ошибка загрузки постов', 'error');
+                        setupLocalMode();
                     });
                     
             } catch (error) {
-                console.error('Ошибка подключения к Firestore:', error);
-                feedEl.innerHTML = '<div class="error">Ошибка подключения к базе данных</div>';
-                showMessage('Проверь конфигурацию Firebase', 'error');
+                console.error('Ошибка подключения:', error);
+                setupLocalMode();
             }
+        }
+
+        // Локальные посты
+        function loadLocalPosts() {
+            const feedEl = document.getElementById('feed');
+            if (!feedEl) return;
+            
+            feedEl.innerHTML = '<div class="loading">Загрузка локальных постов...</div>';
+            
+            setTimeout(() => {
+                const localPosts = JSON.parse(localStorage.getItem('localPosts') || '[]');
+                
+                if (localPosts.length === 0) {
+                    feedEl.innerHTML = '<div class="empty">Пока нет постов. Будь первым!</div>';
+                    return;
+                }
+                
+                feedEl.innerHTML = '';
+                localPosts.forEach(post => addPostToFeed(post));
+            }, 500);
+        }
+
+        function savePostToLocalStorage(post) {
+            const posts = JSON.parse(localStorage.getItem('localPosts') || '[]');
+            posts.unshift(post);
+            localStorage.setItem('localPosts', JSON.stringify(posts.slice(0, 50)));
         }
 
         // Добавление поста в ленту
         function addPostToFeed(post) {
             const feedEl = document.getElementById('feed');
+            if (!feedEl) return;
             
             // Проверяем, нет ли уже такого поста
             if (document.getElementById(`post-${post.id}`)) {
                 return;
             }
             
-            const timeAgo = getTimeAgo(post.createdAt?.toDate() || new Date());
+            const timeAgo = getTimeAgo(post.createdAt);
             const isAuthor = currentUser && currentUser.uid === post.authorId;
             const isLiked = post.likedBy?.includes(currentUser?.uid) || false;
             
@@ -1033,52 +1115,54 @@
             loadComments(post.id);
         }
 
-        // Функции для комментариев
+        // Загрузка комментариев
         async function loadComments(postId) {
             const commentsList = document.getElementById(`comments-list-${postId}`);
+            if (!commentsList) return;
             
             try {
-                const snapshot = await db.collection('posts').doc(postId)
-                    .collection('comments').orderBy('createdAt').get();
-                
-                commentsList.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5);">Пока нет комментариев</div>';
-                    return;
+                if (db) {
+                    // Отписываемся от предыдущего слушателя
+                    if (unsubscribeComments[postId]) {
+                        unsubscribeComments[postId]();
+                    }
+                    
+                    // Режим Firebase
+                    unsubscribeComments[postId] = db.collection('posts').doc(postId)
+                        .collection('comments')
+                        .orderBy('createdAt')
+                        .onSnapshot((snapshot) => {
+                            commentsList.innerHTML = '';
+                            
+                            if (snapshot.empty) {
+                                commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5);">Пока нет комментариев</div>';
+                                return;
+                            }
+                            
+                            snapshot.forEach(doc => {
+                                const comment = {
+                                    id: doc.id,
+                                    ...doc.data()
+                                };
+                                addCommentToPost(postId, comment);
+                            });
+                        }, (error) => {
+                            console.error('Ошибка загрузки комментариев:', error);
+                        });
+                } else {
+                    // Локальный режим
+                    const localComments = JSON.parse(localStorage.getItem(`comments_${postId}`) || '[]');
+                    commentsList.innerHTML = '';
+                    
+                    if (localComments.length === 0) {
+                        commentsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5);">Пока нет комментариев</div>';
+                        return;
+                    }
+                    
+                    localComments.forEach(comment => {
+                        addCommentToPost(postId, comment);
+                    });
                 }
-                
-                snapshot.forEach(doc => {
-                    const comment = {
-                        id: doc.id,
-                        ...doc.data()
-                    };
-                    
-                    const commentEl = document.createElement('div');
-                    commentEl.className = 'comment-item';
-                    commentEl.id = `comment-${comment.id}`;
-                    
-                    const timeAgo = getTimeAgo(comment.createdAt?.toDate() || new Date());
-                    const isAuthor = currentUser && currentUser.uid === comment.authorId;
-                    
-                    commentEl.innerHTML = `
-                        <div class="comment-avatar">${(comment.authorName || 'А').charAt(0).toUpperCase()}</div>
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <div class="comment-username">${comment.authorName || 'Аноним'}</div>
-                                <div class="comment-time">${timeAgo}</div>
-                            </div>
-                            <div class="comment-text">${escapeHtml(comment.text || '')}</div>
-                        </div>
-                        ${isAuthor ? `
-                            <button class="delete-comment" onclick="deleteComment('${postId}', '${comment.id}')">
-                                ✕
-                            </button>
-                        ` : ''}
-                    `;
-                    
-                    commentsList.appendChild(commentEl);
-                });
                 
             } catch (error) {
                 console.error('Ошибка загрузки комментариев:', error);
@@ -1086,6 +1170,47 @@
             }
         }
 
+        function addCommentToPost(postId, comment) {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            if (!commentsList) return;
+            
+            // Проверяем, нет ли уже такого комментария
+            if (document.getElementById(`comment-${comment.id}`)) {
+                return;
+            }
+            
+            const timeAgo = getTimeAgo(comment.createdAt);
+            const isAuthor = currentUser && currentUser.uid === comment.authorId;
+            
+            const commentEl = document.createElement('div');
+            commentEl.className = 'comment-item';
+            commentEl.id = `comment-${comment.id}`;
+            
+            commentEl.innerHTML = `
+                <div class="comment-avatar">${(comment.authorName || 'А').charAt(0).toUpperCase()}</div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <div class="comment-username">${comment.authorName || 'Аноним'}</div>
+                        <div class="comment-time">${timeAgo}</div>
+                    </div>
+                    <div class="comment-text">${escapeHtml(comment.text || '')}</div>
+                </div>
+                ${isAuthor ? `
+                    <button class="delete-comment" onclick="deleteComment('${postId}', '${comment.id}')">
+                        ✕
+                    </button>
+                ` : ''}
+            `;
+            
+            // Если список пустой, очищаем сообщение "нет комментариев"
+            if (commentsList.innerHTML.includes('Пока нет комментариев')) {
+                commentsList.innerHTML = '';
+            }
+            
+            commentsList.appendChild(commentEl);
+        }
+
+        // Добавление комментария
         async function addComment(postId) {
             if (!currentUser) {
                 showMessage('Войдите, чтобы комментировать', 'error');
@@ -1113,18 +1238,44 @@
                     text: text,
                     authorId: currentUser.uid,
                     authorName: currentUser.displayName,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdAt: new Date(),
                     postId: postId
                 };
 
-                // Запись комментария
-                await db.collection('posts').doc(postId).collection('comments').add(commentData);
-                
-                // Обновляем счетчик комментариев
-                const postRef = db.collection('posts').doc(postId);
-                await postRef.update({
-                    commentsCount: firebase.firestore.FieldValue.increment(1)
-                });
+                if (db) {
+                    // Режим Firebase
+                    await db.collection('posts').doc(postId).collection('comments').add({
+                        ...commentData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Обновляем счетчик комментариев
+                    await db.collection('posts').doc(postId).update({
+                        commentsCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                } else {
+                    // Локальный режим
+                    commentData.id = 'comment_' + Date.now();
+                    addCommentToPost(postId, commentData);
+                    
+                    // Сохраняем в localStorage
+                    const comments = JSON.parse(localStorage.getItem(`comments_${postId}`) || '[]');
+                    comments.push(commentData);
+                    localStorage.setItem(`comments_${postId}`, JSON.stringify(comments));
+                    
+                    // Обновляем счетчик в посте
+                    const postElement = document.getElementById(`post-${postId}`);
+                    if (postElement) {
+                        const commentCountEl = postElement.querySelector('.comment-count');
+                        const commentsToggleEl = postElement.querySelector('.comments-toggle span');
+                        
+                        const currentCount = parseInt(commentCountEl.textContent) || 0;
+                        const newCount = currentCount + 1;
+                        
+                        commentCountEl.textContent = newCount;
+                        commentsToggleEl.textContent = `Комментарии (${newCount})`;
+                    }
+                }
                 
                 showMessage('Комментарий добавлен', 'success');
                 input.value = '';
@@ -1134,24 +1285,50 @@
                 
             } catch (error) {
                 console.error('Ошибка добавления комментария:', error);
-                showMessage('Ошибка при добавлении комментария: ' + error.message, 'error');
+                showMessage('Ошибка: ' + error.message, 'error');
             } finally {
                 button.disabled = false;
             }
         }
 
+        // Удаление комментария
         async function deleteComment(postId, commentId) {
             if (!confirm('Удалить комментарий?')) return;
 
             try {
-                // Удаление комментария
-                await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
-                
-                // Обновляем счетчик
-                const postRef = db.collection('posts').doc(postId);
-                await postRef.update({
-                    commentsCount: firebase.firestore.FieldValue.increment(-1)
-                });
+                if (db) {
+                    // Режим Firebase
+                    await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                    
+                    // Обновляем счетчик
+                    await db.collection('posts').doc(postId).update({
+                        commentsCount: firebase.firestore.FieldValue.increment(-1)
+                    });
+                } else {
+                    // Локальный режим
+                    const commentEl = document.getElementById(`comment-${commentId}`);
+                    if (commentEl) {
+                        commentEl.remove();
+                    }
+                    
+                    // Обновляем localStorage
+                    const comments = JSON.parse(localStorage.getItem(`comments_${postId}`) || '[]');
+                    const filteredComments = comments.filter(c => c.id !== commentId);
+                    localStorage.setItem(`comments_${postId}`, JSON.stringify(filteredComments));
+                    
+                    // Обновляем счетчик
+                    const postElement = document.getElementById(`post-${postId}`);
+                    if (postElement) {
+                        const commentCountEl = postElement.querySelector('.comment-count');
+                        const commentsToggleEl = postElement.querySelector('.comments-toggle span');
+                        
+                        const currentCount = parseInt(commentCountEl.textContent) || 0;
+                        const newCount = Math.max(0, currentCount - 1);
+                        
+                        commentCountEl.textContent = newCount;
+                        commentsToggleEl.textContent = `Комментарии (${newCount})`;
+                    }
+                }
                 
                 showMessage('Комментарий удален', 'success');
                 
@@ -1161,6 +1338,7 @@
             }
         }
 
+        // Переключение видимости комментариев
         function toggleComments(postId, forceOpen = false) {
             const commentsList = document.getElementById(`comments-list-${postId}`);
             const toggleBtn = document.querySelector(`#comments-${postId} .comments-toggle`);
@@ -1181,63 +1359,97 @@
             }
         }
 
-        // Функции для лайков
+        // Лайки
         async function toggleLike(postId) {
             if (!currentUser) {
                 showMessage('Войдите, чтобы ставить лайки', 'error');
                 return;
             }
 
-            const postRef = db.collection('posts').doc(postId);
-            let postDoc;
+            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
+            const likeCount = document.querySelector(`#post-${postId} .like-count`);
+            
+            if (!likeBtn || !likeCount) return;
+            
+            const isLiked = likeBtn.classList.contains('liked');
+            const currentLikes = parseInt(likeCount.textContent) || 0;
             
             try {
-                postDoc = await postRef.get();
-                if (!postDoc.exists) {
-                    showMessage('Пост не найден', 'error');
-                    return;
-                }
-                
-                const postData = postDoc.data();
-                const likedBy = postData.likedBy || [];
-                const isLiked = likedBy.includes(currentUser.uid);
-                
-                if (isLiked) {
-                    // Убираем лайк
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(-1),
-                        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                    });
+                if (db) {
+                    // Режим Firebase
+                    const postRef = db.collection('posts').doc(postId);
+                    
+                    if (isLiked) {
+                        // Убираем лайк
+                        await postRef.update({
+                            likes: firebase.firestore.FieldValue.increment(-1),
+                            likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                        });
+                    } else {
+                        // Ставим лайк
+                        await postRef.update({
+                            likes: firebase.firestore.FieldValue.increment(1),
+                            likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                        });
+                    }
                 } else {
-                    // Ставим лайк
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(1),
-                        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                    });
+                    // Локальный режим
+                    if (isLiked) {
+                        likeBtn.classList.remove('liked');
+                        likeBtn.innerHTML = '🤍';
+                        likeCount.textContent = currentLikes - 1;
+                    } else {
+                        likeBtn.classList.add('liked');
+                        likeBtn.innerHTML = '❤️';
+                        likeCount.textContent = currentLikes + 1;
+                        likeBtn.classList.add('like-pop');
+                        setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
+                    }
                 }
                 
             } catch (error) {
                 console.error('Ошибка обновления лайка:', error);
-                showMessage('Ошибка при обновлении лайка: ' + error.message, 'error');
+                showMessage('Ошибка при обновлении лайка', 'error');
             }
         }
 
+        // Удаление поста
         async function deletePost(postId) {
             if (!confirm('Удалить этот пост?')) return;
 
             try {
-                await db.collection('posts').doc(postId).delete();
+                if (db) {
+                    // Режим Firebase
+                    await db.collection('posts').doc(postId).delete();
+                } else {
+                    // Локальный режим
+                    const posts = JSON.parse(localStorage.getItem('localPosts') || '[]');
+                    const filteredPosts = posts.filter(p => p.id !== postId);
+                    localStorage.setItem('localPosts', JSON.stringify(filteredPosts));
+                    
+                    // Удаляем комментарии
+                    localStorage.removeItem(`comments_${postId}`);
+                }
+                
+                const postEl = document.getElementById(`post-${postId}`);
+                if (postEl) postEl.remove();
+                
                 showMessage('Пост удален', 'success');
                 
             } catch (error) {
                 console.error('Ошибка удаления поста:', error);
-                showMessage('Ошибка при удалении поста: ' + error.message, 'error');
+                showMessage('Ошибка при удалении поста', 'error');
             }
         }
 
+        // Выход
         async function logout() {
             try {
-                await auth.signOut();
+                if (auth) {
+                    await auth.signOut();
+                }
+                currentUser = null;
+                updateUserInfo();
                 showMessage('Вы вышли из системы', 'success');
             } catch (error) {
                 console.error('Ошибка выхода:', error);
@@ -1245,9 +1457,10 @@
         }
 
         // Вспомогательные функции
-        function getTimeAgo(date) {
-            if (!date) return 'давно';
+        function getTimeAgo(dateInput) {
+            if (!dateInput) return 'давно';
             
+            const date = dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
             const now = new Date();
             const diff = now - date;
             
@@ -1273,8 +1486,9 @@
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM загружен, инициализирую приложение...");
             initializeFirebase();
-            updateUserInfo();
+            updateTime();
         });
     </script>
 </body>

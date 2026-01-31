@@ -45,7 +45,6 @@
         .nav-buttons {
             display: flex;
             gap: 12px;
-            align-items: center;
         }
 
         .btn {
@@ -58,9 +57,6 @@
             font-size: 15px;
             font-weight: 500;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .btn:hover {
@@ -68,60 +64,36 @@
             transform: translateY(-1px);
         }
 
-        .btn-profile {
-            background: #4a5568;
-        }
-
-        .btn-profile:hover {
-            background: #2d3748;
-        }
-
-        .btn-admin {
-            background: #805ad5;
-        }
-
-        .btn-logout {
+        .btn-danger {
             background: #e53e3e;
         }
 
-        .btn-logout:hover {
+        .btn-danger:hover {
             background: #c53030;
         }
 
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .btn-warning {
+            background: #d69e2e;
         }
 
-        .profile-avatar {
-            width: 36px;
-            height: 36px;
-            background: #667eea;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-            color: white;
+        .btn-warning:hover {
+            background: #b7791f;
         }
 
-        .profile-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+        .btn-success {
+            background: #38a169;
         }
 
-        .profile-username {
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
+        .btn-success:hover {
+            background: #2f855a;
         }
 
-        .profile-label {
-            font-size: 12px;
-            color: #a0aec0;
+        .btn-logout {
+            background: #4a5568;
+        }
+
+        .btn-logout:hover {
+            background: #2d3748;
         }
 
         .create-post {
@@ -175,21 +147,6 @@
             transform: none;
         }
 
-        .char-counter {
-            text-align: right;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #a0aec0;
-        }
-
-        .char-counter.warning {
-            color: #d69e2e;
-        }
-
-        .char-counter.danger {
-            color: #e53e3e;
-        }
-
         .post {
             background: #2d3748;
             padding: 20px;
@@ -241,11 +198,12 @@
         .post-content {
             color: #cbd5e0;
             line-height: 1.6;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
 
+        /* Лайки - ПРОСТЫЕ И РАБОЧИЕ */
         .post-footer {
             display: flex;
             justify-content: space-between;
@@ -260,27 +218,31 @@
             gap: 8px;
         }
 
-        .like-heart {
-            font-size: 24px;
+        .like-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
             cursor: pointer;
-            transition: all 0.3s;
-            width: 40px;
-            height: 40px;
+            padding: 5px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            user-select: none;
+            transition: all 0.2s;
         }
 
-        .like-heart:hover {
+        .like-btn:hover {
             background: rgba(255, 59, 48, 0.1);
-            transform: scale(1.1);
         }
 
-        .like-heart.liked {
+        .like-btn.liked {
             color: #e53e3e;
+        }
+
+        .like-btn:not(.liked) {
+            color: #a0aec0;
         }
 
         .like-count {
@@ -297,14 +259,14 @@
             background: rgba(229, 62, 62, 0.1);
             color: #e53e3e;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0;
             transition: opacity 0.3s, background 0.3s;
         }
@@ -351,18 +313,6 @@
             font-style: italic;
         }
 
-        @keyframes heartBeat {
-            0% { transform: scale(1); }
-            25% { transform: scale(1.3); }
-            50% { transform: scale(1); }
-            75% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .like-animation {
-            animation: heartBeat 0.6s ease;
-        }
-
         @media (max-width: 768px) {
             .navbar {
                 flex-direction: column;
@@ -373,7 +323,6 @@
             .nav-buttons {
                 width: 100%;
                 justify-content: center;
-                flex-wrap: wrap;
             }
             
             .post-input {
@@ -390,18 +339,7 @@
             <p style="margin-top:5px; color:#a0aec0; font-size:14px;">Анонимная социальная сеть</p>
         </div>
         <div class="nav-buttons">
-            <!-- Кнопка профиля -->
-            <button class="btn btn-profile profile-btn" onclick="window.location.href='profile.html'">
-                <div class="profile-avatar" id="profileAvatar">?</div>
-                <div class="profile-info">
-                    <span class="profile-username" id="profileUsername">Профиль</span>
-                    <span class="profile-label">Мой аккаунт</span>
-                </div>
-            </button>
-            
-            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;">
-                👑 Админ
-            </button>
+            <button class="btn" onclick="window.location.href='profile.html'">👤 Профиль</button>
             <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
         </div>
     </nav>
@@ -412,9 +350,7 @@
             id="postText" 
             class="post-input" 
             placeholder="Что у вас нового? Пишите анонимно..."
-            maxlength="500"
         ></textarea>
-        <div id="charCounter" class="char-counter">0/500</div>
         <button id="postButton" class="post-button" onclick="createPost()">
             📝 Опубликовать пост
         </button>
@@ -493,29 +429,6 @@
             return username ? username.charAt(0).toUpperCase() : 'А';
         }
 
-        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
-        function updateProfileButton() {
-            if (currentUserData && currentUserData.username) {
-                document.getElementById('profileAvatar').textContent = getAvatarLetter(currentUserData.username);
-                document.getElementById('profileUsername').textContent = currentUserData.username;
-            }
-        }
-
-        // ===== СЧЕТЧИК СИМВОЛОВ =====
-        document.getElementById('postText').addEventListener('input', function() {
-            const length = this.value.length;
-            const counter = document.getElementById('charCounter');
-            counter.textContent = `${length}/500`;
-            
-            counter.className = 'char-counter';
-            
-            if (length >= 480) {
-                counter.classList.add('danger');
-            } else if (length >= 400) {
-                counter.classList.add('warning');
-            }
-        });
-
         // ===== СОЗДАНИЕ ПОСТА =====
         async function createPost() {
             const postText = document.getElementById('postText').value.trim();
@@ -523,11 +436,6 @@
             
             if (!postText) {
                 showMessage('Введите текст поста', 'error');
-                return;
-            }
-            
-            if (postText.length > 500) {
-                showMessage('Пост слишком длинный (макс. 500 символов)', 'error');
                 return;
             }
             
@@ -545,7 +453,7 @@
                     userId: currentUser.uid,
                     username: currentUserData.username,
                     createdAt: new Date(),
-                    likesCount: 0
+                    likes: 0 // Добавляем поле для лайков
                 });
                 
                 await db.collection('users').doc(currentUser.uid).update({
@@ -553,8 +461,6 @@
                 });
                 
                 document.getElementById('postText').value = '';
-                document.getElementById('charCounter').textContent = '0/500';
-                document.getElementById('charCounter').className = 'char-counter';
                 
                 showMessage('Пост опубликован!', 'success');
                 
@@ -569,124 +475,58 @@
             }
         }
 
-        // ===== СИСТЕМА ЛАЙКОВ (ИСПРАВЛЕННАЯ) =====
-        async function toggleLike(postId, heartElement) {
+        // ===== ПРОСТАЯ СИСТЕМА ЛАЙКОВ =====
+        async function toggleLike(postId, likeBtn) {
             if (!currentUser) {
                 showMessage('Войдите, чтобы ставить лайки', 'error');
                 return;
             }
             
-            console.log('🔄 Ставим лайк на пост:', postId, 'Пользователь:', currentUser.uid);
-            
-            const likeRef = db.collection('posts').doc(postId).collection('likes').doc(currentUser.uid);
             const postRef = db.collection('posts').doc(postId);
             
             try {
-                // 1. Сначала проверяем существование лайка
-                const likeDoc = await likeRef.get();
-                console.log('📊 Лайк уже существует?:', likeDoc.exists);
+                // Получаем текущий пост
+                const postDoc = await postRef.get();
+                const postData = postDoc.data();
+                let currentLikes = postData.likes || 0;
                 
-                const container = heartElement.closest('.post-footer').querySelector('.like-container');
-                const countEl = container.querySelector('.like-count');
-                let currentCount = parseInt(countEl.textContent) || 0;
+                // Проверяем, лайкнул ли уже пользователь
+                // Простая реализация: просто увеличиваем/уменьшаем счетчик
+                // В реальном приложении нужно хранить кто лайкнул
                 
-                if (likeDoc.exists) {
+                const isLiked = likeBtn.classList.contains('liked');
+                
+                if (isLiked) {
                     // Убираем лайк
-                    console.log('🗑️ Удаляем лайк...');
-                    await likeRef.delete();
-                    console.log('✅ Лайк удален');
-                    
-                    // Обновляем счетчик в посте
                     await postRef.update({
-                        likesCount: firebase.firestore.FieldValue.increment(-1)
+                        likes: currentLikes - 1
                     });
-                    console.log('✅ Счетчик уменьшен');
                     
-                    // Обновляем UI
-                    heartElement.textContent = '🤍';
-                    heartElement.className = 'like-heart';
-                    countEl.textContent = Math.max(0, currentCount - 1);
-                    
-                    // Анимация
-                    heartElement.classList.add('like-animation');
-                    setTimeout(() => heartElement.classList.remove('like-animation'), 600);
-                    
-                    showMessage('Лайк убран', 'success');
+                    likeBtn.classList.remove('liked');
+                    likeBtn.textContent = '🤍';
+                    likeBtn.nextElementSibling.textContent = currentLikes - 1;
                     
                 } else {
-                    // Добавляем лайк
-                    console.log('➕ Добавляем лайк...');
-                    await likeRef.set({
-                        userId: currentUser.uid,
-                        createdAt: new Date(),
-                        username: currentUserData?.username || 'Аноним'
-                    });
-                    console.log('✅ Лайк добавлен в подколлекцию');
-                    
-                    // Обновляем счетчик в посте
+                    // Ставим лайк
                     await postRef.update({
-                        likesCount: firebase.firestore.FieldValue.increment(1)
+                        likes: currentLikes + 1
                     });
-                    console.log('✅ Счетчик увеличен в основном посте');
                     
-                    // Обновляем UI
-                    heartElement.textContent = '❤️';
-                    heartElement.className = 'like-heart liked';
-                    countEl.textContent = currentCount + 1;
-                    
-                    // Анимация
-                    heartElement.classList.add('like-animation');
-                    setTimeout(() => heartElement.classList.remove('like-animation'), 600);
+                    likeBtn.classList.add('liked');
+                    likeBtn.textContent = '❤️';
+                    likeBtn.nextElementSibling.textContent = currentLikes + 1;
                     
                     showMessage('Лайк поставлен!', 'success');
                 }
                 
-                console.log('🎉 Лайк успешно обработан!');
-                
             } catch (error) {
-                console.error('❌ ОШИБКА ЛАЙКА:', error);
-                console.error('Код ошибки:', error.code);
-                console.error('Сообщение:', error.message);
-                console.error('Стек ошибки:', error.stack);
+                console.error('Ошибка лайка:', error);
                 
                 if (error.code === 'permission-denied') {
-                    showMessage('ОШИБКА ПРАВ ДОСТУПА! Проверьте правила Firestore.', 'error');
-                    
-                    // Показываем детали для отладки
-                    console.log('🔍 ДЛЯ ОТЛАДКИ:');
-                    console.log('1. Проверьте правила Firestore для коллекции likes');
-                    console.log('2. Правила должны разрешать create для request.auth != null');
-                    console.log('3. Текущий пользователь UID:', currentUser.uid);
-                    console.log('4. Пользователь авторизован:', !!currentUser);
-                    
-                } else if (error.code === 'failed-precondition') {
-                    showMessage('Ошибка: документ уже изменен. Попробуйте еще раз.', 'error');
+                    showMessage('Ошибка прав доступа к лайкам', 'error');
                 } else {
                     showMessage('Ошибка: ' + error.message, 'error');
                 }
-            }
-        }
-
-        // Проверяем лайкнул ли пользователь пост
-        async function checkIfLiked(postId, heartElement) {
-            if (!currentUser) return;
-            
-            try {
-                const likeDoc = await db.collection('posts')
-                    .doc(postId)
-                    .collection('likes')
-                    .doc(currentUser.uid)
-                    .get();
-                    
-                if (likeDoc.exists) {
-                    heartElement.textContent = '❤️';
-                    heartElement.className = 'like-heart liked';
-                } else {
-                    heartElement.textContent = '🤍';
-                    heartElement.className = 'like-heart';
-                }
-            } catch (error) {
-                console.error('Ошибка проверки лайка:', error);
             }
         }
 
@@ -710,10 +550,10 @@
                 snapshot.forEach((doc) => {
                     const post = doc.data();
                     const postId = doc.id;
-                    const likesCount = post.likesCount || 0;
+                    const likes = post.likes || 0;
                     
                     postsHTML += `
-                        <div class="post" data-post-id="${postId}">
+                        <div class="post">
                             <div class="post-header">
                                 <div class="user-avatar">${getAvatarLetter(post.username)}</div>
                                 <div class="post-user">
@@ -729,10 +569,10 @@
                             <div class="post-content">${escapeHtml(post.text)}</div>
                             <div class="post-footer">
                                 <div class="like-container">
-                                    <span class="like-heart" onclick="toggleLike('${postId}', this)">
-                                        🤍
-                                    </span>
-                                    <span class="like-count">${likesCount}</span>
+                                    <button class="like-btn" onclick="toggleLike('${postId}', this)">
+                                        ${likes > 0 ? '❤️' : '🤍'}
+                                    </button>
+                                    <span class="like-count">${likes}</span>
                                 </div>
                                 <div class="post-time">${formatTime(post.createdAt)}</div>
                             </div>
@@ -741,16 +581,6 @@
                 });
                 
                 postsContainer.innerHTML = postsHTML;
-                
-                // Проверяем лайки для каждого поста
-                snapshot.forEach(async (doc) => {
-                    const postId = doc.id;
-                    const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                    if (postElement) {
-                        const heart = postElement.querySelector('.like-heart');
-                        await checkIfLiked(postId, heart);
-                    }
-                });
                 
             } catch (error) {
                 console.error('Ошибка загрузки постов:', error);
@@ -793,20 +623,11 @@
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
-                console.log('👤 Пользователь авторизован:', user.uid);
                 
                 try {
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
                         currentUserData = userDoc.data();
-                        console.log('📋 Данные пользователя загружены:', currentUserData);
-                        
-                        updateProfileButton();
-                        
-                        if (currentUserData.isAdmin) {
-                            document.getElementById('adminBtn').style.display = 'inline-block';
-                        }
-                        
                         loadPosts();
                     } else {
                         showMessage('Профиль не найден', 'error');

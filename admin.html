@@ -2,6 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <!-- УБЕРИТЕ ВСЕ СУЩЕСТВУЮЩИЕ META CSP ИЛИ ЗАМЕНИТЕ НА ЭТОТ -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' https://*.firebaseio.com https://*.firebasestorage.app https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://*.googleapis.com https://www.gstatic.com;
+        script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.firebaseio.com https://www.gstatic.com https://*.googleapis.com;
+        style-src 'self' 'unsafe-inline' https://*.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        connect-src 'self' https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://*.googleapis.com wss://*.firebaseio.com;
+        img-src 'self' https: data:;
+        frame-src 'self' https://*.firebaseapp.com;
+    ">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель - czhmass.com</title>
     
@@ -10,6 +20,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     
     <style>
+        /* Стили остаются без изменений, они у вас уже есть */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -455,13 +466,26 @@
         let currentUser = null;
         let currentUserData = null;
 
+        console.log('🚀 Начало инициализации админ-панели');
+        
         if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase инициализирован в админке');
+            try {
+                firebase.initializeApp(firebaseConfig);
+                console.log('✅ Firebase инициализирован в админке');
+            } catch (error) {
+                console.error('❌ Ошибка инициализации Firebase:', error);
+            }
+        } else {
+            console.log('ℹ️ Firebase уже инициализирован');
         }
 
         db = firebase.firestore();
         auth = firebase.auth();
+
+        // Включаем отладку Firestore
+        db.settings({
+            experimentalForceLongPolling: true
+        });
 
         // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
@@ -527,6 +551,7 @@
         let pendingData = null;
 
         function showConfirm(action, title, text, data = null) {
+            console.log('📢 Показать подтверждение:', action, data);
             pendingAction = action;
             pendingData = data;
             document.getElementById('modalTitle').textContent = title;
@@ -535,12 +560,14 @@
         }
 
         function closeModal() {
+            console.log('❌ Закрыть модальное окно');
             document.getElementById('confirmModal').style.display = 'none';
             pendingAction = null;
             pendingData = null;
         }
 
         document.getElementById('confirmButton').onclick = async function() {
+            console.log('✅ Нажата кнопка подтверждения:', pendingAction, pendingData);
             if (!pendingAction) return;
             
             closeModal();
@@ -565,7 +592,7 @@
                         break;
                 }
             } catch (error) {
-                console.error('Ошибка выполнения действия:', error);
+                console.error('❌ Ошибка выполнения действия:', error);
                 showMessage('Ошибка: ' + error.message, 'error');
             }
         };
@@ -589,9 +616,11 @@
             }
 
             try {
+                console.log('🔍 Проверка прав админа для пользователя:', user.uid);
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
                 if (!userDoc.exists) {
+                    console.error('❌ Документ пользователя не найден');
                     showMessage('❌ Профиль не найден', 'error');
                     setTimeout(() => window.location.href = 'feed.html', 2000);
                     return;
@@ -600,7 +629,10 @@
                 currentUserData = userDoc.data();
                 currentUser = user;
 
+                console.log('📋 Данные пользователя:', currentUserData);
+
                 if (!currentUserData.isAdmin) {
+                    console.error('⛔ У пользователя нет прав админа');
                     showMessage('⛔ У вас нет прав администратора', 'error');
                     setTimeout(() => window.location.href = 'feed.html', 2000);
                     return;
@@ -608,9 +640,10 @@
 
                 console.log('✅ Админ авторизован:', currentUserData.username);
                 
-                loadStatistics();
-                loadUsers();
-                loadPosts();
+                // Загружаем данные
+                await loadStatistics();
+                await loadUsers();
+                await loadPosts();
 
             } catch (error) {
                 console.error('❌ Ошибка проверки админа:', error);
@@ -621,6 +654,7 @@
         // ===== СТАТИСТИКА =====
         async function loadStatistics() {
             try {
+                console.log('📊 Загрузка статистики...');
                 const usersSnapshot = await db.collection('users').get();
                 const totalUsers = usersSnapshot.size;
                 
@@ -649,6 +683,8 @@
                 document.getElementById('todayPosts').textContent = todayPosts;
                 document.getElementById('adminCount').textContent = adminCount;
 
+                console.log('✅ Статистика загружена:', { totalUsers, totalPosts, todayPosts, adminCount });
+
             } catch (error) {
                 console.error('❌ Ошибка загрузки статистики:', error);
             }
@@ -662,11 +698,14 @@
             const emptyDiv = document.getElementById('usersEmpty');
 
             try {
+                console.log('👥 Загрузка пользователей...');
                 const snapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
                 
+                console.log(`📋 Получено пользователей: ${snapshot.size}`);
                 loadingDiv.style.display = 'none';
                 
                 if (snapshot.empty) {
+                    console.log('ℹ️ Нет пользователей');
                     emptyDiv.style.display = 'block';
                     table.style.display = 'none';
                     return;
@@ -719,9 +758,11 @@
                     tbody.appendChild(row);
                 });
 
+                console.log('✅ Пользователи загружены в таблицу');
+
             } catch (error) {
                 console.error('❌ Ошибка загрузки пользователей:', error);
-                loadingDiv.innerHTML = '<div class="error">Ошибка загрузки пользователей</div>';
+                loadingDiv.innerHTML = '<div class="error">Ошибка загрузки пользователей: ' + error.message + '</div>';
             }
         }
 
@@ -733,14 +774,17 @@
             const emptyDiv = document.getElementById('postsEmpty');
 
             try {
+                console.log('📝 Загрузка постов...');
                 const snapshot = await db.collection('posts')
                     .orderBy('createdAt', 'desc')
                     .limit(100)
                     .get();
                 
+                console.log(`📋 Получено постов: ${snapshot.size}`);
                 loadingDiv.style.display = 'none';
                 
                 if (snapshot.empty) {
+                    console.log('ℹ️ Нет постов');
                     emptyDiv.style.display = 'block';
                     table.style.display = 'none';
                     return;
@@ -783,24 +827,31 @@
                     tbody.appendChild(row);
                 });
 
+                console.log('✅ Посты загружены в таблицу');
+
             } catch (error) {
                 console.error('❌ Ошибка загрузки постов:', error);
-                loadingDiv.innerHTML = '<div class="error">Ошибка загрузки постов</div>';
+                loadingDiv.innerHTML = '<div class="error">Ошибка загрузки постов: ' + error.message + '</div>';
             }
         }
 
         // ===== ФУНКЦИИ АДМИНИСТРИРОВАНИЯ =====
         async function toggleAdmin(userId, username, isCurrentlyAdmin) {
+            console.log(`👑 Изменение прав админа для ${username} (${userId})`, isCurrentlyAdmin);
+            
             if (userId === currentUser.uid) {
+                console.warn('❌ Попытка изменить свои права');
                 showMessage('❌ Нельзя изменить свои права', 'error');
                 return;
             }
 
             try {
+                console.log(`🔧 Обновление документа пользователя ${userId}`);
                 await db.collection('users').doc(userId).update({
                     isAdmin: !isCurrentlyAdmin
                 });
 
+                console.log('✅ Права обновлены');
                 showMessage(`✅ Пользователь @${username} ${!isCurrentlyAdmin ? 'назначен админом' : 'лишен прав админа'}`, 'success');
                 
                 // Обновляем данные
@@ -811,47 +862,53 @@
 
             } catch (error) {
                 console.error('❌ Ошибка изменения прав:', error);
+                console.error('Код ошибки:', error.code);
+                console.error('Сообщение:', error.message);
                 showMessage('Ошибка: ' + error.message, 'error');
             }
         }
 
         function confirmDeleteUser(userId, username) {
+            console.log(`❓ Подтверждение удаления пользователя: ${username} (${userId})`);
             showConfirm('deleteUser', 'Удалить пользователя?', `Вы уверены, что хотите удалить пользователя @${username}? Все его посты также будут удалены.`, { userId, username });
         }
 
         async function deleteUser(userId, username) {
+            console.log(`🗑️ Начало удаления пользователя: ${username} (${userId})`);
+            
             if (userId === currentUser.uid) {
+                console.warn('❌ Попытка удалить самого себя');
                 showMessage('❌ Нельзя удалить самого себя', 'error');
                 return;
             }
 
             try {
-                console.log(`🗑️ Удаление пользователя ${username} (ID: ${userId})`);
-                
-                // 1. Сначала удаляем все посты пользователя
+                console.log('1. 🔍 Поиск постов пользователя...');
                 const postsSnapshot = await db.collection('posts')
                     .where('userId', '==', userId)
                     .get();
                 
+                console.log(`📊 Найдено постов: ${postsSnapshot.size}`);
+                
                 if (!postsSnapshot.empty) {
+                    console.log('2. 🔧 Удаление постов пользователя...');
                     const batch = db.batch();
                     postsSnapshot.forEach(doc => {
+                        console.log(`   - Удаление поста: ${doc.id}`);
                         batch.delete(doc.ref);
                     });
                     await batch.commit();
                     console.log(`✅ Удалено ${postsSnapshot.size} постов пользователя`);
                 }
                 
-                // 2. Удаляем пользователя из базы
+                console.log('3. 🔧 Удаление документа пользователя...');
                 await db.collection('users').doc(userId).delete();
-                
-                // 3. Удаляем пользователя из Authentication (Firebase Auth)
-                // Для этого нужна Cloud Function или доступ к Firebase Admin SDK
-                // Временно оставляем только удаление из Firestore
+                console.log('✅ Документ пользователя удален');
                 
                 showMessage(`✅ Пользователь @${username} удален`, 'success');
                 
                 // Обновляем данные
+                console.log('4. 🔄 Обновление интерфейса...');
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -860,30 +917,47 @@
 
             } catch (error) {
                 console.error('❌ Ошибка удаления пользователя:', error);
-                showMessage('Ошибка удаления: ' + error.message, 'error');
+                console.error('Код ошибки:', error.code);
+                console.error('Сообщение ошибки:', error.message);
+                console.error('Полная ошибка:', error);
                 
-                // Показываем детали ошибки для отладки
+                showMessage(`Ошибка удаления: ${error.message} (код: ${error.code})`, 'error');
+                
                 if (error.code === 'permission-denied') {
                     showMessage('⛔ Ошибка прав доступа. Проверьте правила Firestore!', 'error');
+                    console.log('🔑 ДЛЯ ИСПРАВЛЕНИЯ:');
+                    console.log('1. Перейдите в Firebase Console → Firestore → Rules');
+                    console.log('2. Замените правила на те, что я отправил');
+                    console.log('3. Убедитесь, что у вас в users/{yourId} поле isAdmin: true');
                 }
             }
         }
 
         function confirmDeletePost(postId, username) {
+            console.log(`❓ Подтверждение удаления поста: ${postId} от @${username}`);
             showConfirm('deletePost', 'Удалить пост?', `Вы уверены, что хотите удалить пост пользователя @${username}?`, { postId, username });
         }
 
         async function deletePost(postId, username) {
+            console.log(`🗑️ Удаление поста: ${postId}`);
+            
             try {
+                console.log(`🔧 Удаление документа поста ${postId}`);
                 await db.collection('posts').doc(postId).delete();
+                console.log('✅ Пост удален');
+                
                 showMessage('✅ Пост удален', 'success');
                 
                 // Обновляем посты
+                console.log('🔄 Обновление интерфейса...');
                 setTimeout(loadPosts, 1000);
                 setTimeout(loadStatistics, 1000);
 
             } catch (error) {
                 console.error('❌ Ошибка удаления поста:', error);
+                console.error('Код ошибки:', error.code);
+                console.error('Сообщение:', error.message);
+                
                 showMessage('Ошибка: ' + error.message, 'error');
                 
                 if (error.code === 'permission-denied') {
@@ -893,11 +967,16 @@
         }
 
         async function deleteAllPosts() {
+            console.log('🗑️ Удаление всех постов...');
+            
             try {
                 // Получаем все посты
                 const snapshot = await db.collection('posts').get();
                 
+                console.log(`📊 Всего постов: ${snapshot.size}`);
+                
                 if (snapshot.empty) {
+                    console.log('ℹ️ Нет постов для удаления');
                     showMessage('Нет постов для удаления', 'error');
                     return;
                 }
@@ -911,6 +990,7 @@
                     count++;
                 });
                 
+                console.log(`🔧 Удаление ${count} постов пачкой...`);
                 await batch.commit();
                 
                 // Обновляем счетчики постов у пользователей
@@ -923,6 +1003,7 @@
                 
                 await usersBatch.commit();
                 
+                console.log(`✅ Удалено ${count} постов`);
                 showMessage(`✅ Удалено ${count} постов`, 'success');
                 
                 // Обновляем данные
@@ -938,11 +1019,16 @@
         }
 
         async function deleteAllUsers() {
+            console.log('🗑️ Удаление всех пользователей...');
+            
             try {
                 // Получаем всех пользователей кроме себя
                 const snapshot = await db.collection('users').get();
                 
+                console.log(`📊 Всего пользователей: ${snapshot.size}`);
+                
                 if (snapshot.size <= 1) {
+                    console.log('ℹ️ Нет других пользователей для удаления');
                     showMessage('Нет других пользователей для удаления', 'error');
                     return;
                 }
@@ -957,11 +1043,13 @@
                     }
                 });
                 
+                console.log(`🔧 Удаление ${count} пользователей пачкой...`);
                 await batch.commit();
                 
                 // Удаляем все посты
                 await deleteAllPosts();
                 
+                console.log(`✅ Удалено ${count} пользователей`);
                 showMessage(`✅ Удалено ${count} пользователей`, 'success');
                 
                 // Обновляем данные
@@ -978,18 +1066,21 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         auth.onAuthStateChanged((user) => {
-            console.log('🔐 Проверка админ-авторизации:', user ? user.email : 'нет');
+            console.log('🔐 Изменение состояния авторизации:', user ? user.email : 'нет пользователя');
             
             if (user) {
+                console.log('👤 Пользователь авторизован:', user.uid);
                 checkAdminAndLoad();
             } else {
+                console.log('👋 Пользователь не авторизован, перенаправление...');
                 window.location.href = 'index.html';
             }
         });
 
         // Запуск при загрузке страницы
         window.addEventListener('load', () => {
-            console.log('🚀 Админ-панель загружена');
+            console.log('🚀 Админ-панель загружена и готова');
+            console.log('ℹ️ Проверка авторизации...');
         });
     </script>
 </body>

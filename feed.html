@@ -5,43 +5,216 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
     
-    <!-- Firebase скрипты -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     
     <style>
-        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .post { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-        .btn { background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
-        .navbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        /* КРАСИВЫЕ СТИЛИ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* НАВИГАЦИЯ */
+        .navbar {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1877f2;
+            text-decoration: none;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            background: #1877f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: #166fe5;
+            transform: translateY(-1px);
+        }
+        
+        .btn-admin {
+            background: #805ad5;
+            display: none;
+        }
+        
+        .btn-logout {
+            background: #e4e6eb;
+            color: #050505;
+        }
+        
+        .btn-logout:hover {
+            background: #d8dadf;
+        }
+        
+        /* СОЗДАНИЕ ПОСТА */
+        .create-post {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .create-post h2 {
+            margin-bottom: 16px;
+            color: #050505;
+            font-size: 20px;
+        }
+        
+        .post-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 16px;
+            transition: border 0.2s;
+        }
+        
+        .post-textarea:focus {
+            outline: none;
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+        }
+        
+        /* ЛЕНТА */
+        .feed-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .feed-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #050505;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .post {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #1877f2;
+            transition: transform 0.2s;
+        }
+        
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .post-author {
+            font-weight: 600;
+            color: #1877f2;
+            font-size: 16px;
+        }
+        
+        .post-time {
+            color: #65676b;
+            font-size: 14px;
+        }
+        
+        .post-content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #050505;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* СООБЩЕНИЯ */
+        .message {
+            padding: 14px;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fecaca;
+        }
+        
+        /* ЗАГРУЗКА */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #65676b;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #65676b;
+            font-style: italic;
+        }
     </style>
-</head>
-<body>
-    <div class="navbar">
-        <h2>czhmass.com</h2>
-        <div>
-            <button class="btn" onclick="window.location.href='profile.html'">Профиль</button>
-            <button class="btn" id="adminBtn" style="display:none;" onclick="window.location.href='admin.html'">Админ</button>
-            <button class="btn" onclick="logout()">Выйти</button>
-        </div>
-    </div>
     
-    <div>
-        <h3>Новый пост:</h3>
-        <textarea id="postText" placeholder="Что нового?"></textarea>
-        <button class="btn" onclick="createPost()">Опубликовать</button>
-        <div id="message" style="margin:10px 0;"></div>
-    </div>
-    
-    <hr>
-    
-    <h3>Лента постов:</h3>
-    <div id="posts">Загрузка...</div>
-
     <script>
-        // ===== FIREBASE КОНФИГ (ТОЛЬКО ОДИН РАЗ!) =====
+        // ===== FIREBASE КОНФИГ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
             authDomain: "czhmass.firebaseapp.com",
@@ -51,105 +224,250 @@
             appId: "1:1064257019843:web:65488b45be2f86838ca776"
         };
         
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase инициализирован');
-        }
-        
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-        auth.onAuthStateChanged((user) => {
-            if (!user) {
-                alert('Сначала войдите!');
-                window.location.href = 'index.html';
-            } else {
-                console.log('Пользователь:', user.email);
-                loadPosts();
-                checkAdmin(user.uid);
+        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+        let db, auth, currentUserId, currentUsername;
+    </script>
+</head>
+<body>
+    <!-- НАВИГАЦИЯ -->
+    <nav class="navbar">
+        <a href="feed.html" class="logo">czhmass.com</a>
+        <div class="nav-buttons">
+            <button class="btn" onclick="window.location.href='profile.html'">👤 Профиль</button>
+            <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
+            <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
+        </div>
+    </nav>
+    
+    <!-- СОЗДАНИЕ ПОСТА -->
+    <div class="create-post">
+        <h2>💭 Что у вас нового?</h2>
+        <textarea class="post-textarea" id="postText" placeholder="Поделитесь своими мыслями..."></textarea>
+        <button class="btn" onclick="createPost()" style="width: 100%; padding: 14px; font-size: 16px;">
+            📤 Опубликовать
+        </button>
+        <div id="message" class="message"></div>
+        <div style="margin-top: 12px; color: #65676b; font-size: 14px;">
+            Нажмите Ctrl+Enter для быстрой отправки
+        </div>
+    </div>
+    
+    <!-- ЛЕНТА -->
+    <div class="feed-container">
+        <h2 class="feed-title">📰 Лента постов</h2>
+        <div id="posts">
+            <div class="loading">Загрузка постов...</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== ИНИЦИАЛИЗАЦИЯ FIREBASE =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Инициализация...');
+            
+            try {
+                // Инициализация Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('✅ Firebase инициализирован');
+                }
+                
+                db = firebase.firestore();
+                auth = firebase.auth();
+                
+                // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        console.log('❌ Пользователь не авторизован');
+                        
+                        // Проверяем старые данные localStorage
+                        const oldUser = localStorage.getItem('czhmass_userId');
+                        if (oldUser) {
+                            console.log('Найден старый пользователь, пробуем восстановить...');
+                            showMessage('⚠️ Сессия устарела. Пожалуйста, войдите заново.', 'error');
+                            setTimeout(() => window.location.href = 'index.html', 2000);
+                            return;
+                        }
+                        
+                        alert('Сначала войдите в систему!');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    
+                    console.log('✅ Пользователь авторизован:', user.email);
+                    
+                    // Получаем данные пользователя
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        
+                        if (!userDoc.exists) {
+                            console.error('❌ Данные пользователя не найдены в Firestore');
+                            showMessage('❌ Ошибка данных пользователя', 'error');
+                            await auth.signOut();
+                            localStorage.clear();
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                        
+                        const userData = userDoc.data();
+                        currentUserId = user.uid;
+                        currentUsername = userData.username;
+                        
+                        // Сохраняем в localStorage
+                        localStorage.setItem('czhmass_userId', user.uid);
+                        localStorage.setItem('czhmass_currentUser', userData.username);
+                        localStorage.setItem('czhmass_userEmail', user.email);
+                        
+                        console.log('👤 Пользователь:', currentUsername);
+                        
+                        // Проверяем админ-права
+                        if (userData.isAdmin) {
+                            document.getElementById('adminBtn').style.display = 'inline-block';
+                            console.log('👑 Админ-права доступны');
+                        }
+                        
+                        // Загружаем посты
+                        loadPosts();
+                        
+                        // Настраиваем обработчики
+                        setupEventListeners();
+                        
+                    } catch (error) {
+                        console.error('Ошибка загрузки данных пользователя:', error);
+                        showMessage('❌ Ошибка загрузки данных', 'error');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Критическая ошибка инициализации:', error);
+                document.getElementById('posts').innerHTML = 
+                    '<div class="error">Ошибка загрузки. Обновите страницу.</div>';
             }
         });
         
         // ===== ЗАГРУЗКА ПОСТОВ =====
         async function loadPosts() {
+            console.log('📝 Загрузка постов...');
+            const postsContainer = document.getElementById('posts');
+            
             try {
                 const snapshot = await db.collection('posts')
                     .orderBy('createdAt', 'desc')
                     .limit(50)
                     .get();
                 
+                if (snapshot.empty) {
+                    postsContainer.innerHTML = '<div class="empty">😴 Пока нет постов. Будьте первым!</div>';
+                    return;
+                }
+                
                 let html = '';
                 snapshot.forEach(doc => {
                     const post = doc.data();
                     html += `
                         <div class="post">
-                            <strong>@${post.username}</strong>
-                            <small>(${formatTime(post.createdAt)})</small>
-                            <p>${post.text}</p>
+                            <div class="post-header">
+                                <span class="post-author">@${escapeHtml(post.username)}</span>
+                                <span class="post-time">${formatTime(post.createdAt)}</span>
+                            </div>
+                            <div class="post-content">${escapeHtml(post.text)}</div>
                         </div>
                     `;
                 });
                 
-                document.getElementById('posts').innerHTML = html || '<p>Пока нет постов</p>';
+                postsContainer.innerHTML = html;
+                console.log(`✅ Загружено ${snapshot.size} постов`);
                 
             } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                document.getElementById('posts').innerHTML = '<p>Ошибка загрузки</p>';
+                console.error('❌ Ошибка загрузки постов:', error);
+                
+                let errorMsg = 'Ошибка загрузки постов';
+                if (error.code === 'permission-denied') {
+                    errorMsg = 'Нет доступа к базе данных. Проверьте правила Firestore.';
+                }
+                
+                postsContainer.innerHTML = `<div class="error">${errorMsg}</div>`;
+                showMessage(`❌ ${errorMsg}`, 'error');
             }
         }
         
         // ===== СОЗДАНИЕ ПОСТА =====
         async function createPost() {
-            const text = document.getElementById('postText').value.trim();
-            if (!text) return;
+            const textInput = document.getElementById('postText');
+            const text = textInput.value.trim();
             
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!text) {
+                showMessage('Введите текст поста', 'error');
+                textInput.focus();
+                return;
+            }
+            
+            if (!currentUserId || !currentUsername) {
+                showMessage('Ошибка авторизации', 'error');
+                return;
+            }
             
             try {
-                // Получаем username из Firestore
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                const username = userDoc.data().username;
+                console.log('➕ Создание поста от', currentUsername);
                 
                 // Создаем пост
                 await db.collection('posts').add({
-                    userId: user.uid,
-                    username: username,
+                    userId: currentUserId,
+                    username: currentUsername,
                     text: text,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    likes: 0
+                    likes: 0,
+                    comments: []
                 });
                 
-                document.getElementById('postText').value = '';
-                showMessage('✅ Пост опубликован!', 'success');
-                loadPosts();
+                // Очищаем поле
+                textInput.value = '';
+                textInput.focus();
+                
+                // Показываем успех
+                showMessage('✅ Пост опубликован для всех пользователей!', 'success');
+                
+                // Обновляем ленту через 0.5 сек
+                setTimeout(loadPosts, 500);
                 
             } catch (error) {
-                console.error('Ошибка:', error);
-                showMessage('❌ Ошибка: ' + error.message, 'error');
-            }
-        }
-        
-        // ===== ПРОВЕРКА АДМИНА =====
-        async function checkAdmin(userId) {
-            try {
-                const userDoc = await db.collection('users').doc(userId).get();
-                if (userDoc.exists && userDoc.data().isAdmin) {
-                    document.getElementById('adminBtn').style.display = 'inline-block';
+                console.error('❌ Ошибка создания поста:', error);
+                
+                let errorMsg = 'Ошибка при публикации';
+                if (error.code === 'permission-denied') {
+                    errorMsg = 'Нет прав для записи. Проверьте правила Firestore.';
                 }
-            } catch (error) {
-                console.log('Ошибка проверки админа:', error);
+                
+                showMessage(`❌ ${errorMsg}`, 'error');
             }
         }
         
         // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+        function setupEventListeners() {
+            // Ctrl+Enter для отправки
+            document.getElementById('postText').addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    createPost();
+                }
+            });
+        }
+        
         function showMessage(text, type) {
-            const el = document.getElementById('message');
-            el.textContent = text;
-            el.style.color = type === 'success' ? 'green' : 'red';
-            setTimeout(() => el.textContent = '', 3000);
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 4000);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
         }
         
         function formatTime(timestamp) {
@@ -170,10 +488,18 @@
         }
         
         function logout() {
-            auth.signOut();
-            localStorage.clear();
-            window.location.href = 'index.html';
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                auth.signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                });
+            }
         }
+        
+        // ===== ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК =====
+        window.addEventListener('error', function(e) {
+            console.error('🚨 Глобальная ошибка:', e.error);
+        });
     </script>
 </body>
 </html>

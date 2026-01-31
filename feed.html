@@ -87,11 +87,22 @@
             color: white;
             padding: 6px 12px;
             font-size: 13px;
-            margin-left: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0;
+            transform: translateX(10px);
         }
 
         .btn-delete:hover {
             background: #c53030;
+            transform: translateX(0);
+        }
+
+        .btn-delete.show {
+            opacity: 1;
+            transform: translateX(0);
         }
 
         .create-post {
@@ -151,20 +162,27 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             border-left: 4px solid #1877f2;
-            transition: transform 0.2s;
+            transition: all 0.3s;
             position: relative;
+            overflow: hidden;
         }
 
         .post:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .post:hover .btn-delete {
+            opacity: 1;
+            transform: translateX(0);
         }
 
         .post-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 12px;
+            position: relative;
         }
 
         .post-author {
@@ -174,6 +192,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex: 1;
         }
 
         .post-author-avatar {
@@ -187,11 +206,22 @@
             color: white;
             font-weight: bold;
             font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .author-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .author-name {
+            font-weight: 600;
         }
 
         .post-time {
             color: #65676b;
             font-size: 14px;
+            margin-top: 2px;
         }
 
         .post-content {
@@ -201,15 +231,27 @@
             white-space: pre-wrap;
             word-break: break-word;
             margin-top: 12px;
-            padding-right: 30px;
+            padding-right: 50px;
         }
 
         .post-actions {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 0;
+            right: 0;
             display: flex;
             gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .your-post-badge {
+            background: #38a169;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+            display: inline-block;
         }
 
         .message {
@@ -245,14 +287,26 @@
             font-style: italic;
         }
 
-        .your-post-badge {
-            background: #38a169;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
+        /* Анимация удаления */
+        .post.deleting {
+            opacity: 0.5;
+            transform: translateX(20px);
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .post {
+                padding: 20px;
+            }
+            
+            .post-content {
+                padding-right: 40px;
+            }
+            
+            .btn-delete {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -294,7 +348,7 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         let db, auth;
         let currentUserData = null;
-        let postsCache = new Map(); // Кэш постов для быстрого доступа
+        let postsCache = new Map();
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -322,7 +376,12 @@
                 if (diff < 60000) return 'Только что';
                 if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
                 if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
-                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                return date.toLocaleDateString('ru-RU', { 
+                    day: 'numeric', 
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             } catch (e) {
                 return 'Недавно';
             }
@@ -362,7 +421,6 @@
             console.log('✅ Пользователь авторизован:', user.email);
 
             try {
-                // Проверяем/создаем документ пользователя
                 const userDocRef = db.collection('users').doc(user.uid);
                 const userDoc = await userDocRef.get();
 
@@ -386,27 +444,22 @@
                     currentUserData = data;
                     console.log('👤 Данные пользователя:', data.username);
                     
-                    // Обновляем время входа
                     await userDocRef.update({
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
 
-                // Сохраняем в localStorage
                 localStorage.setItem('czhmass_userId', user.uid);
                 localStorage.setItem('czhmass_currentUser', currentUserData.username);
                 localStorage.setItem('czhmass_userEmail', user.email);
 
-                // Проверка админки
                 if (currentUserData.isAdmin) {
                     document.getElementById('adminBtn').style.display = 'inline-block';
                     console.log('👑 Админ-права доступны');
                 }
 
-                // Загружаем посты
                 loadPosts();
 
-                // Настройка горячих клавиш
                 document.getElementById('postText').addEventListener('keydown', (e) => {
                     if (e.ctrlKey && e.key === 'Enter') createPost();
                 });
@@ -433,7 +486,6 @@
                     return;
                 }
 
-                // Очищаем кэш
                 postsCache.clear();
                 
                 let html = '';
@@ -441,32 +493,35 @@
                     const post = doc.data();
                     const postId = doc.id;
                     const avatarLetter = getAvatarLetter(post.username);
+                    const isMyPost = post.userId === auth.currentUser?.uid;
                     
-                    // Сохраняем в кэш
                     postsCache.set(postId, {
                         id: postId,
                         ...post
                     });
                     
-                    // Проверяем, принадлежит ли пост текущему пользователю
-                    const isMyPost = post.userId === auth.currentUser?.uid;
-                    
                     html += `
-                        <div class="post" id="post-${postId}">
+                        <div class="post" id="post-${postId}" data-post-id="${postId}">
                             <div class="post-header">
                                 <div class="post-author">
                                     <div class="post-author-avatar">${avatarLetter}</div>
-                                    @${escapeHtml(post.username || 'Аноним')}
-                                    ${isMyPost ? '<span class="your-post-badge">Ваш пост</span>' : ''}
+                                    <div class="author-info">
+                                        <div>
+                                            <span class="author-name">@${escapeHtml(post.username || 'Аноним')}</span>
+                                            ${isMyPost ? '<span class="your-post-badge">Ваш</span>' : ''}
+                                        </div>
+                                        <div class="post-time">${formatTime(post.createdAt)}</div>
+                                    </div>
                                 </div>
-                                <span class="post-time">${formatTime(post.createdAt)}</span>
+                                ${isMyPost ? `
+                                    <div class="post-actions">
+                                        <button class="btn-delete" onclick="deleteMyPost('${postId}')" title="Удалить пост">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                ` : ''}
                             </div>
                             <div class="post-content">${escapeHtml(post.text || '')}</div>
-                            ${isMyPost ? `
-                                <div class="post-actions">
-                                    <button class="btn btn-delete" onclick="deleteMyPost('${postId}')">🗑️ Удалить</button>
-                                </div>
-                            ` : ''}
                         </div>
                     `;
                 });
@@ -489,44 +544,45 @@
                 return;
             }
 
-            // Получаем пост из кэша для проверки
             const post = postsCache.get(postId);
             if (!post) {
                 showMessage('Пост не найден', 'error');
                 return;
             }
 
-            // Проверяем, что пост принадлежит текущему пользователю
             if (post.userId !== user.uid) {
                 showMessage('❌ Вы можете удалять только свои посты', 'error');
                 return;
             }
 
-            if (!confirm('Удалить этот пост?')) {
+            if (!confirm('Удалить этот пост?\n\nЭто действие нельзя отменить.')) {
                 return;
             }
 
             try {
                 console.log('🗑️ Удаление поста:', postId);
                 
+                // Показываем анимацию удаления
+                const postElement = document.getElementById(`post-${postId}`);
+                if (postElement) {
+                    postElement.classList.add('deleting');
+                }
+                
                 // Удаляем пост из Firestore
                 await db.collection('posts').doc(postId).delete();
                 
-                // Уменьшаем счетчик постов у пользователя
+                // Уменьшаем счетчик постов
                 await db.collection('users').doc(user.uid).update({
                     postsCount: firebase.firestore.FieldValue.increment(-1)
                 });
                 
-                // Удаляем из DOM
-                const postElement = document.getElementById(`post-${postId}`);
-                if (postElement) {
-                    postElement.style.opacity = '0.5';
-                    postElement.style.transition = 'opacity 0.3s';
-                    setTimeout(() => {
+                // Удаляем из DOM с задержкой для анимации
+                setTimeout(() => {
+                    if (postElement) {
                         postElement.remove();
-                        showMessage('✅ Пост удален', 'success');
-                    }, 300);
-                }
+                    }
+                    showMessage('✅ Пост удален', 'success');
+                }, 300);
                 
                 // Удаляем из кэша
                 postsCache.delete(postId);
@@ -535,6 +591,12 @@
 
             } catch (error) {
                 console.error('❌ Ошибка удаления поста:', error);
+                
+                // Отменяем анимацию удаления при ошибке
+                const postElement = document.getElementById(`post-${postId}`);
+                if (postElement) {
+                    postElement.classList.remove('deleting');
+                }
                 
                 let errorMsg = 'Ошибка удаления поста';
                 if (error.code === 'permission-denied') {
@@ -563,7 +625,6 @@
             }
 
             try {
-                // Получаем username (из кэша или Firestore)
                 let username = currentUserData ? currentUserData.username : null;
                 
                 if (!username) {
@@ -577,7 +638,6 @@
 
                 console.log('📝 Создание поста от:', username);
 
-                // Создаем пост
                 const newPostRef = await db.collection('posts').add({
                     text: text,
                     userId: user.uid,
@@ -589,16 +649,14 @@
                     comments: []
                 });
 
-                // Увеличиваем счетчик постов у пользователя
                 await db.collection('users').doc(user.uid).update({
                     postsCount: firebase.firestore.FieldValue.increment(1)
                 });
 
-                // Очищаем и показываем успех
                 textInput.value = '';
                 showMessage('✅ Пост опубликован!', 'success');
 
-                // Обновляем ленту через 1 сек
+                // Обновляем ленту
                 setTimeout(loadPosts, 1000);
 
             } catch (error) {

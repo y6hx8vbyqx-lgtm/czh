@@ -1,3 +1,26 @@
+<!-- В начале файла feed.html, ПЕРЕД вашим script -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+<script>
+// Firebase конфиг ДО основного кода
+const firebaseConfig = {
+  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+  authDomain: "czhmass.firebaseapp.com",
+  projectId: "czhmass",
+  storageBucket: "czhmass.firebasestorage.app",
+  messagingSenderId: "1064257019843",
+  appId: "1:1064257019843:web:65488b45be2f86838ca776"
+};
+
+// Инициализация Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+console.log('Firebase инициализирован:', firebase.apps.length);
+</script>
+
 <script>
     // ===== КОНФИГУРАЦИЯ FIREBASE (ТА ЖЕ САМАЯ!) =====
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional

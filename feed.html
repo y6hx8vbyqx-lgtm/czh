@@ -1,177 +1,49 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>czhmass</title>
+async function createPost() {
+    const postText = document.getElementById('postText').value.trim();
+    const postButton = document.getElementById('postButton');
+    const imageFile = document.getElementById('postImage').files[0];
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    if (!postText && !imageFile) {
+        showMessage('Добавьте текст или фото', 'error');
+        return;
+    }
 
-<style>
-:root{
-  --bg:#000;
-  --card:rgba(28,28,30,.9);
-  --border:#1f1f1f;
-  --sub:#9a9a9a;
-  --accent:linear-gradient(135deg,#667eea,#764ba2);
+    postButton.disabled = true;
+    postButton.textContent = 'Публикация...';
+
+    try {
+        let imageUrl = null;
+
+        if (imageFile) {
+            const imageRef = storage.ref(
+                `posts/${currentUser.uid}/${Date.now()}_${imageFile.name}`
+            );
+            await imageRef.put(imageFile);
+            imageUrl = await imageRef.getDownloadURL();
+        }
+
+        await db.collection('posts').add({
+            text: postText,
+            imageUrl: imageUrl,
+            userId: currentUser.uid,
+            username: currentUserData.username,
+            createdAt: new Date(),
+            likes: 0,
+            likedBy: [],
+            commentsCount: 0
+        });
+
+        document.getElementById('postText').value = '';
+        document.getElementById('postImage').value = '';
+
+        showMessage('Пост опубликован!', 'success');
+        loadPosts();
+
+    } catch (error) {
+        console.error(error);
+        showMessage('Ошибка публикации', 'error');
+    } finally {
+        postButton.disabled = false;
+        postButton.textContent = '📝 Опубликовать';
+    }
 }
-body{
-  margin:0;
-  background:var(--bg);
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
-}
-.container{
-  max-width:480px;
-  margin:auto;
-  padding:120px 14px 80px;
-}
-.create{
-  background:var(--card);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:16px;
-}
-.create textarea{
-  width:100%;
-  min-height:90px;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
-  color:#fff;
-}
-.create-actions{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
-.btn-photo{
-  width:33%;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:16px;
-  font-size:22px;
-  color:#fff;
-}
-.btn-post{
-  width:67%;
-  background:var(--accent);
-  border:none;
-  border-radius:16px;
-  color:#fff;
-  font-weight:600;
-}
-.post{
-  background:var(--card);
-  border-radius:24px;
-  padding:16px;
-  margin-bottom:14px;
-}
-.post img{
-  width:100%;
-  margin-top:10px;
-  border-radius:18px;
-  object-fit:cover;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-  <div class="create">
-    <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
-
-    <input type="file" id="postImage" accept="image/*" hidden>
-
-    <div class="create-actions">
-      <button class="btn-photo" onclick="postImage.click()">📷</button>
-      <button class="btn-post" onclick="createPost()">📝 Опубликовать</button>
-    </div>
-  </div>
-
-  <div id="feed"></div>
-</div>
-
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain:"czhmass.firebaseapp.com",
-  projectId:"czhmass"
-});
-
-const db = firebase.firestore();
-const auth = firebase.auth();
-const storage = firebase.storage();
-
-let currentUser = null;
-let userData = null;
-
-auth.onAuthStateChanged(async user=>{
-  if(!user) return location.href="index.html";
-  currentUser = user;
-  const u = await db.collection("users").doc(user.uid).get();
-  userData = u.data() || {};
-  loadPosts();
-});
-
-async function createPost(){
-  const text = postText.value.trim();
-  const file = postImage.files[0];
-
-  if(!text && !file){
-    alert("Добавьте текст или фото");
-    return;
-  }
-
-  let imageUrl = null;
-
-  if(file){
-    const ref = storage.ref(
-      `posts/${currentUser.uid}/${Date.now()}_${file.name}`
-    );
-    await ref.put(file);
-    imageUrl = await ref.getDownloadURL();
-  }
-
-  await db.collection("posts").add({
-    text,
-    imageUrl,
-    userId: currentUser.uid,
-    username: userData.username || "anon",
-    createdAt: new Date(),
-    likes: 0,
-    likedBy: [],
-    commentsCount: 0
-  });
-
-  postText.value = "";
-  postImage.value = "";
-  loadPosts();
-}
-
-async function loadPosts(){
-  feed.innerHTML="";
-  const snap = await db.collection("posts")
-    .orderBy("createdAt","desc").get();
-
-  snap.forEach(doc=>{
-    const p = doc.data();
-    feed.innerHTML += `
-      <div class="post">
-        <strong>@${p.username}</strong>
-        <div>${p.text || ""}</div>
-        ${p.imageUrl ? `<img src="${p.imageUrl}">` : ""}
-      </div>
-    `;
-  });
-}
-</script>
-
-</body>
-</html>

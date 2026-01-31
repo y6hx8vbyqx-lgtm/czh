@@ -1,217 +1,502 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>czhmass.com</title>
+    <title>Лента - czhmass.com</title>
     <meta charset="UTF-8">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #f5f5f5;
             margin: 0;
             padding: 20px;
         }
-        .box {
+        .navbar {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-width: 400px;
-            width: 100%;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 10px;
+        .search-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
         }
-        .subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        input {
-            width: 100%;
+        .search-input {
+            flex: 1;
             padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 16px;
         }
-        button {
-            width: 100%;
-            padding: 12px;
+        .btn {
             background: #667eea;
             color: white;
             border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #5a67d8;
-        }
-        .form-group {
-            margin-bottom: 25px;
-            padding-bottom: 25px;
-            border-bottom: 1px solid #eee;
-        }
-        #message {
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 5px;
-            margin-top: 15px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-profile {
+            background: #48bb78;
+        }
+        .create-post {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        .post {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .post-header {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .empty {
             text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .user-search-result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #adminBtn {
+            background: #805ad5;
             display: none;
         }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>czhmass.com</h1>
-        <p class="subtitle">Работает без Firebase!</p>
-        
-        <div class="form-group">
-            <h3>📝 Регистрация</h3>
-            <input type="text" id="regUsername" placeholder="Имя пользователя">
-            <input type="email" id="regEmail" placeholder="Email">
-            <input type="password" id="regPassword" placeholder="Пароль (6+ символов)">
-            <button onclick="register()">Зарегистрироваться</button>
+    <div class="navbar">
+        <h2 style="margin:0;">czhmass.com</h2>
+        <div>
+            <button class="btn btn-profile" onclick="window.location.href='profile.html'">👤 Профиль</button>
+            <button class="btn" onclick="window.location.href='admin.html'" id="adminBtn">👑 Админ</button>
+            <button class="btn" onclick="logout()">🚪 Выйти</button>
         </div>
-        
-        <div class="form-group">
-            <h3>🔑 Вход</h3>
-            <input type="email" id="loginEmail" placeholder="Email">
-            <input type="password" id="loginPassword" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
-        </div>
-        
-        <div id="message"></div>
+    </div>
+    
+    <!-- ПРОСТОЙ ПОИСК -->
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" 
+               placeholder="Найти пользователя...">
+        <button class="btn" onclick="searchUsers()">🔍 Поиск</button>
+    </div>
+    
+    <!-- РЕЗУЛЬТАТЫ ПОИСКА (скрыты по умолчанию) -->
+    <div id="searchResults" style="display:none; margin-bottom:20px;">
+        <h3>Найденные пользователи:</h3>
+        <div id="usersList"></div>
+    </div>
+    
+    <!-- СОЗДАНИЕ ПОСТА -->
+    <div class="create-post">
+        <h3 style="margin-top:0;">Новый пост</h3>
+        <textarea id="postText" placeholder="Что у вас нового?"></textarea>
+        <button class="btn" onclick="createPost()">📤 Опубликовать</button>
+        <div id="message" style="margin-top:10px; display:none;"></div>
+    </div>
+    
+    <!-- ЛЕНТА ПОСТОВ -->
+    <div id="posts">
+        <h3>📰 Лента постов:</h3>
+        <div class="empty" id="emptyMsg">Загрузка постов...</div>
     </div>
 
     <script>
-        // ===== ЛОКАЛЬНАЯ РЕГИСТРАЦИЯ (без Firebase) =====
+        // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
+        let currentUser = localStorage.getItem('czhmass_currentUser');
+        let users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
         
-        // Проверяем, если уже вошли
-        if (localStorage.getItem('czhmass_currentUser')) {
-            showMessage('Вы уже вошли как: ' + localStorage.getItem('czhmass_currentUser'), 'info');
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+        if (!currentUser) {
+            alert('❌ Сначала войдите в систему!');
+            window.location.href = 'index.html';
         }
         
-        // Функция регистрации
-        function register() {
-            const username = document.getElementById('regUsername').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
+        // ===== ИНИЦИАЛИЗАЦИЯ ДАННЫХ =====
+        function initializeUserData() {
+            console.log('=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ ===');
+            console.log('Текущий пользователь:', currentUser);
+            console.log('Все пользователи:', users);
             
-            // Проверка
-            if (!username || !email || !password) {
-                showMessage('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showMessage('Пароль должен быть не менее 6 символов', 'error');
-                return;
-            }
-            
-            // Получаем пользователей из LocalStorage
-            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            
-            // Проверяем, свободно ли имя
-            if (users[username]) {
-                showMessage('Имя "' + username + '" уже занято', 'error');
-                return;
-            }
-            
-            // Проверяем, не занят ли email
-            for (const user in users) {
-                if (users[user].email === email) {
-                    showMessage('Email уже используется', 'error');
-                    return;
-                }
-            }
-            
-            // Сохраняем пользователя
-            users[username] = {
-                email: email,
-                password: password, // В реальном проекте НЕ хранить так пароли!
-                createdAt: new Date().toISOString(),
-                posts: []
-            };
-            
-            localStorage.setItem('czhmass_users', JSON.stringify(users));
-            localStorage.setItem('czhmass_currentUser', username);
-            
-            showMessage('✅ Регистрация успешна! Имя "' + username + '" закреплено.', 'success');
-            
-            // Через 2 секунды переходим в ленту
-            setTimeout(() => {
-                window.location.href = 'feed.html';
-            }, 2000);
-        }
-        
-        // Функция входа
-        function login() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            
-            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            
-            // Ищем пользователя по email и паролю
-            let foundUser = null;
-            for (const username in users) {
-                if (users[username].email === email && users[username].password === password) {
-                    foundUser = username;
-                    break;
-                }
-            }
-            
-            if (foundUser) {
-                localStorage.setItem('czhmass_currentUser', foundUser);
-                showMessage('✅ Вход выполнен! Добро пожаловать, ' + foundUser, 'success');
+            // Если пользователь существует, но структура неполная - исправляем
+            if (currentUser && users[currentUser]) {
+                const user = users[currentUser];
                 
-                setTimeout(() => {
-                    window.location.href = 'feed.html';
-                }, 1500);
-            } else {
-                showMessage('❌ Неверный email или пароль', 'error');
+                if (!Array.isArray(user.posts)) {
+                    console.log('⚠️ Исправляем posts массив');
+                    user.posts = [];
+                }
+                
+                if (!Array.isArray(user.postTimes)) {
+                    console.log('⚠️ Исправляем postTimes массив');
+                    user.postTimes = [];
+                }
+                
+                if (!user.email) {
+                    user.email = currentUser + '@czhmass.com';
+                }
+                
+                if (!user.createdAt) {
+                    user.createdAt = new Date().toISOString();
+                }
+                
+                // Сохраняем исправления
+                localStorage.setItem('czhmass_users', JSON.stringify(users));
             }
         }
         
-        // Функция показа сообщений
+        // ===== ЗАГРУЗКА ПОСТОВ =====
+        function loadPosts() {
+            console.log('=== ЗАГРУЗКА ПОСТОВ ===');
+            const postsDiv = document.getElementById('posts');
+            const emptyMsg = document.getElementById('emptyMsg');
+            
+            if (!postsDiv) {
+                console.error('❌ Не найден элемент posts');
+                return;
+            }
+            
+            // Собираем ВСЕ посты
+            let allPosts = [];
+            for (const username in users) {
+                if (users[username] && Array.isArray(users[username].posts)) {
+                    const userPosts = users[username].posts || [];
+                    const userTimes = users[username].postTimes || [];
+                    
+                    userPosts.forEach((text, index) => {
+                        if (text && text.trim()) {
+                            allPosts.push({
+                                username: username,
+                                text: text,
+                                time: userTimes[index] || new Date().toISOString()
+                            });
+                        }
+                    });
+                }
+            }
+            
+            // Сортируем по времени (новые сверху)
+            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            // Отображаем
+            if (allPosts.length === 0) {
+                postsDiv.innerHTML = '<h3>📰 Лента постов:</h3><div class="empty">Пока нет постов. Будьте первым!</div>';
+                return;
+            }
+            
+            let postsHTML = '<h3>📰 Лента постов:</h3>';
+            allPosts.forEach(post => {
+                postsHTML += `
+                    <div class="post">
+                        <div class="post-header">
+                            <span>@${escapeHtml(post.username)}</span>
+                            <span style="color:#a0aec0; font-size:14px;">${formatTime(post.time)}</span>
+                        </div>
+                        <div>${escapeHtml(post.text)}</div>
+                    </div>
+                `;
+            });
+            
+            postsDiv.innerHTML = postsHTML;
+        }
+        
+        // ===== СОЗДАНИЕ ПОСТА (ИСПРАВЛЕННАЯ) =====
+        function createPost() {
+            console.log('=== СОЗДАНИЕ ПОСТА ===');
+            
+            const textInput = document.getElementById('postText');
+            const text = textInput ? textInput.value.trim() : '';
+            const messageEl = document.getElementById('message');
+            
+            console.log('Текст поста:', text);
+            console.log('Текущий пользователь:', currentUser);
+            console.log('Данные пользователя:', users[currentUser]);
+            
+            // Проверка ввода
+            if (!text) {
+                showMessage('Введите текст поста', 'error');
+                return;
+            }
+            
+            if (!currentUser) {
+                showMessage('Ошибка: вы не авторизованы', 'error');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Если пользователя нет в users - создаем
+            if (!users[currentUser]) {
+                console.log('⚠️ Создаем нового пользователя');
+                users[currentUser] = {
+                    email: currentUser + '@czhmass.com',
+                    password: 'auto-generated',
+                    posts: [],
+                    postTimes: [],
+                    createdAt: new Date().toISOString(),
+                    isAdmin: false
+                };
+            }
+            
+            // Гарантируем что массивы существуют
+            if (!Array.isArray(users[currentUser].posts)) {
+                users[currentUser].posts = [];
+            }
+            if (!Array.isArray(users[currentUser].postTimes)) {
+                users[currentUser].postTimes = [];
+            }
+            
+            // Добавляем пост
+            users[currentUser].posts.push(text);
+            users[currentUser].postTimes.push(new Date().toISOString());
+            
+            console.log('После добавления:', users[currentUser]);
+            
+            // Сохраняем
+            try {
+                localStorage.setItem('czhmass_users', JSON.stringify(users));
+                console.log('✅ Данные сохранены');
+                showMessage('✅ Пост опубликован!', 'success');
+            } catch (e) {
+                console.error('❌ Ошибка сохранения:', e);
+                showMessage('❌ Ошибка сохранения', 'error');
+                return;
+            }
+            
+            // Очищаем поле
+            if (textInput) {
+                textInput.value = '';
+                textInput.focus();
+            }
+            
+            // Обновляем ленту
+            setTimeout(loadPosts, 100);
+        }
+        
+        // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ =====
+        function searchUsers() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const resultsDiv = document.getElementById('searchResults');
+            const usersList = document.getElementById('usersList');
+            
+            if (!searchTerm) {
+                if (resultsDiv) resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Ищем пользователей
+            const results = [];
+            for (const username in users) {
+                if (username.toLowerCase().includes(searchTerm) && username !== currentUser) {
+                    results.push(username);
+                }
+            }
+            
+            if (!resultsDiv || !usersList) return;
+            
+            if (results.length === 0) {
+                usersList.innerHTML = '<p style="color:#718096; text-align:center;">Пользователи не найдены</p>';
+            } else {
+                usersList.innerHTML = '';
+                results.forEach(username => {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'user-search-result';
+                    userDiv.innerHTML = `
+                        <div>
+                            <strong>@${escapeHtml(username)}</strong>
+                            <div style="color:#718096; font-size:14px;">
+                                Постов: ${users[username] && users[username].posts ? users[username].posts.length : 0}
+                            </div>
+                        </div>
+                        <button onclick="viewUserProfile('${escapeHtml(username)}')" 
+                                style="background:#667eea; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">
+                            👁️ Профиль
+                        </button>
+                    `;
+                    usersList.appendChild(userDiv);
+                });
+            }
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        // ===== ПРОСМОТР ПРОФИЛЯ =====
+        function viewUserProfile(username) {
+            const userData = users[username];
+            if (!userData) return;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background:white; padding:30px; border-radius:15px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto; position:relative;">
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#718096;">
+                        ×
+                    </button>
+                    
+                    <h3 style="margin-top:0;">@${escapeHtml(username)}</h3>
+                    
+                    <div style="margin:20px 0;">
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div style="width:50px; height:50px; background:#667eea; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold;">
+                                ${username.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div><strong>Email:</strong> ${escapeHtml(userData.email || 'не указан')}</div>
+                                <div><strong>Постов:</strong> ${userData.posts ? userData.posts.length : 0}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h4>Последние посты:</h4>
+                    ${userData.posts && userData.posts.length > 0 ? 
+                      userData.posts.slice(-3).reverse().map(post => 
+                        `<div style="background:#f8f9fa; padding:12px; border-radius:8px; margin:8px 0;">
+                            ${escapeHtml(post)}
+                        </div>`
+                      ).join('') : 
+                      '<p style="color:#718096; text-align:center;">Нет постов</p>'}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Закрытие по клику на фон
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            };
+        }
+        
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
             const messageEl = document.getElementById('message');
+            if (!messageEl) return;
+            
             messageEl.textContent = text;
             messageEl.style.display = 'block';
+            messageEl.style.color = type === 'success' ? '#48bb78' : '#e53e3e';
+            messageEl.style.padding = '10px';
+            messageEl.style.borderRadius = '5px';
             
-            if (type === 'success') {
-                messageEl.style.background = '#d4edda';
-                messageEl.style.color = '#155724';
-                messageEl.style.border = '1px solid #c3e6cb';
-            } else if (type === 'error') {
-                messageEl.style.background = '#f8d7da';
-                messageEl.style.color = '#721c24';
-                messageEl.style.border = '1px solid #f5c6cb';
-            } else {
-                messageEl.style.background = '#d1ecf1';
-                messageEl.style.color = '#0c5460';
-                messageEl.style.border = '1px solid #bee5eb';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+        
+        function formatTime(timeString) {
+            try {
+                const postTime = new Date(timeString);
+                const now = new Date();
+                const diff = now - postTime;
+                const minutes = Math.floor(diff / 60000);
+                
+                if (minutes < 1) return 'только что';
+                if (minutes < 60) return `${minutes} мин назад`;
+                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
+                return postTime.toLocaleDateString('ru-RU');
+            } catch {
+                return 'недавно';
             }
         }
         
-        // Enter для отправки форм
-        document.getElementById('regPassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') register();
-        });
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('czhmass_currentUser');
+                window.location.href = 'index.html';
+            }
+        }
         
-        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login();
-        });
-        
-        // Приветствие
-        console.log('czhmass.com загружен (LocalStorage версия)');
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.onload = function() {
+            console.log('=== ЗАГРУЗКА СТРАНИЦЫ ===');
+            
+            // Инициализируем данные
+            initializeUserData();
+            
+            // Загружаем посты
+            loadPosts();
+            
+            // Проверка админ-прав
+            if (currentUser && users[currentUser] && users[currentUser].isAdmin) {
+                const adminBtn = document.getElementById('adminBtn');
+                if (adminBtn) {
+                    adminBtn.style.display = 'inline-block';
+                    console.log('👑 Админ-панель доступна для:', currentUser);
+                }
+            }
+            
+            // Назначаем обработчики
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') searchUsers();
+                });
+            }
+            
+            const postText = document.getElementById('postText');
+            if (postText) {
+                postText.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && e.key === 'Enter') createPost();
+                });
+            }
+            
+            console.log('✅ Страница загружена');
+        };
     </script>
 </body>
 </html>

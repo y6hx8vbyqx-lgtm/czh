@@ -9,7 +9,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
 
 <style>
 :root{
@@ -64,58 +63,18 @@ body{
 }
 
 .create{
-  background:var(--card);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:16px;
+  background:var(--card);border-radius:22px;
+  padding:16px;margin-bottom:16px;
 }
 .create textarea{
   width:100%;min-height:90px;
   background:#1c1c1e;border:1px solid var(--border);
   border-radius:16px;padding:12px;color:#fff;
 }
-
-.preview{
-  position:relative;
-  margin-top:10px;
-}
-.preview img{
-  width:100%;
-  border-radius:16px;
-}
-.preview .remove{
-  position:absolute;
-  top:8px;
-  right:8px;
-  background:rgba(0,0,0,.6);
-  border:none;
-  color:#fff;
-  border-radius:50%;
-  width:28px;
-  height:28px;
-  font-size:16px;
-}
-
-.create-actions{
-  display:flex;
-  gap:8px;
-  margin-top:12px;
-}
-.photo-btn{
-  flex:1;
-  background:#1c1c1e;
-  border:none;
-  border-radius:16px;
-  color:#fff;
-  font-size:18px;
-}
-.publish-btn{
-  flex:2;
-  background:var(--accent);
-  border:none;
-  border-radius:16px;
-  color:#fff;
-  font-weight:600;
+.create button{
+  width:100%;margin-top:12px;
+  padding:14px;border:none;border-radius:16px;
+  background:var(--accent);color:#fff;font-weight:600;
 }
 
 .post{
@@ -135,24 +94,56 @@ body{
 }
 .post-user{font-weight:600}
 .post-time{color:var(--sub);font-size:13px}
-.post-text{margin:10px 0}
-.post img{
-  width:100%;
-  border-radius:16px;
-  margin-top:8px;
-}
+.post-text{margin:10px 0 6px}
 .post-actions{
-  display:flex;gap:18px;margin-top:6px;
+  display:flex;align-items:center;gap:18px;
 }
 .action{
   background:none;border:none;
   color:var(--sub);font-size:18px;
 }
-.action.liked{color:#ff2d55}
+.action.liked{color:#ff2d55;animation:pop .2s}
+@keyframes pop{50%{transform:scale(1.2)}}
+
 .trash{
   margin-left:auto;
   background:none;border:none;
   color:var(--danger);font-size:18px;
+}
+
+/* COMMENTS */
+.sheet{
+  position:fixed;inset:0;
+  background:#000;
+  transform:translateY(100%);
+  transition:.35s ease;
+  display:flex;flex-direction:column;
+  z-index:2000;
+}
+.sheet.show{transform:translateY(0)}
+.sheet-header{
+  padding:16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;
+}
+.sheet-body{
+  flex:1;overflow:auto;padding:16px;
+}
+.comment{
+  background:var(--card);
+  border-radius:20px;padding:14px;margin-bottom:12px;
+}
+.comment-head{
+  display:flex;align-items:center;gap:10px;
+}
+.comment-text{margin-top:6px}
+.sheet-footer{
+  padding:12px;border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+.sheet-footer input{
+  flex:1;background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;padding:10px;color:#fff;
 }
 </style>
 </head>
@@ -173,37 +164,38 @@ body{
 <div class="container">
   <div class="create">
     <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
-
-    <div class="preview" id="imagePreview"></div>
-
-    <div class="create-actions">
-      <button class="photo-btn" onclick="postImage.click()">📷</button>
-      <button class="publish-btn" onclick="createPost()">📝 Опубликовать</button>
-    </div>
-
-    <input type="file" id="postImage" accept="image/*" hidden>
+    <button onclick="createPost()">📝 Опубликовать</button>
   </div>
-
   <div id="feed"></div>
+</div>
+
+<div class="sheet" id="commentsSheet">
+  <div class="sheet-header">
+    <strong>Комментарии</strong>
+    <button class="action" onclick="closeComments()">✕</button>
+  </div>
+  <div class="sheet-body" id="commentsBody"></div>
+  <div class="sheet-footer">
+    <input id="commentInput" placeholder="Комментарий">
+    <button class="action" onclick="addComment()">📤</button>
+  </div>
 </div>
 
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
   authDomain:"czhmass.firebaseapp.com",
-  projectId:"czhmass",
-  storageBucket:"czhmass.appspot.com"
+  projectId:"czhmass"
 });
-
 const db=firebase.firestore();
 const auth=firebase.auth();
-const storage=firebase.storage();
 
 let currentUser,userData;
-let imageFile=null;
+let postsCache=new Map();
+let currentPostId=null;
 
 auth.onAuthStateChanged(async u=>{
-  if(!u) location.href="index.html";
+  if(!u)return location.href="index.html";
   currentUser=u;
   const snap=await db.collection("users").doc(u.uid).get();
   userData=snap.data()||{};
@@ -211,60 +203,12 @@ auth.onAuthStateChanged(async u=>{
   loadPosts();
 });
 
-postImage.onchange=()=>{
-  imagePreview.innerHTML="";
-  imageFile=postImage.files[0];
-  if(!imageFile) return;
-
-  const img=document.createElement("img");
-  img.src=URL.createObjectURL(imageFile);
-
-  const btn=document.createElement("button");
-  btn.className="remove";
-  btn.textContent="✕";
-  btn.onclick=()=>{
-    imageFile=null;
-    postImage.value="";
-    imagePreview.innerHTML="";
-  };
-
-  imagePreview.appendChild(img);
-  imagePreview.appendChild(btn);
-};
-
-async function createPost(){
-  if(!postText.value.trim() && !imageFile) return;
-
-  let imageUrl=null;
-
-  if(imageFile){
-    const ref=storage.ref(`posts/${currentUser.uid}_${Date.now()}`);
-    await ref.put(imageFile);
-    imageUrl=await ref.getDownloadURL();
-  }
-
-  await db.collection("posts").add({
-    text:postText.value,
-    image:imageUrl,
-    userId:currentUser.uid,
-    username:userData.username,
-    createdAt:new Date(),
-    likes:0,
-    likedBy:[],
-    commentsCount:0
-  });
-
-  postText.value="";
-  imageFile=null;
-  imagePreview.innerHTML="";
-  loadPosts();
-}
-
 async function loadPosts(){
   feed.innerHTML="";
   const snap=await db.collection("posts").orderBy("createdAt","desc").get();
   snap.forEach(doc=>{
-    const p=doc.data();
+    const p=doc.data();postsCache.set(doc.id,p);
+    const liked=p.likedBy?.includes(currentUser.uid);
     feed.innerHTML+=`
     <div class="post fade-in">
       <div class="post-header">
@@ -273,17 +217,104 @@ async function loadPosts(){
           <div class="post-user">@${p.username||"anon"}</div>
           <div class="post-time">${new Date(p.createdAt.seconds*1000).toLocaleString()}</div>
         </div>
+        ${(p.userId===currentUser.uid||userData.isAdmin)?
+          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
       </div>
-      <div class="post-text">${p.text||""}</div>
-      ${p.image?`<img src="${p.image}">`:""}
+      <div class="post-text">${p.text}</div>
+      <div class="post-actions">
+        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
+          ${liked?"❤️":"🤍"} ${p.likes||0}
+        </button>
+        <button class="action" onclick="openComments('${doc.id}')">
+          💬 ${p.commentsCount||0}
+        </button>
+      </div>
     </div>`;
   });
+}
+
+async function toggleLike(id){
+  const p=postsCache.get(id);
+  const liked=p.likedBy?.includes(currentUser.uid);
+  await db.collection("posts").doc(id).update({
+    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
+    likedBy:liked
+      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+  });
+  loadPosts();
+}
+
+async function createPost(){
+  if(!postText.value.trim())return;
+  await db.collection("posts").add({
+    text:postText.value,
+    userId:currentUser.uid,
+    username:userData.username,
+    createdAt:new Date(),
+    likes:0,likedBy:[],commentsCount:0
+  });
+  postText.value="";loadPosts();
+}
+
+async function deletePost(id){
+  if(!confirm("Удалить пост?"))return;
+  await db.collection("posts").doc(id).delete();
+  loadPosts();
+}
+
+function openComments(id){
+  currentPostId=id;
+  commentsSheet.classList.add("show");
+  loadComments();
+}
+function closeComments(){
+  commentsSheet.classList.remove("show");
+}
+
+async function loadComments(){
+  commentsBody.innerHTML="";
+  const snap=await db.collection("posts").doc(currentPostId)
+    .collection("comments").orderBy("createdAt").get();
+  snap.forEach(d=>{
+    const c=d.data();
+    commentsBody.innerHTML+=`
+    <div class="comment fade-in">
+      <div class="comment-head">
+        <div class="avatar">${c.username?.[0]||"A"}</div>
+        <strong>@${c.username||"anon"}</strong>
+        ${(c.userId===currentUser.uid||userData.isAdmin)?
+          `<button class="trash" onclick="deleteComment('${d.id}')">🗑</button>`:""}
+      </div>
+      <div class="comment-text">${c.text}</div>
+    </div>`;
+  });
+}
+
+async function addComment(){
+  if(!commentInput.value)return;
+  await db.collection("posts").doc(currentPostId)
+    .collection("comments").add({
+      text:commentInput.value,
+      userId:currentUser.uid,
+      username:userData.username,
+      createdAt:new Date()
+    });
+  await db.collection("posts").doc(currentPostId)
+    .update({commentsCount:firebase.firestore.FieldValue.increment(1)});
+  commentInput.value="";
+  loadComments();loadPosts();
+}
+
+async function deleteComment(id){
+  await db.collection("posts").doc(currentPostId)
+    .collection("comments").doc(id).delete();
+  loadComments();
 }
 
 function logout(){
   auth.signOut().then(()=>location.href="index.html");
 }
-
 setInterval(()=>{
   time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 },1000);

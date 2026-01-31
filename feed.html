@@ -294,6 +294,13 @@
             transition: all 0.3s;
         }
 
+        .privacy-note {
+            color: #65676b;
+            font-size: 14px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .post {
                 padding: 20px;
@@ -316,6 +323,7 @@
         <div class="nav-buttons">
             <button class="btn" onclick="window.location.href='profile.html'">👤 Профиль</button>
             <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
+            <button class="btn" onclick="window.location.href='profile-settings.html'">⚙️ Приватность</button>
             <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
         </div>
     </nav>
@@ -324,6 +332,9 @@
         <h2>💬 О чем думаете?</h2>
         <textarea class="post-textarea" id="postText" placeholder="Поделитесь чем-нибудь с сообществом..."></textarea>
         <button class="btn" onclick="createPost()">📤 Опубликовать</button>
+        <div class="privacy-note">
+            Ваш email будет скрыт от других пользователей
+        </div>
         <div id="message" class="message"></div>
     </div>
 
@@ -433,12 +444,22 @@
                         email: user.email,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         isAdmin: false,
+                        displayEmail: false,
+                        allowMentions: true,
+                        profileVisible: true,
+                        showPostsCount: true,
+                        showJoinDate: true,
                         postsCount: 0,
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
                     console.log('✅ Документ создан для:', username);
-                    currentUserData = { username: username, email: user.email, isAdmin: false };
+                    currentUserData = { 
+                        username: username, 
+                        email: user.email, 
+                        isAdmin: false,
+                        displayEmail: false
+                    };
                 } else {
                     const data = userDoc.data();
                     currentUserData = data;
@@ -449,9 +470,10 @@
                     });
                 }
 
-                localStorage.setItem('czhmass_userId', user.uid);
                 localStorage.setItem('czhmass_currentUser', currentUserData.username);
+                localStorage.setItem('czhmass_userId', user.uid);
                 localStorage.setItem('czhmass_userEmail', user.email);
+                localStorage.setItem('czhmass_isAdmin', currentUserData.isAdmin ? 'true' : 'false');
 
                 if (currentUserData.isAdmin) {
                     document.getElementById('adminBtn').style.display = 'inline-block';
@@ -465,216 +487,4 @@
                 });
 
             } catch (error) {
-                console.error('❌ Ошибка загрузки пользователя:', error);
-                showMessage('Ошибка загрузки данных: ' + error.message, 'error');
-            }
-        });
-
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        async function loadPosts() {
-            console.log('📥 Загрузка постов...');
-            const postsContainer = document.getElementById('posts');
-
-            try {
-                const snapshot = await db.collection('posts')
-                    .orderBy('createdAt', 'desc')
-                    .limit(50)
-                    .get();
-
-                if (snapshot.empty) {
-                    postsContainer.innerHTML = '<div class="empty">😴 Пока нет постов. Будьте первым!</div>';
-                    return;
-                }
-
-                postsCache.clear();
-                
-                let html = '';
-                snapshot.forEach(doc => {
-                    const post = doc.data();
-                    const postId = doc.id;
-                    const avatarLetter = getAvatarLetter(post.username);
-                    const isMyPost = post.userId === auth.currentUser?.uid;
-                    
-                    postsCache.set(postId, {
-                        id: postId,
-                        ...post
-                    });
-                    
-                    html += `
-                        <div class="post" id="post-${postId}" data-post-id="${postId}">
-                            <div class="post-header">
-                                <div class="post-author">
-                                    <div class="post-author-avatar">${avatarLetter}</div>
-                                    <div class="author-info">
-                                        <div>
-                                            <span class="author-name">@${escapeHtml(post.username || 'Аноним')}</span>
-                                            ${isMyPost ? '<span class="your-post-badge">Ваш</span>' : ''}
-                                        </div>
-                                        <div class="post-time">${formatTime(post.createdAt)}</div>
-                                    </div>
-                                </div>
-                                ${isMyPost ? `
-                                    <div class="post-actions">
-                                        <button class="btn-delete" onclick="deleteMyPost('${postId}')" title="Удалить пост">
-                                            🗑️
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <div class="post-content">${escapeHtml(post.text || '')}</div>
-                        </div>
-                    `;
-                });
-
-                postsContainer.innerHTML = html;
-                console.log(`✅ Загружено ${snapshot.size} постов`);
-
-            } catch (error) {
-                console.error('❌ Ошибка загрузки постов:', error);
-                postsContainer.innerHTML = '<div class="error">Ошибка загрузки постов. Проверьте правила Firestore.</div>';
-                showMessage('Ошибка загрузки ленты', 'error');
-            }
-        }
-
-        // ===== УДАЛЕНИЕ СВОЕГО ПОСТА =====
-        async function deleteMyPost(postId) {
-            const user = auth.currentUser;
-            if (!user) {
-                showMessage('Вы не авторизованы', 'error');
-                return;
-            }
-
-            const post = postsCache.get(postId);
-            if (!post) {
-                showMessage('Пост не найден', 'error');
-                return;
-            }
-
-            if (post.userId !== user.uid) {
-                showMessage('❌ Вы можете удалять только свои посты', 'error');
-                return;
-            }
-
-            if (!confirm('Удалить этот пост?\n\nЭто действие нельзя отменить.')) {
-                return;
-            }
-
-            try {
-                console.log('🗑️ Удаление поста:', postId);
-                
-                // Показываем анимацию удаления
-                const postElement = document.getElementById(`post-${postId}`);
-                if (postElement) {
-                    postElement.classList.add('deleting');
-                }
-                
-                // Удаляем пост из Firestore
-                await db.collection('posts').doc(postId).delete();
-                
-                // Уменьшаем счетчик постов
-                await db.collection('users').doc(user.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(-1)
-                });
-                
-                // Удаляем из DOM с задержкой для анимации
-                setTimeout(() => {
-                    if (postElement) {
-                        postElement.remove();
-                    }
-                    showMessage('✅ Пост удален', 'success');
-                }, 300);
-                
-                // Удаляем из кэша
-                postsCache.delete(postId);
-                
-                console.log('✅ Пост удален успешно');
-
-            } catch (error) {
-                console.error('❌ Ошибка удаления поста:', error);
-                
-                // Отменяем анимацию удаления при ошибке
-                const postElement = document.getElementById(`post-${postId}`);
-                if (postElement) {
-                    postElement.classList.remove('deleting');
-                }
-                
-                let errorMsg = 'Ошибка удаления поста';
-                if (error.code === 'permission-denied') {
-                    errorMsg = '❌ НЕТ ДОСТУПА! Проверьте правила Firestore.';
-                }
-                
-                showMessage(errorMsg, 'error');
-            }
-        }
-
-        // ===== СОЗДАНИЕ ПОСТА =====
-        async function createPost() {
-            const textInput = document.getElementById('postText');
-            const text = textInput.value.trim();
-            const user = auth.currentUser;
-
-            if (!text) {
-                showMessage('Введите текст поста', 'error');
-                return;
-            }
-
-            if (!user) {
-                showMessage('Вы не авторизованы', 'error');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            try {
-                let username = currentUserData ? currentUserData.username : null;
-                
-                if (!username) {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        username = userDoc.data().username;
-                    } else {
-                        username = user.email.split('@')[0];
-                    }
-                }
-
-                console.log('📝 Создание поста от:', username);
-
-                const newPostRef = await db.collection('posts').add({
-                    text: text,
-                    userId: user.uid,
-                    username: username,
-                    userEmail: user.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    likes: 0,
-                    likedBy: [],
-                    comments: []
-                });
-
-                await db.collection('users').doc(user.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(1)
-                });
-
-                textInput.value = '';
-                showMessage('✅ Пост опубликован!', 'success');
-
-                // Обновляем ленту
-                setTimeout(loadPosts, 1000);
-
-            } catch (error) {
-                console.error('❌ Ошибка создания поста:', error);
-                
-                let errorMsg = 'Ошибка публикации: ' + error.message;
-                if (error.code === 'permission-denied') {
-                    errorMsg = '❌ НЕТ ДОСТУПА К БАЗЕ! Проверьте правила Firestore.';
-                }
-                
-                showMessage(errorMsg, 'error');
-            }
-        }
-
-        // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
-        window.addEventListener('load', () => {
-            console.log('🚀 Страница feed.html загружена');
-        });
-    </script>
-</body>
-</html>
+                console.error('❌ Ошибка загрузки пользователя:',

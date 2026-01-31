@@ -225,17 +225,55 @@
     </nav>
     
     <!-- СОЗДАНИЕ ПОСТА -->
-    <div class="create-post">
-        <h2>💭 Что у вас нового?</h2>
-        <textarea class="post-textarea" id="postText" placeholder="Поделитесь своими мыслями..."></textarea>
-        <button class="btn" onclick="createPost()" style="width: 100%; padding: 14px; font-size: 16px;">
-            📤 Опубликовать
-        </button>
-        <div id="message" class="message"></div>
-        <div style="margin-top: 12px; color: #65676b; font-size: 14px;">
-            Нажмите Ctrl+Enter для быстрой отправки
-        </div>
-    </div>
+    async function createPost() {
+    const postText = document.getElementById('postText').value;
+    const user = auth.currentUser;
+    
+    if (!user) {
+        alert('Вы не авторизованы!');
+        return;
+    }
+    
+    try {
+        // 1. Получаем данные пользователя из Firestore
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            console.error('❌ Документ пользователя не найден в Firestore');
+            alert('Ошибка: данные пользователя не найдены. Попробуйте выйти и зайти снова.');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        const username = userData.username || user.email.split('@')[0];
+        
+        console.log('✅ Создание поста от пользователя:', username);
+        
+        // 2. Создаем пост
+        const newPostRef = db.collection('posts').doc();
+        await newPostRef.set({
+            id: newPostRef.id,
+            text: postText,
+            userId: user.uid,
+            userEmail: user.email,
+            username: username,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            likes: 0,
+            likedBy: [],
+            comments: []
+        });
+        
+        console.log('✅ Пост создан успешно!');
+        document.getElementById('postText').value = '';
+        
+        // 3. Обновляем ленту
+        loadFeed();
+        
+    } catch (error) {
+        console.error('❌ Ошибка создания поста:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
     
     <!-- ЛЕНТА -->
     <div class="feed-container">

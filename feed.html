@@ -14,15 +14,14 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         body {
-            background: #000000;
-            color: #ffffff;
+            background: #1a202c;
+            color: white;
             min-height: 100vh;
-            padding: 0;
-            position: relative;
+            padding: 20px;
         }
 
         /* Динамический островок */
@@ -84,6 +83,7 @@
         .nav-buttons {
             display: flex;
             gap: 12px;
+            align-items: center;
         }
 
         .btn {
@@ -97,6 +97,9 @@
             font-weight: 500;
             transition: all 0.2s;
             backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn:hover {
@@ -110,6 +113,59 @@
         .btn-logout {
             background: rgba(255, 59, 48, 0.2);
             color: #ff3b30;
+        }
+
+        /* Кнопка профиля */
+        .profile-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .profile-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .profile-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .profile-username {
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .profile-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.2;
         }
 
         /* Основной контент */
@@ -315,6 +371,22 @@
             transform: none;
         }
 
+        /* Счетчик символов */
+        .char-counter {
+            text-align: right;
+            margin-top: 8px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .char-counter.warning {
+            color: #ff9500;
+        }
+
+        .char-counter.danger {
+            color: #ff3b30;
+        }
+
         /* Сообщения */
         .message {
             position: fixed;
@@ -386,25 +458,6 @@
             animation: heartBeat 0.6s ease;
         }
 
-        /* Скроллбар */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
         /* Адаптивность */
         @media (max-width: 768px) {
             .navbar {
@@ -426,6 +479,28 @@
             .post-ios {
                 padding: 16px;
             }
+            
+            .profile-btn {
+                padding: 5px 10px;
+            }
+            
+            .profile-username {
+                font-size: 11px;
+            }
+            
+            .nav-buttons {
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-btn .profile-label {
+                display: none;
+            }
+            
+            .profile-btn {
+                padding: 6px;
+            }
         }
     </style>
 </head>
@@ -439,6 +514,15 @@
     <nav class="navbar">
         <div class="logo">czhmass</div>
         <div class="nav-buttons">
+            <!-- Кнопка профиля с аватаркой -->
+            <button class="profile-btn" onclick="window.location.href='profile.html'" id="profileBtn">
+                <div class="profile-avatar" id="profileAvatar">?</div>
+                <div class="profile-info">
+                    <span class="profile-username" id="profileUsername">Загрузка...</span>
+                    <span class="profile-label">Профиль</span>
+                </div>
+            </button>
+            
             <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;">
                 👑 Админ
             </button>
@@ -458,12 +542,10 @@
                 placeholder="Что у вас нового? Пишите анонимно..."
                 maxlength="500"
             ></textarea>
+            <div id="charCounter" class="char-counter">0/500</div>
             <button id="postButton" class="post-button" onclick="createPost()">
                 📝 Опубликовать пост
             </button>
-            <div style="text-align:right; margin-top:8px; font-size:13px; color:rgba(255,255,255,0.4);">
-                <span id="charCount">0</span>/500
-            </div>
         </div>
 
         <!-- Лента постов -->
@@ -553,17 +635,31 @@
         setInterval(updateTime, 1000);
         updateTime();
 
+        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
+        function updateProfileButton(userData) {
+            const avatar = document.getElementById('profileAvatar');
+            const username = document.getElementById('profileUsername');
+            
+            if (userData && userData.username) {
+                avatar.textContent = getAvatarLetter(userData.username);
+                username.textContent = userData.username;
+            }
+        }
+
         // ===== СЧЕТЧИК СИМВОЛОВ =====
         document.getElementById('postText').addEventListener('input', function() {
             const length = this.value.length;
-            document.getElementById('charCount').textContent = length;
+            const counter = document.getElementById('charCounter');
+            counter.textContent = `${length}/500`;
             
+            // Сбрасываем классы
+            counter.className = 'char-counter';
+            
+            // Меняем цвет в зависимости от длины
             if (length >= 480) {
-                document.getElementById('charCount').style.color = '#ff3b30';
+                counter.classList.add('danger');
             } else if (length >= 400) {
-                document.getElementById('charCount').style.color = '#ff9500';
-            } else {
-                document.getElementById('charCount').style.color = 'rgba(255,255,255,0.4)';
+                counter.classList.add('warning');
             }
         });
 
@@ -598,8 +694,7 @@
                     userId: currentUser.uid,
                     username: currentUserData.username,
                     createdAt: new Date(),
-                    likesCount: 0,
-                    likedBy: []
+                    likesCount: 0
                 });
                 
                 // Обновляем счетчик постов пользователя
@@ -609,8 +704,8 @@
                 
                 // Очищаем поле
                 document.getElementById('postText').value = '';
-                document.getElementById('charCount').textContent = '0';
-                document.getElementById('charCount').style.color = 'rgba(255,255,255,0.4)';
+                document.getElementById('charCounter').textContent = '0/500';
+                document.getElementById('charCounter').className = 'char-counter';
                 
                 showMessage('Пост опубликован!', 'success');
                 
@@ -658,8 +753,6 @@
                     // Анимация
                     heartElement.classList.add('like-animation');
                     setTimeout(() => heartElement.classList.remove('like-animation'), 600);
-                    
-                    showMessage('Лайк убран', 'success');
                     
                 } else {
                     // Добавляем лайк
@@ -822,6 +915,9 @@
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
                         currentUserData = userDoc.data();
+                        
+                        // Обновляем кнопку профиля
+                        updateProfileButton(currentUserData);
                         
                         // Показываем кнопку админа если нужно
                         if (currentUserData.isAdmin) {

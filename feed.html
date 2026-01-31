@@ -4,163 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
-
+    
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
-
+    
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         body {
-            background: #000000;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-            padding-top: 10px;
-        }
-
-        /* iOS Динамический островок */
-        .dynamic-island {
-            position: fixed;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 35px;
-            background: rgba(40, 40, 40, 0.95);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 0 15px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-        }
-
-        .island-time {
-            font-size: 15px;
-            font-weight: 600;
+            background: #1a202c;
             color: white;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        /* Навигация */
         .navbar {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: rgba(28, 28, 30, 0.8);
-            padding: 12px 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            background: #2d3748;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
         .logo {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #667eea;
+            text-decoration: none;
         }
 
         .nav-buttons {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             align-items: center;
         }
 
         .btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: #667eea;
             color: white;
             border: none;
-            padding: 8px 14px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-width: auto;
-            white-space: nowrap;
         }
 
         .btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: #5a67d8;
+            transform: translateY(-1px);
         }
 
-        .btn-admin {
-            background: linear-gradient(135deg, #805ad5, #6b46c1);
+        .btn-danger {
+            background: #e53e3e;
         }
 
-        .btn-admin:hover {
-            background: linear-gradient(135deg, #6b46c1, #553c9a);
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .btn-success {
+            background: #38a169;
+        }
+
+        .btn-success:hover {
+            background: #2f855a;
         }
 
         .btn-logout {
-            background: rgba(255, 59, 48, 0.2);
-            color: #ff3b30;
-            padding: 8px 14px;
+            background: #4a5568;
         }
 
         .btn-logout:hover {
-            background: rgba(255, 59, 48, 0.3);
+            background: #2d3748;
         }
 
-        /* Кнопка профиля - УЛУЧШЕННАЯ ДЛЯ МОБИЛЬНЫХ */
+        /* Кнопка профиля */
         .profile-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: #4a5568;
             color: white;
             border: none;
-            padding: 6px 10px;
-            border-radius: 12px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            min-width: auto;
+            text-decoration: none;
         }
 
         .profile-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: #2d3748;
             transform: translateY(-1px);
         }
 
         .profile-avatar {
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 8px;
+            background: #667eea;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             font-size: 14px;
             color: white;
-            flex-shrink: 0;
         }
 
         .profile-info {
@@ -170,46 +129,30 @@
         }
 
         .profile-username {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 600;
             color: white;
-            line-height: 1.2;
-            max-width: 80px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .profile-label {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.2;
+            font-size: 12px;
+            color: #a0aec0;
         }
 
-        /* Основной контент */
-        .container {
-            padding: 140px 20px 100px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        /* Форма создания поста */
         .create-post {
-            background: rgba(28, 28, 30, 0.8);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            background: #2d3748;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .post-input {
             width: 100%;
-            min-height: 100px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            min-height: 120px;
+            background: #4a5568;
+            border: none;
+            border-radius: 8px;
             padding: 16px;
             color: white;
             font-size: 16px;
@@ -220,143 +163,63 @@
 
         .post-input:focus {
             outline: none;
-            border-color: #667eea;
-            background: rgba(255, 255, 255, 0.07);
-        }
-
-        /* НОВЫЙ КОНТЕЙНЕР ДЛЯ КНОПОК */
-        .post-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
         }
 
         .post-button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #667eea;
             color: white;
             border: none;
-            padding: 14px 20px;
-            border-radius: 15px;
+            padding: 14px 30px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            transition: transform 0.2s, opacity 0.2s;
-            flex: 1;
-            text-align: center;
-        }
-
-        .photo-button {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            width: 100%;
             transition: all 0.2s;
-            width: 140px;
-            min-width: 140px;
-        }
-
-        .photo-button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
         }
 
         .post-button:hover {
-            transform: scale(1.02);
-            opacity: 0.9;
+            background: #5a67d8;
+            transform: translateY(-2px);
         }
 
-        .post-button:disabled,
-        .photo-button:disabled {
-            opacity: 0.5;
+        .post-button:disabled {
+            background: #4a5568;
             cursor: not-allowed;
             transform: none;
         }
 
-        /* ПРЕВЬЮ ФОТО */
-        .photo-preview-container {
-            margin-bottom: 15px;
-            border-radius: 15px;
-            overflow: hidden;
-            max-height: 300px;
-            display: none;
-            position: relative;
-        }
-
-        .photo-preview {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .remove-photo {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-            transition: background 0.2s;
-        }
-
-        .remove-photo:hover {
-            background: rgba(255, 59, 48, 0.8);
-        }
-
-        /* Пост в стиле iOS */
-        .post-ios {
-            background: rgba(28, 28, 30, 0.8);
-            border-radius: 20px;
+        .post {
+            background: #2d3748;
             padding: 20px;
+            border-radius: 12px;
             margin-bottom: 16px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
             position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
         }
 
-        .post-ios:hover {
+        .post:hover {
             transform: translateY(-2px);
-            background: rgba(35, 35, 37, 0.9);
         }
 
-        /* Аватар и заголовок */
         .post-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
         }
 
         .user-avatar {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
-            color: white;
+            margin-right: 12px;
             flex-shrink: 0;
         }
 
@@ -365,58 +228,33 @@
         }
 
         .username {
-            font-size: 17px;
             font-weight: 600;
-            color: white;
+            color: #e2e8f0;
             margin-bottom: 3px;
         }
 
         .post-time {
             font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
+            color: #a0aec0;
         }
 
-        /* Текст поста */
         .post-content {
-            font-size: 16px;
-            line-height: 1.5;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 20px;
+            color: #cbd5e0;
+            line-height: 1.6;
+            margin-bottom: 15px;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
 
-        /* ФОТО В ПОСТЕ */
-        .post-photo {
-            margin-bottom: 20px;
-            border-radius: 15px;
-            overflow: hidden;
-            max-height: 400px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .post-photo img {
-            width: 100%;
-            height: auto;
-            display: block;
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .post-photo img:hover {
-            transform: scale(1.02);
-        }
-
-        /* Футер поста с лайками */
+        /* Лайки - ПРОСТЫЕ И РАБОЧИЕ */
         .post-footer {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding-top: 16px;
-            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #4a5568;
         }
 
-        /* Лайки */
         .like-container {
             display: flex;
             align-items: center;
@@ -426,319 +264,164 @@
         .like-btn {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
-            padding: 6px;
-            border-radius: 12px;
-            width: 44px;
-            height: 44px;
+            padding: 5px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.15s ease;
-            user-select: none;
+            transition: all 0.2s;
         }
 
         .like-btn:hover {
             background: rgba(255, 59, 48, 0.1);
-            transform: scale(1.05);
         }
 
         .like-btn.liked {
-            color: #ff3b30;
-            background: rgba(255, 59, 48, 0.15);
+            color: #e53e3e;
         }
 
         .like-btn:not(.liked) {
-            color: rgba(255, 255, 255, 0.6);
+            color: #a0aec0;
         }
 
         .like-count {
             font-size: 16px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.8);
-            min-width: 24px;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
+            color: #a0aec0;
+            min-width: 20px;
         }
 
-        /* Кнопка удаления */
         .delete-post {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 59, 48, 0.1);
-            color: #ff3b30;
+            background: rgba(229, 62, 62, 0.1);
+            color: #e53e3e;
             border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0;
             transition: opacity 0.3s, background 0.3s;
         }
 
-        .post-ios:hover .delete-post {
+        .post:hover .delete-post {
             opacity: 1;
         }
 
         .delete-post:hover {
-            background: rgba(255, 59, 48, 0.2);
+            background: rgba(229, 62, 62, 0.2);
         }
 
-        /* Сообщения */
         .message {
-            position: fixed;
-            top: 130px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 15px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 1001;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            padding: 14px;
+            border-radius: 8px;
+            margin: 16px 0;
             display: none;
-            max-width: 90%;
-            text-align: center;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translate(-50%, -20px);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
+            font-size: 14px;
         }
 
         .success {
-            background: rgba(52, 199, 89, 0.15);
-            color: #34c759;
-            border-color: rgba(52, 199, 89, 0.3);
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
 
         .error {
-            background: rgba(255, 59, 48, 0.15);
-            color: #ff3b30;
-            border-color: rgba(255, 59, 48, 0.3);
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fecaca;
         }
 
-        /* Загрузка */
         .loading {
             text-align: center;
-            padding: 60px 20px;
-            color: rgba(255, 255, 255, 0.5);
+            padding: 40px;
+            color: #a0aec0;
             font-size: 16px;
         }
 
         .empty {
             text-align: center;
-            padding: 60px 20px;
-            color: rgba(255, 255, 255, 0.5);
+            padding: 40px;
+            color: #a0aec0;
             font-style: italic;
         }
 
-        /* Анимация лайка */
-        @keyframes heartPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .like-pop {
-            animation: heartPop 0.3s ease;
-        }
-
-        /* ===== УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ ===== */
         @media (max-width: 768px) {
             .navbar {
-                width: 95%;
-                top: 65px;
-                padding: 10px 15px;
-            }
-
-            .container {
-                padding: 130px 15px 80px;
-            }
-
-            .dynamic-island {
-                width: 110px;
-                height: 32px;
-                top: 10px;
-            }
-
-            .post-ios {
-                padding: 16px;
-            }
-
-            /* Кнопки навигации для мобильных */
-            .nav-buttons {
-                gap: 6px;
-            }
-
-            .btn {
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-
-            .btn span:not(.btn-icon) {
-                display: none;
-            }
-
-            .profile-btn {
-                padding: 6px;
-            }
-
-            .profile-info {
-                display: none;
-            }
-
-            /* Адаптивность для фотографий */
-            .post-photo {
-                max-height: 300px;
-                border-radius: 12px;
-            }
-
-            .photo-button {
-                width: 120px;
-                min-width: 120px;
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            .post-button {
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            .photo-preview-container {
-                max-height: 250px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .post-actions {
                 flex-direction: column;
+                gap: 15px;
+                text-align: center;
             }
-
-            .photo-button,
-            .post-button {
+            
+            .nav-buttons {
                 width: 100%;
-                min-width: unset;
+                justify-content: center;
+                flex-wrap: wrap;
             }
-
-            .post-photo {
-                max-height: 250px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .dynamic-island {
-                width: 100px;
-                height: 30px;
-                font-size: 13px;
-            }
-
-            .post-photo {
-                max-height: 200px;
+            
+            .post-input {
+                min-height: 100px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- iOS Динамический островок -->
-    <div class="dynamic-island">
-        <span class="island-time" id="currentTime">--:--</span>
-    </div>
-
-    <!-- Навигация -->
-    <div class="navbar">
-        <div class="logo">czhmass</div>
+    <!-- НАВИГАЦИЯ -->
+    <nav class="navbar">
+        <div>
+            <h1 style="margin:0; color:#667eea;">📰 Лента czhmass.com</h1>
+            <p style="margin-top:5px; color:#a0aec0; font-size:14px;">Анонимная социальная сеть</p>
+        </div>
         <div class="nav-buttons">
-            <button class="btn btn-admin" onclick="openAdmin()">
-                <span class="btn-icon">⚙️</span>
-                <span>Админ</span>
-            </button>
-            <button class="profile-btn" onclick="openProfile()">
-                <div class="profile-avatar" id="userAvatar">U</div>
+            <!-- Кнопка профиля -->
+            <a href="profile.html" class="profile-btn" id="profileBtn">
+                <div class="profile-avatar" id="profileAvatar">👤</div>
                 <div class="profile-info">
-                    <div class="profile-username" id="username">User</div>
-                    <div class="profile-label">Профиль</div>
+                    <span class="profile-username" id="profileUsername">Профиль</span>
+                    <span class="profile-label">Мой аккаунт</span>
                 </div>
+            </a>
+            
+            <button class="btn" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;">
+                👑 Админ
             </button>
-            <button class="btn btn-logout" onclick="logout()">
-                <span class="btn-icon">↩️</span>
-                <span>Выйти</span>
-            </button>
+            <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
         </div>
+    </nav>
+
+    <!-- СОЗДАНИЕ ПОСТА -->
+    <div class="create-post">
+        <textarea 
+            id="postText" 
+            class="post-input" 
+            placeholder="Что у вас нового? Пишите анонимно..."
+            maxlength="500"
+        ></textarea>
+        <button id="postButton" class="post-button" onclick="createPost()">
+            📝 Опубликовать пост
+        </button>
     </div>
 
-    <!-- Основной контент -->
-    <div class="container">
-        <!-- Форма создания поста -->
-        <div class="create-post">
-            <textarea 
-                id="postInput" 
-                class="post-input" 
-                placeholder="О чем думаете сегодня? Максимум 500 символов..."
-                maxlength="500"
-            ></textarea>
-
-            <!-- Превью фото -->
-            <div class="photo-preview-container" id="photoPreviewContainer">
-                <img id="photoPreview" class="photo-preview" src="" alt="Превью фото">
-                <button class="remove-photo" onclick="removePhoto()">✕</button>
-            </div>
-
-            <!-- Кнопки действий -->
-            <div class="post-actions">
-                <button 
-                    id="photoButton" 
-                    class="photo-button"
-                    onclick="document.getElementById('photoInput').click()"
-                >
-                    📷 Фото
-                </button>
-                <button 
-                    id="postButton" 
-                    class="post-button"
-                    onclick="createPost()"
-                >
-                    Опубликовать
-                </button>
-            </div>
-
-            <!-- Скрытый input для загрузки фото -->
-            <input 
-                type="file" 
-                id="photoInput" 
-                accept="image/*" 
-                style="display: none;"
-                onchange="handlePhotoSelect(event)"
-            >
-        </div>
-
-        <!-- Контейнер для постов -->
-        <div id="postsContainer">
-            <div class="loading">Загрузка постов...</div>
-        </div>
-
-        <!-- Сообщения -->
-        <div id="message" class="message"></div>
+    <!-- ЛЕНТА ПОСТОВ -->
+    <div id="postsContainer">
+        <div class="loading">Загрузка ленты...</div>
     </div>
+
+    <!-- СООБЩЕНИЯ -->
+    <div id="message" class="message"></div>
 
     <script>
-        // ===== FIREBASE КОНФИГ И ИНИЦИАЛИЗАЦИЯ =====
+        // ===== FIREBASE КОНФИГ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
             authDomain: "czhmass.firebaseapp.com",
@@ -748,9 +431,10 @@
             appId: "1:1064257019843:web:65488b45be2f86838ca776"
         };
 
-        let db, auth, storage;
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        let db, auth;
         let currentUser = null;
-        let selectedPhoto = null;
+        let currentUserData = null;
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -758,7 +442,6 @@
 
         db = firebase.firestore();
         auth = firebase.auth();
-        storage = firebase.storage();
 
         // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
@@ -769,342 +452,289 @@
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                             now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('currentTime').textContent = timeString;
-        }
-
         function formatTime(timestamp) {
-            if (!timestamp) return 'только что';
-            
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffSec = Math.floor(diffMs / 1000);
-            const diffMin = Math.floor(diffSec / 60);
-            const diffHour = Math.floor(diffMin / 60);
-            const diffDay = Math.floor(diffHour / 24);
-
-            if (diffSec < 60) return 'только что';
-            if (diffMin < 60) return `${diffMin} мин назад`;
-            if (diffHour < 24) return `${diffHour} ч назад`;
-            if (diffDay < 7) return `${diffDay} дн назад`;
-            
-            return date.toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            });
-        }
-
-        // ===== РАБОТА С ФОТОГРАФИЯМИ =====
-        function handlePhotoSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // Проверка типа файла
-            if (!file.type.startsWith('image/')) {
-                showMessage('Пожалуйста, выберите файл изображения', 'error');
-                return;
-            }
-
-            // Проверка размера файла (максимум 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showMessage('Файл слишком большой. Максимум 5MB', 'error');
-                return;
-            }
-
-            selectedPhoto = file;
-
-            // Показать превью
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('photoPreview');
-                const container = document.getElementById('photoPreviewContainer');
-                
-                preview.src = e.target.result;
-                container.style.display = 'block';
-                
-                // Прокрутить к превью
-                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removePhoto() {
-            selectedPhoto = null;
-            document.getElementById('photoPreviewContainer').style.display = 'none';
-            document.getElementById('photoInput').value = '';
-        }
-
-        async function uploadPhoto(file) {
-            if (!file) return null;
-
+            if (!timestamp) return 'Только что';
             try {
-                // Генерируем уникальное имя для файла
-                const fileName = `posts/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-                const storageRef = storage.ref().child(fileName);
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
                 
-                // Загружаем файл
-                const snapshot = await storageRef.put(file);
-                const downloadURL = await snapshot.ref.getDownloadURL();
+                if (diff < 60000) return 'Только что';
+                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
+                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
+                if (diff < 604800000) return `${Math.floor(diff / 86400000)} дн назад`;
                 
-                return downloadURL;
-            } catch (error) {
-                console.error('Ошибка загрузки фото:', error);
-                throw error;
+                return date.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return 'Недавно';
             }
         }
 
-        // ===== СОЗДАНИЕ ПОСТА С ФОТО =====
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getAvatarLetter(username) {
+            return username ? username.charAt(0).toUpperCase() : 'А';
+        }
+
+        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
+        function updateProfileButton() {
+            if (currentUserData && currentUserData.username) {
+                document.getElementById('profileAvatar').textContent = getAvatarLetter(currentUserData.username);
+                document.getElementById('profileUsername').textContent = currentUserData.username;
+            }
+        }
+
+        // ===== СОЗДАНИЕ ПОСТА =====
         async function createPost() {
-            const postInput = document.getElementById('postInput');
+            const postText = document.getElementById('postText').value.trim();
             const postButton = document.getElementById('postButton');
-            const photoButton = document.getElementById('photoButton');
             
-            const text = postInput.value.trim();
-            
-            // Проверка ввода
-            if (!text && !selectedPhoto) {
-                showMessage('Введите текст или прикрепите фото', 'error');
+            if (!postText) {
+                showMessage('Введите текст поста', 'error');
                 return;
             }
-
-            if (text.length > 500) {
-                showMessage('Текст слишком длинный. Максимум 500 символов', 'error');
+            
+            if (postText.length > 500) {
+                showMessage('Пост слишком длинный (макс. 500 символов)', 'error');
                 return;
             }
-
-            // Блокируем кнопки
+            
+            if (!currentUser) {
+                showMessage('Вы не авторизованы', 'error');
+                return;
+            }
+            
             postButton.disabled = true;
-            photoButton.disabled = true;
             postButton.textContent = 'Публикация...';
-
+            
             try {
-                let photoURL = null;
-                
-                // Загружаем фото если есть
-                if (selectedPhoto) {
-                    photoURL = await uploadPhoto(selectedPhoto);
-                }
-
-                // Создаем пост в Firestore
-                const postData = {
-                    text: text,
+                await db.collection('posts').add({
+                    text: postText,
                     userId: currentUser.uid,
-                    username: currentUser.displayName || 'Анонимный пользователь',
-                    userInitial: (currentUser.displayName || 'А').charAt(0).toUpperCase(),
-                    likes: 0,
-                    likedBy: [],
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    photoURL: photoURL
-                };
-
-                await db.collection('posts').add(postData);
-
-                // Очищаем форму
-                postInput.value = '';
-                removePhoto();
+                    username: currentUserData.username,
+                    createdAt: new Date(),
+                    likes: 0
+                });
                 
-                showMessage('Пост успешно опубликован!', 'success');
-
+                await db.collection('users').doc(currentUser.uid).update({
+                    postsCount: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                document.getElementById('postText').value = '';
+                
+                showMessage('Пост опубликован!', 'success');
+                
+                setTimeout(loadPosts, 500);
+                
             } catch (error) {
                 console.error('Ошибка создания поста:', error);
-                showMessage('Ошибка при публикации поста', 'error');
+                showMessage('Ошибка публикации: ' + error.message, 'error');
             } finally {
-                // Разблокируем кнопки
                 postButton.disabled = false;
-                photoButton.disabled = false;
-                postButton.textContent = 'Опубликовать';
+                postButton.textContent = '📝 Опубликовать пост';
             }
         }
 
-        // ===== ОТОБРАЖЕНИЕ ПОСТОВ =====
-        function renderPosts(posts) {
-            const container = document.getElementById('postsContainer');
-            
-            if (posts.length === 0) {
-                container.innerHTML = '<div class="empty">Пока нет постов. Будьте первым!</div>';
+        // ===== ПРОСТАЯ СИСТЕМА ЛАЙКОВ =====
+        async function toggleLike(postId, likeBtn) {
+            if (!currentUser) {
+                showMessage('Войдите, чтобы ставить лайки', 'error');
                 return;
             }
-
-            container.innerHTML = '';
             
-            posts.forEach(post => {
-                const postElement = document.createElement('div');
-                postElement.className = 'post-ios';
-                postElement.id = `post-${post.id}`;
-
-                // Проверяем, лайкнул ли текущий пользователь этот пост
-                const isLiked = post.likedBy && post.likedBy.includes(currentUser.uid);
+            const postRef = db.collection('posts').doc(postId);
+            
+            try {
+                // Получаем текущий пост
+                const postDoc = await postRef.get();
+                const postData = postDoc.data();
+                let currentLikes = postData.likes || 0;
                 
-                let photoHTML = '';
-                if (post.photoURL) {
-                    photoHTML = `
-                        <div class="post-photo">
-                            <img src="${post.photoURL}" alt="Фото поста" onclick="openPhoto('${post.photoURL}')">
+                const isLiked = likeBtn.classList.contains('liked');
+                
+                if (isLiked) {
+                    // Убираем лайк
+                    await postRef.update({
+                        likes: currentLikes - 1
+                    });
+                    
+                    likeBtn.classList.remove('liked');
+                    likeBtn.textContent = '🤍';
+                    likeBtn.nextElementSibling.textContent = currentLikes - 1;
+                    
+                } else {
+                    // Ставим лайк
+                    await postRef.update({
+                        likes: currentLikes + 1
+                    });
+                    
+                    likeBtn.classList.add('liked');
+                    likeBtn.textContent = '❤️';
+                    likeBtn.nextElementSibling.textContent = currentLikes + 1;
+                    
+                    showMessage('Лайк поставлен!', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка лайка:', error);
+                
+                if (error.code === 'permission-denied') {
+                    showMessage('Ошибка прав доступа к лайкам', 'error');
+                } else {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // ===== ЗАГРУЗКА ПОСТОВ =====
+        async function loadPosts() {
+            try {
+                const snapshot = await db.collection('posts')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
+                    
+                const postsContainer = document.getElementById('postsContainer');
+                
+                if (snapshot.empty) {
+                    postsContainer.innerHTML = '<div class="empty">Пока нет постов. Будьте первым!</div>';
+                    return;
+                }
+                
+                let postsHTML = '';
+                
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
+                    const postId = doc.id;
+                    const likes = post.likes || 0;
+                    
+                    postsHTML += `
+                        <div class="post" data-post-id="${postId}">
+                            <div class="post-header">
+                                <div class="user-avatar">${getAvatarLetter(post.username)}</div>
+                                <div class="post-user">
+                                    <div class="username">@${escapeHtml(post.username)}</div>
+                                    <div class="post-time">${formatTime(post.createdAt)}</div>
+                                </div>
+                                ${post.userId === currentUser?.uid ? `
+                                    <button class="delete-post" onclick="deletePost('${postId}')" title="Удалить пост">
+                                        🗑️
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="post-content">${escapeHtml(post.text)}</div>
+                            <div class="post-footer">
+                                <div class="like-container">
+                                    <button class="like-btn ${likes > 0 ? 'liked' : ''}" onclick="toggleLike('${postId}', this)">
+                                        ${likes > 0 ? '❤️' : '🤍'}
+                                    </button>
+                                    <span class="like-count">${likes}</span>
+                                </div>
+                                <div class="post-time">${formatTime(post.createdAt)}</div>
+                            </div>
                         </div>
                     `;
-                }
-
-                postElement.innerHTML = `
-                    <div class="post-header">
-                        <div class="user-avatar">${post.userInitial}</div>
-                        <div class="post-user">
-                            <div class="username">${post.username}</div>
-                            <div class="post-time">${formatTime(post.createdAt)}</div>
-                        </div>
-                    </div>
-                    
-                    ${post.text ? `<div class="post-content">${post.text}</div>` : ''}
-                    
-                    ${photoHTML}
-                    
-                    <div class="post-footer">
-                        <div class="like-container">
-                            <button 
-                                class="like-btn ${isLiked ? 'liked' : ''}" 
-                                onclick="toggleLike('${post.id}', ${post.likes}, ${JSON.stringify(post.likedBy || [])})"
-                            >
-                                ${isLiked ? '❤️' : '🤍'}
-                            </button>
-                            <span class="like-count">${post.likes || 0}</span>
-                        </div>
-                    </div>
-                    
-                    ${post.userId === currentUser.uid ? 
-                        `<button class="delete-post" onclick="deletePost('${post.id}')">✕</button>` : 
-                        ''
-                    }
-                `;
-
-                container.appendChild(postElement);
-            });
-        }
-
-        function openPhoto(photoURL) {
-            window.open(photoURL, '_blank');
-        }
-
-        // ===== ЛАЙКИ =====
-        async function toggleLike(postId, currentLikes, likedByArray) {
-            if (!currentUser) return;
-
-            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
-            const likeCount = document.querySelector(`#post-${postId} .like-count`);
-            
-            const isLiked = likedByArray.includes(currentUser.uid);
-            const newLikes = isLiked ? currentLikes - 1 : currentLikes + 1;
-            const newLikedBy = isLiked 
-                ? likedByArray.filter(id => id !== currentUser.uid)
-                : [...likedByArray, currentUser.uid];
-
-            // Обновляем UI сразу для отзывчивости
-            likeBtn.classList.toggle('liked');
-            likeBtn.innerHTML = isLiked ? '🤍' : '❤️';
-            likeCount.textContent = newLikes;
-            likeBtn.classList.add('like-pop');
-            setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
-
-            // Обновляем в Firestore
-            try {
-                await db.collection('posts').doc(postId).update({
-                    likes: newLikes,
-                    likedBy: newLikedBy
                 });
+                
+                postsContainer.innerHTML = postsHTML;
+                
             } catch (error) {
-                console.error('Ошибка обновления лайка:', error);
-                // Откатываем изменения в UI
-                likeBtn.classList.toggle('liked');
-                likeBtn.innerHTML = isLiked ? '❤️' : '🤍';
-                likeCount.textContent = currentLikes;
-                showMessage('Ошибка при обновлении лайка', 'error');
+                console.error('Ошибка загрузки постов:', error);
+                postsContainer.innerHTML = '<div class="error">Ошибка загрузки ленты</div>';
             }
         }
 
         // ===== УДАЛЕНИЕ ПОСТА =====
         async function deletePost(postId) {
             if (!confirm('Удалить этот пост?')) return;
-
+            
             try {
                 await db.collection('posts').doc(postId).delete();
-                document.getElementById(`post-${postId}`).remove();
+                
+                if (currentUser) {
+                    await db.collection('users').doc(currentUser.uid).update({
+                        postsCount: firebase.firestore.FieldValue.increment(-1)
+                    });
+                }
+                
                 showMessage('Пост удален', 'success');
+                
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.style.opacity = '0';
+                    postElement.style.transform = 'translateY(-20px)';
+                    setTimeout(() => {
+                        postElement.remove();
+                        loadPosts();
+                    }, 300);
+                }
+                
             } catch (error) {
                 console.error('Ошибка удаления поста:', error);
-                showMessage('Ошибка при удалении поста', 'error');
+                showMessage('Ошибка удаления: ' + error.message, 'error');
             }
         }
 
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        function loadPosts() {
-            const container = document.getElementById('postsContainer');
-            container.innerHTML = '<div class="loading">Загрузка постов...</div>';
-
-            db.collection('posts')
-                .orderBy('createdAt', 'desc')
-                .onSnapshot(snapshot => {
-                    const posts = [];
-                    snapshot.forEach(doc => {
-                        posts.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    renderPosts(posts);
-                }, error => {
-                    console.error('Ошибка загрузки постов:', error);
-                    container.innerHTML = '<div class="error">Ошибка загрузки постов</div>';
-                });
-        }
-
-        // ===== АУТЕНТИФИКАЦИЯ =====
-        function checkAuth() {
-            auth.onAuthStateChanged(user => {
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
                 currentUser = user;
                 
-                // Обновляем информацию о пользователе
-                document.getElementById('username').textContent = 
-                    user.displayName || 'Пользователь';
-                document.getElementById('userAvatar').textContent = 
-                    (user.displayName || 'U').charAt(0).toUpperCase();
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        currentUserData = userDoc.data();
+                        
+                        updateProfileButton();
+                        
+                        if (currentUserData.isAdmin) {
+                            document.getElementById('adminBtn').style.display = 'inline-block';
+                        }
+                        
+                        loadPosts();
+                    } else {
+                        showMessage('Профиль не найден', 'error');
+                        setTimeout(() => window.location.href = 'profile.html', 2000);
+                    }
+                } catch (error) {
+                    console.error('Ошибка загрузки профиля:', error);
+                    showMessage('Ошибка загрузки', 'error');
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
 
-                loadPosts();
-            });
-        }
-
+        // ===== ВЫХОД =====
         function logout() {
-            auth.signOut()
-                .then(() => {
+            if (confirm('Выйти из аккаунта?')) {
+                auth.signOut().then(() => {
                     window.location.href = 'index.html';
-                })
-                .catch(error => {
-                    console.error('Ошибка выхода:', error);
-                    showMessage('Ошибка при выходе', 'error');
                 });
+            }
         }
 
-        function openAdmin() {
-            showMessage('Админ-панель в разработке', 'info');
-        }
-
-        function openProfile() {
-            showMessage('Профиль в разработке', 'info');
-        }
-
-        // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTime();
-            setInterval(updateTime, 60000);
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.addEventListener('load', () => {
+            console.log('🚀 Лента загружена');
             
-            checkAuth();
+            document.getElementById('postText').focus();
+            
+            document.getElementById('postText').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    createPost();
+                }
+            });
         });
     </script>
 </body>

@@ -223,6 +223,24 @@
             text-overflow: ellipsis;
         }
 
+        .privacy-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .privacy-public {
+            background: #38a169;
+            color: white;
+        }
+
+        .privacy-private {
+            background: #e53e3e;
+            color: white;
+        }
+
         .danger-zone {
             background: #742a2a;
             border: 2px solid #e53e3e;
@@ -306,6 +324,12 @@
             border: 1px solid #fecaca;
         }
 
+        .email-note {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-top: 4px;
+        }
+
         @media (max-width: 768px) {
             .stats {
                 grid-template-columns: 1fr;
@@ -373,6 +397,7 @@
                 <tr>
                     <th>Пользователь</th>
                     <th>Email</th>
+                    <th>Приватность</th>
                     <th>Постов</th>
                     <th>Дата регистрации</th>
                     <th>Действия</th>
@@ -393,6 +418,7 @@
             <thead>
                 <tr>
                     <th>Автор</th>
+                    <th>Email автора</th>
                     <th>Текст</th>
                     <th>Дата</th>
                     <th>Действия</th>
@@ -415,9 +441,6 @@
             </button>
             <button class="btn btn-danger" onclick="showConfirm('deleteAllUsers', 'Удалить ВСЕХ пользователей?', 'Все пользователи, кроме вас, будут удалены.')">
                 👥 Удалить всех пользователей
-            </button>
-            <button class="btn btn-warning" onclick="makeAdminPrompt()">
-                👑 Назначить администратора
             </button>
         </div>
     </div>
@@ -547,9 +570,6 @@
                     case 'deleteAllUsers':
                         await deleteAllUsers();
                         break;
-                    case 'makeAdmin':
-                        await makeAdmin(currentAdminUserId, currentAdminUsername);
-                        break;
                 }
             } catch (error) {
                 console.error('Ошибка выполнения действия:', error);
@@ -576,7 +596,6 @@
             }
 
             try {
-                // Получаем данные пользователя
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
                 if (!userDoc.exists) {
@@ -588,7 +607,6 @@
                 currentUserData = userDoc.data();
                 currentUser = user;
 
-                // Проверяем права админа
                 if (!currentUserData.isAdmin) {
                     showMessage('⛔ У вас нет прав администратора', 'error');
                     setTimeout(() => window.location.href = 'feed.html', 2000);
@@ -597,7 +615,6 @@
 
                 console.log('✅ Админ авторизован:', currentUserData.username);
                 
-                // Загружаем данные
                 loadStatistics();
                 loadUsers();
                 loadPosts();
@@ -611,21 +628,17 @@
         // ===== СТАТИСТИКА =====
         async function loadStatistics() {
             try {
-                // Получаем пользователей
                 const usersSnapshot = await db.collection('users').get();
                 const totalUsers = usersSnapshot.size;
                 
-                // Считаем админов
                 let adminCount = 0;
                 usersSnapshot.forEach(doc => {
                     if (doc.data().isAdmin) adminCount++;
                 });
 
-                // Получаем посты
                 const postsSnapshot = await db.collection('posts').get();
                 const totalPosts = postsSnapshot.size;
                 
-                // Считаем посты за сегодня
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 let todayPosts = 0;
@@ -638,7 +651,6 @@
                     }
                 });
 
-                // Обновляем статистику
                 document.getElementById('totalUsers').textContent = totalUsers;
                 document.getElementById('totalPosts').textContent = totalPosts;
                 document.getElementById('todayPosts').textContent = todayPosts;
@@ -676,8 +688,9 @@
                     const userId = doc.id;
                     const isCurrentUser = userId === currentUser.uid;
                     
-                    // Считаем посты пользователя
                     let postsCount = user.postsCount || 0;
+                    const emailStatus = user.displayEmail ? 'публичный' : 'скрыт';
+                    const emailStatusClass = user.displayEmail ? 'privacy-public' : 'privacy-private';
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -691,7 +704,13 @@
                                 </div>
                             </div>
                         </td>
-                        <td>${escapeHtml(user.email || 'Нет email')}</td>
+                        <td>
+                            <div>${escapeHtml(user.email || 'Нет email')}</div>
+                            <div class="email-note">Админы всегда видят email</div>
+                        </td>
+                        <td>
+                            <span class="privacy-status ${emailStatusClass}">${emailStatus}</span>
+                        </td>
                         <td>${postsCount}</td>
                         <td>${formatDate(user.createdAt)}</td>
                         <td>
@@ -700,10 +719,6 @@
                                     <button class="btn btn-success" style="padding:6px 12px; font-size:13px;" 
                                             onclick="toggleAdmin('${userId}', '${escapeHtml(user.username)}', ${user.isAdmin || false})">
                                         ${user.isAdmin ? '👑 Снять' : '👑 Назначить'}
-                                    </button>
-                                    <button class="btn btn-warning" style="padding:6px 12px; font-size:13px;" 
-                                            onclick="viewUserPosts('${userId}', '${escapeHtml(user.username)}')">
-                                        📝 Посты
                                     </button>
                                     <button class="btn btn-danger" style="padding:6px 12px; font-size:13px;" 
                                             onclick="deleteUser('${userId}', '${escapeHtml(user.username)}')">
@@ -733,7 +748,10 @@
             const emptyDiv = document.getElementById('postsEmpty');
 
             try {
-                const snapshot = await db.collection('posts').orderBy('createdAt', 'desc').limit(100).get();
+                const snapshot = await db.collection('posts')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
                 
                 loadingDiv.style.display = 'none';
                 
@@ -747,12 +765,28 @@
                 table.style.display = 'table';
                 tbody.innerHTML = '';
 
+                // Получаем всех пользователей для email
+                const usersSnapshot = await db.collection('users').get();
+                const usersMap = new Map();
+                usersSnapshot.forEach(doc => {
+                    usersMap.set(doc.id, doc.data());
+                });
+
                 snapshot.forEach(doc => {
                     const post = doc.data();
                     const postId = doc.id;
                     const shortText = post.text && post.text.length > 100 
                         ? post.text.substring(0, 100) + '...' 
                         : post.text || '';
+                    
+                    // Получаем email автора
+                    let userEmail = 'Неизвестно';
+                    let displayEmailStatus = '';
+                    if (usersMap.has(post.userId)) {
+                        const userData = usersMap.get(post.userId);
+                        userEmail = userData.email || 'Нет email';
+                        displayEmailStatus = userData.displayEmail ? '' : '🔒';
+                    }
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -761,9 +795,13 @@
                                 <div class="user-avatar" style="background:#805ad5;">${getAvatarLetter(post.username)}</div>
                                 <div>
                                     <strong>@${escapeHtml(post.username || 'Аноним')}</strong>
-                                    <div style="font-size:12px; color:#a0aec0;">${post.userEmail || ''}</div>
+                                    <div style="font-size:12px; color:#a0aec0;">ID: ${post.userId.substring(0, 8)}...</div>
                                 </div>
                             </div>
+                        </td>
+                        <td>
+                            ${escapeHtml(userEmail)} ${displayEmailStatus}
+                            <div class="email-note">${displayEmailStatus ? 'Скрыт для пользователей' : 'Публичный'}</div>
                         </td>
                         <td class="post-content" title="${escapeHtml(post.text || '')}">
                             ${escapeHtml(shortText)}
@@ -800,7 +838,6 @@
 
                 showMessage(`✅ Пользователь @${username} ${!isCurrentlyAdmin ? 'назначен админом' : 'лишен прав админа'}`, 'success');
                 
-                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -823,10 +860,8 @@
             }
 
             try {
-                // Удаляем пользователя
                 await db.collection('users').doc(userId).delete();
                 
-                // Удаляем посты пользователя
                 const postsSnapshot = await db.collection('posts')
                     .where('userId', '==', userId)
                     .get();
@@ -839,7 +874,6 @@
 
                 showMessage(`✅ Пользователь @${username} удален`, 'success');
                 
-                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -861,7 +895,6 @@
                 await db.collection('posts').doc(postId).delete();
                 showMessage('✅ Пост удален', 'success');
                 
-                // Обновляем посты
                 setTimeout(loadPosts, 1000);
                 setTimeout(loadStatistics, 1000);
 
@@ -873,10 +906,8 @@
 
         async function deleteAllPosts() {
             try {
-                // Получаем все посты
                 const snapshot = await db.collection('posts').get();
                 
-                // Удаляем пачкой (Firestore позволяет до 500 операций)
                 const batch = db.batch();
                 let count = 0;
                 
@@ -887,7 +918,6 @@
                 
                 await batch.commit();
                 
-                // Обновляем счетчики постов у пользователей
                 const usersSnapshot = await db.collection('users').get();
                 const usersBatch = db.batch();
                 
@@ -899,7 +929,6 @@
                 
                 showMessage(`✅ Удалено ${count} постов`, 'success');
                 
-                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadPosts();
@@ -913,7 +942,6 @@
 
         async function deleteAllUsers() {
             try {
-                // Получаем всех пользователей кроме себя
                 const snapshot = await db.collection('users').get();
                 
                 const batch = db.batch();
@@ -928,12 +956,10 @@
                 
                 await batch.commit();
                 
-                // Удаляем все посты
                 await deleteAllPosts();
                 
                 showMessage(`✅ Удалено ${count} пользователей`, 'success');
                 
-                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -945,21 +971,36 @@
             }
         }
 
-        function viewUserPosts(userId, username) {
-            alert(`Просмотр постов пользователя @${username}\n\nЭта функция будет реализована в следующем обновлении.`);
-        }
-
-        function makeAdminPrompt() {
-            const email = prompt('Введите email пользователя для назначения админом:');
-            if (!email) return;
-            
-            // Здесь можно добавить поиск пользователя по email и назначение админом
-            alert(`Поиск пользователя с email: ${email}\n\nЭта функция будет реализована в следующем обновлении.`);
-        }
-
         function searchContent() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            alert(`Поиск по запросу: "${query}"\n\nЭта функция будет реализована в следующем обновлении.`);
+            showMessage(`Поиск по запросу: "${query}"`, 'success');
+            
+            // Простая фильтрация таблиц
+            filterTable('usersTable', query);
+            filterTable('postsTable', query);
+        }
+
+        function filterTable(tableId, query) {
+            const table = document.getElementById(tableId);
+            if (!table || table.style.display === 'none') return;
+            
+            const rows = table.getElementsByTagName('tr');
+            let visibleCount = 0;
+            
+            for (let i = 1; i < rows.length; i++) { // Начинаем с 1, пропускаем заголовок
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+            
+            if (visibleCount === 0 && rows.length > 1) {
+                showMessage('Ничего не найдено', 'error');
+            }
         }
 
         function clearSearch() {

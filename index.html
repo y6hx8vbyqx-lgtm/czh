@@ -573,9 +573,9 @@
                 });
 
                 showMessage('Аккаунт успешно создан! Идет перенаправление...', 'success');
-                // Через 2 секунды перенаправляем на главную страницу
+                // Через 2 секунды перенаправляем на главную страницу feed.html
                 setTimeout(() => {
-                    window.location.href = '/home.html';
+                    window.location.href = 'feed.html';
                 }, 2000);
 
             } catch (error) {
@@ -626,8 +626,9 @@
                 await auth.signInWithEmailAndPassword(email, password);
                 showMessage('Вход выполнен! Перенаправление...', 'success');
                 
+                // Перенаправляем на feed.html
                 setTimeout(() => {
-                    window.location.href = '/home.html';
+                    window.location.href = 'feed.html';
                 }, 1500);
 
             } catch (error) {
@@ -648,13 +649,13 @@
         // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
         document.addEventListener('DOMContentLoaded', function() {
             updateTime();
-            setInterval(updateTime, 60000);
+            setInterval(updateTime, 60000); // Обновлять время каждую минуту
             
             // Проверяем, авторизован ли пользователь
             auth.onAuthStateChanged((user) => {
                 if (user) {
-                    // Если пользователь уже вошел, перенаправляем
-                    window.location.href = '/home.html';
+                    // Если пользователь уже вошел, перенаправляем на feed.html
+                    window.location.href = 'feed.html';
                 }
             });
         });

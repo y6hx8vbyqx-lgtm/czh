@@ -828,10 +828,7 @@
             try {
                 console.log(`🗑️ Удаление пользователя ${username} (ID: ${userId})`);
                 
-                // Удаляем пользователя
-                await db.collection('users').doc(userId).delete();
-                
-                // Удаляем посты пользователя
+                // 1. Сначала удаляем все посты пользователя
                 const postsSnapshot = await db.collection('posts')
                     .where('userId', '==', userId)
                     .get();
@@ -845,6 +842,13 @@
                     console.log(`✅ Удалено ${postsSnapshot.size} постов пользователя`);
                 }
                 
+                // 2. Удаляем пользователя из базы
+                await db.collection('users').doc(userId).delete();
+                
+                // 3. Удаляем пользователя из Authentication (Firebase Auth)
+                // Для этого нужна Cloud Function или доступ к Firebase Admin SDK
+                // Временно оставляем только удаление из Firestore
+                
                 showMessage(`✅ Пользователь @${username} удален`, 'success');
                 
                 // Обновляем данные
@@ -857,6 +861,11 @@
             } catch (error) {
                 console.error('❌ Ошибка удаления пользователя:', error);
                 showMessage('Ошибка удаления: ' + error.message, 'error');
+                
+                // Показываем детали ошибки для отладки
+                if (error.code === 'permission-denied') {
+                    showMessage('⛔ Ошибка прав доступа. Проверьте правила Firestore!', 'error');
+                }
             }
         }
 
@@ -876,6 +885,10 @@
             } catch (error) {
                 console.error('❌ Ошибка удаления поста:', error);
                 showMessage('Ошибка: ' + error.message, 'error');
+                
+                if (error.code === 'permission-denied') {
+                    showMessage('⛔ Ошибка прав доступа. Проверьте правила Firestore!', 'error');
+                }
             }
         }
 

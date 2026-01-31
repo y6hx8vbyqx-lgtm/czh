@@ -25,7 +25,7 @@
             padding-top: 10px;
         }
 
-        /* iOS Динамический островок БЕЗ ТЕМНОГО ФОНА */
+        /* iOS Динамический островок */
         .dynamic-island {
             position: fixed;
             top: 15px;
@@ -83,7 +83,7 @@
 
         .nav-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
@@ -101,7 +101,8 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            min-width: 0;
+            min-width: auto;
+            white-space: nowrap;
         }
 
         .btn:hover {
@@ -119,14 +120,14 @@
         .btn-logout {
             background: rgba(255, 59, 48, 0.2);
             color: #ff3b30;
-            padding: 8px 12px;
+            padding: 8px 14px;
         }
 
         .btn-logout:hover {
             background: rgba(255, 59, 48, 0.3);
         }
 
-        /* Кнопка профиля */
+        /* Кнопка профиля - УЛУЧШЕННАЯ ДЛЯ МОБИЛЬНЫХ */
         .profile-btn {
             background: rgba(255, 255, 255, 0.1);
             color: white;
@@ -139,7 +140,7 @@
             gap: 8px;
             transition: all 0.2s;
             backdrop-filter: blur(10px);
-            min-width: 0;
+            min-width: auto;
         }
 
         .profile-btn:hover {
@@ -148,8 +149,8 @@
         }
 
         .profile-avatar {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 8px;
             display: flex;
@@ -322,7 +323,7 @@
             border-top: 0.5px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Лайки - СУПЕР БЫСТРЫЕ */
+        /* Лайки */
         .like-container {
             display: flex;
             align-items: center;
@@ -454,7 +455,7 @@
             font-style: italic;
         }
 
-        /* Анимация лайка - МГНОВЕННАЯ */
+        /* Анимация лайка */
         @keyframes heartPop {
             0% { transform: scale(1); }
             50% { transform: scale(1.2); }
@@ -465,12 +466,12 @@
             animation: heartPop 0.3s ease;
         }
 
-        /* Адаптивность */
+        /* ===== УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ ===== */
         @media (max-width: 768px) {
             .navbar {
                 width: 95%;
                 top: 65px;
-                padding: 10px 16px;
+                padding: 10px 15px;
             }
             
             .container {
@@ -487,43 +488,128 @@
                 padding: 16px;
             }
             
+            /* Кнопки навигации для мобильных */
+            .nav-buttons {
+                gap: 6px;
+            }
+            
             .btn {
-                padding: 7px 12px;
+                padding: 8px 12px;
                 font-size: 13px;
             }
             
-            .profile-btn {
-                padding: 5px 8px;
+            .btn span:not(.btn-icon) {
+                display: none; /* Скрываем текст на мобильных */
             }
             
-            .profile-username {
-                max-width: 60px;
+            .btn-icon {
+                display: inline-block;
+                font-size: 16px;
+            }
+            
+            /* Кнопка профиля на мобильных - ТОЛЬКО АВАТАРКА */
+            .profile-btn {
+                padding: 6px;
+                min-width: 44px;
+                justify-content: center;
+            }
+            
+            .profile-avatar {
+                width: 32px;
+                height: 32px;
+                margin: 0;
+            }
+            
+            .profile-info {
+                display: none; /* Скрываем текст на мобильных */
+            }
+            
+            /* Кнопка выхода - с иконкой дверь */
+            .btn-logout {
+                padding: 8px 12px;
+                min-width: 44px;
+                justify-content: center;
+            }
+            
+            /* Кнопка админа - с иконкой короны */
+            .btn-admin {
+                padding: 8px 12px;
+                min-width: 44px;
+                justify-content: center;
+            }
+            
+            /* Уменьшаем логотип */
+            .logo {
+                font-size: 18px;
             }
         }
 
         @media (max-width: 480px) {
-            .profile-btn .profile-label {
-                display: none;
+            .navbar {
+                padding: 8px 12px;
             }
             
-            .profile-btn .profile-username {
-                display: none;
+            .logo {
+                font-size: 16px;
             }
             
-            .profile-btn {
-                padding: 6px;
-                min-width: 40px;
+            .btn {
+                padding: 6px 10px;
             }
             
-            .btn-logout span,
-            .btn-admin span {
-                display: none;
-            }
-            
+            .profile-btn,
             .btn-logout,
             .btn-admin {
-                padding: 8px;
                 min-width: 40px;
+                padding: 6px 8px;
+            }
+            
+            .profile-avatar {
+                width: 28px;
+                height: 28px;
+                font-size: 13px;
+            }
+            
+            .user-avatar {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            
+            .username {
+                font-size: 15px;
+            }
+            
+            .post-content {
+                font-size: 15px;
+            }
+        }
+
+        /* Для очень маленьких экранов */
+        @media (max-width: 360px) {
+            .navbar {
+                padding: 6px 10px;
+            }
+            
+            .logo {
+                font-size: 14px;
+            }
+            
+            .nav-buttons {
+                gap: 4px;
+            }
+            
+            .profile-btn,
+            .btn-logout,
+            .btn-admin {
+                min-width: 36px;
+                padding: 5px 6px;
+            }
+            
+            .dynamic-island {
+                width: 100px;
+                height: 30px;
+                font-size: 13px;
             }
         }
     </style>
@@ -539,22 +625,25 @@
         <div class="logo">czhmass</div>
         <div class="nav-buttons">
             <!-- Кнопка профиля -->
-            <button class="profile-btn" onclick="window.location.href='profile.html'" id="profileBtn">
-                <div class="profile-avatar" id="profileAvatar">?</div>
+            <button class="profile-btn" onclick="window.location.href='profile.html'" id="profileBtn" title="Профиль">
+                <div class="profile-avatar" id="profileAvatar">
+                    <span class="btn-icon">👤</span>
+                </div>
                 <div class="profile-info">
                     <span class="profile-username" id="profileUsername">Профиль</span>
                     <span class="profile-label">Мой аккаунт</span>
                 </div>
             </button>
             
-            <!-- Кнопка администратора (скрыта по умолчанию) -->
-            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;">
-                <span>👑</span>
+            <!-- Кнопка администратора -->
+            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;" title="Админ панель">
+                <span class="btn-icon">👑</span>
                 <span>Админ</span>
             </button>
             
-            <button class="btn btn-logout" onclick="logout()">
-                <span>🚪</span>
+            <!-- Кнопка выхода -->
+            <button class="btn btn-logout" onclick="logout()" title="Выйти">
+                <span class="btn-icon">🚪</span>
                 <span>Выйти</span>
             </button>
         </div>
@@ -666,13 +755,42 @@
         // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
         function updateProfileButton(userData) {
             const avatar = document.getElementById('profileAvatar');
-            const username = document.getElementById('profileUsername');
             
             if (userData && userData.username) {
-                avatar.textContent = getAvatarLetter(userData.username);
-                username.textContent = userData.username;
+                // На десктопе показываем букву, на мобильных - иконку
+                if (window.innerWidth > 768) {
+                    avatar.textContent = getAvatarLetter(userData.username);
+                    avatar.querySelector('.btn-icon')?.remove();
+                } else {
+                    const icon = avatar.querySelector('.btn-icon');
+                    if (!icon) {
+                        avatar.innerHTML = '<span class="btn-icon">👤</span>';
+                    }
+                }
             }
         }
+
+        // ===== АДАПТИВНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА =====
+        function updateMobileUI() {
+            const profileBtn = document.getElementById('profileBtn');
+            const adminBtn = document.getElementById('adminBtn');
+            const logoutBtn = document.querySelector('.btn-logout');
+            
+            if (window.innerWidth <= 768) {
+                // Мобильная версия - показываем только иконки
+                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'none', 'important');
+                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
+                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
+            } else {
+                // Десктоп версия - показываем текст
+                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'flex', 'important');
+                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
+                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
+            }
+        }
+
+        // Слушаем изменение размера окна
+        window.addEventListener('resize', updateMobileUI);
 
         // ===== СОЗДАНИЕ ПОСТА =====
         async function createPost() {
@@ -791,7 +909,7 @@
             }
         }
 
-        // ===== ЗАГРУЗКА ПОСТОВ С КЭШИРОВАНИЕМ =====
+        // ===== ЗАГРУЗКА ПОСТОВ =====
         async function loadPosts() {
             try {
                 const snapshot = await db.collection('posts')
@@ -901,6 +1019,7 @@
                         currentUserData = userDoc.data();
                         
                         updateProfileButton(currentUserData);
+                        updateMobileUI(); // Обновляем UI для текущего размера экрана
                         
                         // ПОКАЗЫВАЕМ КНОПКУ АДМИНА ЕСЛИ ПОЛЬЗОВАТЕЛЬ АДМИН
                         if (currentUserData.isAdmin) {
@@ -977,6 +1096,9 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.addEventListener('load', () => {
             console.log('🚀 Лента загружена');
+            
+            // Инициализируем мобильный UI
+            updateMobileUI();
             
             document.getElementById('postText').focus();
             

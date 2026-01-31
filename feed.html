@@ -1,441 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Лента - czhmass.com</title>
     <meta charset="UTF-8">
-    <!-- ДОБАВЬТЕ ЭТОТ СКРИПТ ПЕРВЫМ -->
-    <script>
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ ДО ЗАГРУЗКИ СТРАНИЦЫ =====
-        (function() {
-            const currentUser = localStorage.getItem('czhmass_currentUser');
-            if (!currentUser) {
-                // Перенаправляем СРАЗУ, не показывая страницу
-                window.location.replace('index.html');
-            }
-        })();
-    </script>
-    <style>
-        /* остальные стили */
-    </style>
-</head>
-    
-<!DOCTYPE html>
-<html>
-<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Лента - czhmass.com</title>
-    <meta charset="UTF-8">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f8fa;
+            color: #1a202c;
+            line-height: 1.6;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        /* Навигация */
         .navbar {
             background: white;
             padding: 15px 20px;
-            border-radius: 10px;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .search-box {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .nav-buttons {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
-        .search-input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
+        
         .btn {
             background: #667eea;
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
+        
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
         .btn-profile {
             background: #48bb78;
         }
-        .create-post {
+        
+        .btn-admin {
+            background: #805ad5;
+            display: none;
+        }
+        
+        .btn-logout {
+            background: #e53e3e;
+        }
+        
+        /* Поиск */
+        .search-container {
             background: white;
             padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            margin: 0;
+            border-bottom: 1px solid #e2e8f0;
         }
-        textarea {
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* Создание поста */
+        .create-post-container {
+            background: white;
+            padding: 25px;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 600px;
+        }
+        
+        .create-post-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .post-textarea {
             width: 100%;
-            height: 100px;
+            min-height: 120px;
             padding: 15px;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
-            margin-bottom: 10px;
+            font-family: inherit;
             resize: vertical;
+            margin-bottom: 15px;
+            transition: border 0.2s;
         }
+        
+        .post-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .post-hint {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 15px;
+        }
+        
+        /* Лента постов */
+        .feed-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .feed-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .post {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+        
         .post-header {
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #a0aec0;
-            font-style: italic;
-        }
-        .user-search-result {
-            background: #f8f9fa;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <h2 style="margin:0;">czhmass.com</h2>
-        <div>
-            <button class="btn btn-profile" onclick="window.location.href='profile.html'">👤 Профиль</button>
-            <button class="btn" onclick="logout()">🚪 Выйти</button>
-        </div>
-    </div>
-    
-    <!-- ПРОСТОЙ ПОИСК -->
-    <div class="search-box">
-        <input type="text" class="search-input" id="searchInput" 
-               placeholder="Найти пользователя...">
-        <button class="btn" onclick="searchUsers()">🔍 Поиск</button>
-    </div>
-    
-    <!-- РЕЗУЛЬТАТЫ ПОИСКА (скрыты по умолчанию) -->
-    <div id="searchResults" style="display:none; margin-bottom:20px;">
-        <h3>Найденные пользователи:</h3>
-        <div id="usersList"></div>
-    </div>
-    
-    <!-- СОЗДАНИЕ ПОСТА -->
-   function createPost() {
-    console.log('=== СОЗДАНИЕ ПОСТА - ИСПРАВЛЕННАЯ ВЕРСИЯ ===');
-    
-    const text = document.getElementById('postText').value.trim();
-    const messageEl = document.getElementById('message');
-    
-    console.log('Текущий пользователь:', currentUser);
-    console.log('Все пользователи:', users);
-    
-    if (!text) {
-        showMessage('Введите текст поста', 'error');
-        return;
-    }
-    
-    // ВАЖНО: Проверяем и создаем структуру если нужно
-    if (!currentUser) {
-        showMessage('Ошибка: вы не авторизованы', 'error');
-        window.location.href = 'index.html';
-        return;
-    }
-    
-    // ЕСЛИ пользователя нет в users - создаем!
-    if (!users[currentUser]) {
-        console.warn('⚠️ Пользователь не найден, создаем нового');
-        users[currentUser] = {
-            email: currentUser + '@czhmass.com', // дефолтный email
-            password: 'auto-generated',
-            posts: [], // ВАЖНО: создаем массив постов
-            postTimes: [], // ВАЖНО: создаем массив времен
-            createdAt: new Date().toISOString(),
-            isAdmin: false
-        };
-        console.log('Создан новый пользователь:', users[currentUser]);
-    }
-    
-    // ГАРАНТИРУЕМ что массивы существуют
-    if (!Array.isArray(users[currentUser].posts)) {
-        console.warn('⚠️ posts не массив, исправляем');
-        users[currentUser].posts = [];
-    }
-    if (!Array.isArray(users[currentUser].postTimes)) {
-        console.warn('⚠️ postTimes не массив, исправляем');
-        users[currentUser].postTimes = [];
-    }
-    
-    console.log('Добавляем пост. Текущие посты:', users[currentUser].posts);
-    
-    // Добавляем пост
-    users[currentUser].posts.push(text);
-    users[currentUser].postTimes.push(new Date().toISOString());
-    
-    console.log('После добавления:', users[currentUser]);
-    
-    try {
-        localStorage.setItem('czhmass_users', JSON.stringify(users));
-        console.log('✅ Данные сохранены в localStorage');
-        showMessage('✅ Пост опубликован!', 'success');
-    } catch (e) {
-        console.error('❌ Ошибка сохранения:', e);
-        showMessage('❌ Ошибка сохранения', 'error');
-        return;
-    }
-    
-    // Очищаем поле и обновляем ленту
-    document.getElementById('postText').value = '';
-    setTimeout(() => {
-        loadPosts();
-    }, 100);
-}
-    <!-- ЛЕНТА ПОСТОВ -->
-    <div id="posts">
-        <h3>📰 Лента постов:</h3>
-        <div class="empty" id="emptyMsg">Загрузка постов...</div>
-    </div>
-
-    <script>
-  <script>
-    // ===== ПРОВЕРКА АВТОРИЗАЦИИ СРАЗУ =====
-    (function() {
-        const currentUser = localStorage.getItem('czhmass_currentUser');
-        if (!currentUser) {
-            alert('❌ Сначала войдите в систему!');
-            window.location.href = 'index.html';
-            return;
+            margin-bottom: 15px;
         }
         
-        // Загружаем остальные данные только если пользователь авторизован
-        window.czUsers = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-        window.czCurrentUser = currentUser;
-    })();
-    
-    // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ (после проверки) =====
-    let currentUser = window.czCurrentUser;
-    let users = window.czUsers;
-    
-    // ... остальной код без изменений ...
-</script>
-    
-        // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ =====
-        function searchUsers() {
-            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
-            const resultsDiv = document.getElementById('searchResults');
-            const usersList = document.getElementById('usersList');
-            
-            if (!searchTerm) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-            
-            // Ищем пользователей
-            const results = [];
-            for (const username in users) {
-                if (username.toLowerCase().includes(searchTerm) && username !== currentUser) {
-                    results.push(username);
-                }
-            }
-            
-            if (results.length === 0) {
-                usersList.innerHTML = '<p style="color:#718096; text-align:center;">Пользователи не найдены</p>';
-            } else {
-                usersList.innerHTML = '';
-                results.forEach(username => {
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'user-search-result';
-                    userDiv.innerHTML = `
-                        <div>
-                            <strong>@${username}</strong>
-                            <div style="color:#718096; font-size:14px;">
-                                Постов: ${users[username].posts ? users[username].posts.length : 0}
-                            </div>
-                        </div>
-                        <button onclick="viewUserProfile('${username}')" 
-                                style="background:#667eea; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">
-                            👁️ Профиль
-                        </button>
-                    `;
-                    usersList.appendChild(userDiv);
-                });
-            }
-            
-            resultsDiv.style.display = 'block';
+        .post-author {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 17px;
         }
         
-        // ===== ПРОСМОТР ПРОФИЛЯ =====
-        function viewUserProfile(username) {
-            const userData = users[username];
-            if (!userData) return;
-            
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="background:white; padding:30px; border-radius:15px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto; position:relative;">
-                    <button onclick="this.parentElement.parentElement.remove()" 
-                            style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#718096;">
-                        ×
-                    </button>
-                    
-                    <h3 style="margin-top:0;">@${username}</h3>
-                    
-                    <div style="margin:20px 0;">
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <div style="width:50px; height:50px; background:#667eea; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold;">
-                                ${username.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <div><strong>Email:</strong> ${userData.email || 'не указан'}</div>
-                                <div><strong>Постов:</strong> ${userData.posts ? userData.posts.length : 0}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h4>Последние посты:</h4>
-                    ${userData.posts && userData.posts.length > 0 ? 
-                      userData.posts.slice(-3).reverse().map(post => 
-                        `<div style="background:#f8f9fa; padding:12px; border-radius:8px; margin:8px 0;">
-                            ${escapeHtml(post)}
-                        </div>`
-                      ).join('') : 
-                      '<p style="color:#718096; text-align:center;">Нет постов</p>'}
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Закрытие по клику на фон
-            modal.onclick = function(e) {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            };
+        .post-time {
+            color: #a0aec0;
+            font-size: 14px;
         }
         
-        // ===== СОЗДАНИЕ ПОСТА =====
-        function createPost() {
-            const text = document.getElementById('postText').value.trim();
-            const messageEl = document.getElementById('message');
-            
-            if (!text) {
-                showMessage('Введите текст поста', 'error');
-                return;
-            }
-            
-            if (!users[currentUser]) {
-                showMessage('Ошибка: пользователь не найден', 'error');
-                return;
-            }
-            
-            if (!Array.isArray(users[currentUser].posts)) {
-                users[currentUser].posts = [];
-                users[currentUser].postTimes = [];
-            }
-            
-            users[currentUser].posts.push(text);
-            users[currentUser].postTimes.push(new Date().toISOString());
-            
-            try {
-                localStorage.setItem('czhmass_users', JSON.stringify(users));
-                showMessage('✅ Пост опубликован!', 'success');
-            } catch (e) {
-                showMessage('❌ Ошибка сохранения', 'error');
-                return;
-            }
-            
-            document.getElementById('postText').value = '';
-            loadPosts();
+        .post-content {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #2d3748;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
         
-        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.style.display = 'block';
-            messageEl.style.color = type === 'success' ? '#48bb78' : '#e53e3e';
-            messageEl.style.padding = '10px';
-            messageEl.style.borderRadius = '5px';
-            
-            setTimeout(() => {
-                messageEl.style.display = 'none';
-            }, 3000);
+        /* Результаты поиска */
+        .search-results {
+            background: white;
+            padding: 20px;
+            margin: 0 auto 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 600px;
+            display: none;
         }
         
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML.replace(/\n/g, '<br>');
+        .user-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
         }
         
-        function formatTime(timeString) {
-            try {
-                const postTime = new Date(timeString);
-                const now = new Date();
-                const diff = now - postTime;
-                const minutes = Math.floor(diff / 60000);
-                
-                if (minutes < 1) return 'только что';
-                if (minutes < 60) return `${minutes} мин назад`;
-                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
-                return postTime.toLocaleDateString('ru-RU');
-            } catch {
-                return 'недавно';
-            }
+        .user-result:last-child {
+            border-bottom: none;
         }
         
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('czhmass_currentUser');
-                window.location.href = 'index.html';
-            }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
         
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        window.onload = function() {
-            console.log('Текущий пользователь:', currentUser);
-            console.log('Все пользователи:', users);
-            loadPosts();
-            
-            // Enter для поиска
-            document.getElementById('searchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') searchUsers();
-            });
-            
-            // Ctrl+Enter для публикации
-            document.getElementById('postText').addEventListener('keydown', function(e) {
-                if (e.ctrlKey && e.key === 'Enter') createPost();
-            });
-        };
-    </script>
-</body>
-</html>
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            color: white;
+            border-radius:

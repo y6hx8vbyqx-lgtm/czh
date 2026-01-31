@@ -82,6 +82,18 @@
             background: #d8dadf;
         }
 
+        .btn-delete {
+            background: #e53e3e;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+
+        .btn-delete:hover {
+            background: #c53030;
+        }
+
         .create-post {
             background: white;
             padding: 24px;
@@ -140,6 +152,7 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             border-left: 4px solid #1877f2;
             transition: transform 0.2s;
+            position: relative;
         }
 
         .post:hover {
@@ -158,6 +171,22 @@
             font-weight: 600;
             color: #1877f2;
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .post-author-avatar {
+            width: 32px;
+            height: 32px;
+            background: #1877f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
         }
 
         .post-time {
@@ -171,6 +200,16 @@
             color: #050505;
             white-space: pre-wrap;
             word-break: break-word;
+            margin-top: 12px;
+            padding-right: 30px;
+        }
+
+        .post-actions {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
         }
 
         .message {
@@ -204,6 +243,16 @@
             padding: 40px;
             color: #65676b;
             font-style: italic;
+        }
+
+        .your-post-badge {
+            background: #38a169;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -245,6 +294,7 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         let db, auth;
         let currentUserData = null;
+        let postsCache = new Map(); // Кэш постов для быстрого доступа
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -279,12 +329,17 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             return text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        function getAvatarLetter(username) {
+            return username ? username.charAt(0).toUpperCase() : 'U';
         }
 
         // ===== ВЫХОД =====
@@ -378,16 +433,40 @@
                     return;
                 }
 
+                // Очищаем кэш
+                postsCache.clear();
+                
                 let html = '';
                 snapshot.forEach(doc => {
                     const post = doc.data();
+                    const postId = doc.id;
+                    const avatarLetter = getAvatarLetter(post.username);
+                    
+                    // Сохраняем в кэш
+                    postsCache.set(postId, {
+                        id: postId,
+                        ...post
+                    });
+                    
+                    // Проверяем, принадлежит ли пост текущему пользователю
+                    const isMyPost = post.userId === auth.currentUser?.uid;
+                    
                     html += `
-                        <div class="post">
+                        <div class="post" id="post-${postId}">
                             <div class="post-header">
-                                <span class="post-author">@${escapeHtml(post.username || 'Аноним')}</span>
+                                <div class="post-author">
+                                    <div class="post-author-avatar">${avatarLetter}</div>
+                                    @${escapeHtml(post.username || 'Аноним')}
+                                    ${isMyPost ? '<span class="your-post-badge">Ваш пост</span>' : ''}
+                                </div>
                                 <span class="post-time">${formatTime(post.createdAt)}</span>
                             </div>
                             <div class="post-content">${escapeHtml(post.text || '')}</div>
+                            ${isMyPost ? `
+                                <div class="post-actions">
+                                    <button class="btn btn-delete" onclick="deleteMyPost('${postId}')">🗑️ Удалить</button>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -399,6 +478,70 @@
                 console.error('❌ Ошибка загрузки постов:', error);
                 postsContainer.innerHTML = '<div class="error">Ошибка загрузки постов. Проверьте правила Firestore.</div>';
                 showMessage('Ошибка загрузки ленты', 'error');
+            }
+        }
+
+        // ===== УДАЛЕНИЕ СВОЕГО ПОСТА =====
+        async function deleteMyPost(postId) {
+            const user = auth.currentUser;
+            if (!user) {
+                showMessage('Вы не авторизованы', 'error');
+                return;
+            }
+
+            // Получаем пост из кэша для проверки
+            const post = postsCache.get(postId);
+            if (!post) {
+                showMessage('Пост не найден', 'error');
+                return;
+            }
+
+            // Проверяем, что пост принадлежит текущему пользователю
+            if (post.userId !== user.uid) {
+                showMessage('❌ Вы можете удалять только свои посты', 'error');
+                return;
+            }
+
+            if (!confirm('Удалить этот пост?')) {
+                return;
+            }
+
+            try {
+                console.log('🗑️ Удаление поста:', postId);
+                
+                // Удаляем пост из Firestore
+                await db.collection('posts').doc(postId).delete();
+                
+                // Уменьшаем счетчик постов у пользователя
+                await db.collection('users').doc(user.uid).update({
+                    postsCount: firebase.firestore.FieldValue.increment(-1)
+                });
+                
+                // Удаляем из DOM
+                const postElement = document.getElementById(`post-${postId}`);
+                if (postElement) {
+                    postElement.style.opacity = '0.5';
+                    postElement.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                        postElement.remove();
+                        showMessage('✅ Пост удален', 'success');
+                    }, 300);
+                }
+                
+                // Удаляем из кэша
+                postsCache.delete(postId);
+                
+                console.log('✅ Пост удален успешно');
+
+            } catch (error) {
+                console.error('❌ Ошибка удаления поста:', error);
+                
+                let errorMsg = 'Ошибка удаления поста';
+                if (error.code === 'permission-denied') {
+                    errorMsg = '❌ НЕТ ДОСТУПА! Проверьте правила Firestore.';
+                }
+                
+                showMessage(errorMsg, 'error');
             }
         }
 
@@ -435,7 +578,7 @@
                 console.log('📝 Создание поста от:', username);
 
                 // Создаем пост
-                await db.collection('posts').add({
+                const newPostRef = await db.collection('posts').add({
                     text: text,
                     userId: user.uid,
                     username: username,
@@ -444,6 +587,11 @@
                     likes: 0,
                     likedBy: [],
                     comments: []
+                });
+
+                // Увеличиваем счетчик постов у пользователя
+                await db.collection('users').doc(user.uid).update({
+                    postsCount: firebase.firestore.FieldValue.increment(1)
                 });
 
                 // Очищаем и показываем успех
@@ -455,7 +603,13 @@
 
             } catch (error) {
                 console.error('❌ Ошибка создания поста:', error);
-                showMessage('Ошибка публикации: ' + error.message, 'error');
+                
+                let errorMsg = 'Ошибка публикации: ' + error.message;
+                if (error.code === 'permission-denied') {
+                    errorMsg = '❌ НЕТ ДОСТУПА К БАЗЕ! Проверьте правила Firestore.';
+                }
+                
+                showMessage(errorMsg, 'error');
             }
         }
 

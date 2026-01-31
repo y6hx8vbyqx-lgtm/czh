@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>czhmass</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -13,7 +12,7 @@
 <style>
 :root{
   --bg:#000;
-  --card:rgba(28,28,30,.9);
+  --card:rgba(28,28,30,.95);
   --border:#1f1f1f;
   --text:#fff;
   --sub:#9a9a9a;
@@ -27,42 +26,45 @@ body{
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
 }
-.fade-in{animation:fade .35s ease}
+.fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
 
-.dynamic-island{
-  position:fixed;top:12px;left:50%;transform:translateX(-50%);
-  width:120px;height:34px;border-radius:20px;
-  background:#111;display:flex;align-items:center;justify-content:center;
-  font-weight:600;z-index:1000;
+.container{
+  max-width:480px;
+  margin:auto;
+  padding:110px 14px 80px;
 }
 
 .navbar{
-  position:fixed;top:60px;left:50%;transform:translateX(-50%);
-  width:92%;max-width:430px;
-  background:var(--card);backdrop-filter:blur(16px);
-  border-radius:18px;padding:10px 14px;
-  display:flex;justify-content:space-between;align-items:center;
-  z-index:999;
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:92%;
+  max-width:430px;
+  background:var(--card);
+  border-radius:18px;
+  padding:10px 14px;
+  display:flex;
+  justify-content:space-between;
+  z-index:1000;
 }
+
 .logo{
   font-weight:700;
   background:var(--accent);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
-.nav-btns{display:flex;gap:8px}
+
 .nav-btn{
-  background:#1c1c1e;border:none;color:#fff;
-  padding:8px 12px;border-radius:12px;font-size:16px;
+  background:#1c1c1e;
+  border:none;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:12px;
 }
 
-.container{
-  max-width:480px;margin:auto;
-  padding:130px 14px 80px;
-}
-
-/* CREATE POST */
 .create{
   background:var(--card);
   border-radius:22px;
@@ -70,140 +72,153 @@ body{
   margin-bottom:14px;
 }
 .create textarea{
-  width:100%;min-height:90px;
-  background:#1c1c1e;border:1px solid var(--border);
-  border-radius:16px;padding:12px;color:#fff;
+  width:100%;
+  min-height:80px;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px;
+  color:#fff;
 }
 .create button{
-  width:100%;margin-top:12px;
-  padding:14px;border:none;border-radius:16px;
-  background:var(--accent);color:#fff;font-weight:600;
+  width:100%;
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:16px;
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
 }
 
-/* SEARCH + TABS */
-.search-block{
+.search-box{
   background:var(--card);
-  border-radius:22px;
-  padding:14px;
+  border-radius:18px;
+  padding:12px;
   margin-bottom:14px;
 }
-.search-block input{
+.search-box input{
   width:100%;
   background:#1c1c1e;
   border:1px solid var(--border);
   border-radius:14px;
-  padding:10px 12px;
+  padding:10px;
   color:#fff;
 }
+
 .tabs{
   display:flex;
-  margin-top:10px;
   gap:8px;
+  margin-top:10px;
 }
 .tab{
   flex:1;
-  padding:10px;
-  border-radius:14px;
+  padding:8px;
+  border-radius:12px;
   background:#1c1c1e;
   border:none;
-  color:var(--sub);
+  color:#fff;
 }
 .tab.active{
   background:var(--accent);
-  color:#fff;
 }
 
-/* LAUNCHPAD USERS */
-.users-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
-  gap:12px;
-  margin-top:14px;
-}
-.user-card{
-  background:#1c1c1e;
-  border-radius:18px;
-  padding:14px 8px;
-  text-align:center;
-  cursor:pointer;
-}
-.user-avatar{
-  width:44px;height:44px;
-  border-radius:14px;
-  background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 6px;
-  font-weight:700;
-}
-.user-name{font-size:14px}
-
-/* POSTS */
 .post{
   background:var(--card);
-  border-radius:24px;
+  border-radius:22px;
   padding:16px;
   margin-bottom:14px;
 }
 .post-header{
-  display:flex;align-items:center;gap:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
 .avatar{
-  width:42px;height:42px;border-radius:14px;
+  width:40px;
+  height:40px;
+  border-radius:14px;
   background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   font-weight:700;
 }
-.post-user{font-weight:600}
-.post-time{color:var(--sub);font-size:13px}
+.post-user{
+  font-weight:600;
+  cursor:pointer;
+}
 .post-text{margin:10px 0}
 .post-actions{
-  display:flex;gap:18px;
+  display:flex;
+  gap:16px;
 }
 .action{
-  background:none;border:none;
-  color:var(--sub);font-size:18px;
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:18px;
 }
-.action.liked{color:#ff2d55}
-.trash{
-  margin-left:auto;
-  background:none;border:none;
-  color:var(--danger);font-size:18px;
+.liked{color:#ff2d55}
+
+.sheet{
+  position:fixed;
+  inset:0;
+  background:#000;
+  transform:translateY(100%);
+  transition:.35s ease;
+  z-index:2000;
+  display:flex;
+  flex-direction:column;
+}
+.sheet.show{transform:translateY(0)}
+.sheet-header{
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+}
+.sheet-body{
+  flex:1;
+  overflow:auto;
+  padding:14px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="dynamic-island" id="time"></div>
-
 <div class="navbar">
   <div class="logo">czhmass</div>
-  <div class="nav-btns">
-    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
-    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-    <button class="nav-btn" onclick="logout()">🚪</button>
-  </div>
+  <button class="nav-btn" onclick="logout()">🚪</button>
 </div>
 
 <div class="container">
 
-  <!-- CREATE -->
   <div class="create">
     <textarea id="postText" placeholder="Что у вас нового?"></textarea>
-    <button onclick="createPost()">📝 Опубликовать</button>
+    <button onclick="createPost()">Опубликовать</button>
   </div>
 
-  <!-- SEARCH + TABS -->
-  <div class="search-block">
+  <div class="search-box">
     <input id="searchInput" placeholder="Поиск по нику">
     <div class="tabs">
-      <button class="tab active" id="allTab" onclick="switchTab('all')">Все посты</button>
-      <button class="tab" id="favTab" onclick="switchTab('fav')">Избранные</button>
+      <button class="tab active" onclick="setMode('all')">Все посты</button>
+      <button class="tab" onclick="setMode('fav')">Избранные</button>
     </div>
-    <div id="usersGrid" class="users-grid"></div>
   </div>
 
   <div id="feed"></div>
+
+</div>
+
+<div class="sheet" id="profileSheet">
+  <div class="sheet-header">
+    <strong id="profileName"></strong>
+    <button class="action" onclick="closeProfile()">✕</button>
+  </div>
+  <div class="sheet-body" id="profilePosts"></div>
 </div>
 
 <script>
@@ -216,136 +231,80 @@ firebase.initializeApp({
 const db=firebase.firestore();
 const auth=firebase.auth();
 
-let currentUser,userData;
-let currentTab="all";
+let currentUser;
+let mode="all";
+let favorites=[];
 
 auth.onAuthStateChanged(async u=>{
-  if(!u) location.href="index.html";
+  if(!u)return location.href="index.html";
   currentUser=u;
   const snap=await db.collection("users").doc(u.uid).get();
-  userData=snap.data()||{};
-  if(userData.isAdmin) adminBtn.style.display="block";
+  favorites=snap.data()?.favorites||[];
   loadPosts();
 });
 
-/* POSTS */
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  loadPosts();
+}
+
 async function loadPosts(){
   feed.innerHTML="";
-  let query;
-
-  if(currentTab==="fav" && userData.favorites?.length){
-    query=db.collection("posts")
-      .where("userId","in",userData.favorites)
-      .orderBy("createdAt","desc");
-  }else{
-    query=db.collection("posts")
-      .orderBy("createdAt","desc");
-  }
-
-  const snap=await query.get();
-  snap.forEach(doc=>{
-    const p=doc.data();
-    const liked=p.likedBy?.includes(currentUser.uid);
+  let q=await db.collection("posts").orderBy("createdAt","desc").get();
+  q.forEach(d=>{
+    const p=d.data();
+    if(mode==="fav" && !favorites.includes(p.userId)) return;
     feed.innerHTML+=`
-    <div class="post fade-in">
+    <div class="post fade">
       <div class="post-header">
         <div class="avatar">${p.username?.[0]||"A"}</div>
-        <div>
-          <div class="post-user">@${p.username||"anon"}</div>
-          <div class="post-time">${new Date(p.createdAt.seconds*1000).toLocaleString()}</div>
-        </div>
-        ${(p.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
+        <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">@${p.username}</div>
       </div>
       <div class="post-text">${p.text}</div>
       <div class="post-actions">
-        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}',${liked})">
-          ${liked?"❤️":"🤍"} ${p.likes||0}
-        </button>
+        <button class="action" onclick="toggleLike('${d.id}')">❤️ ${p.likes||0}</button>
+        <button class="action">💬 ${p.commentsCount||0}</button>
       </div>
     </div>`;
   });
 }
 
-/* CREATE */
-async function createPost(){
-  if(!postText.value.trim()) return;
-  await db.collection("posts").add({
-    text:postText.value,
-    userId:currentUser.uid,
-    username:userData.username,
-    createdAt:new Date(),
-    likes:0,
-    likedBy:[]
-  });
-  postText.value="";
-  loadPosts();
-}
-
-/* LIKE */
-async function toggleLike(id,liked){
-  await db.collection("posts").doc(id).update({
-    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
-    likedBy:liked
-      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-  });
-  loadPosts();
-}
-
-/* DELETE */
-async function deletePost(id){
-  if(!confirm("Удалить пост?"))return;
-  await db.collection("posts").doc(id).delete();
-  loadPosts();
-}
-
-/* SEARCH USERS */
-let searchTimeout;
-searchInput.oninput=()=>{
-  clearTimeout(searchTimeout);
-  searchTimeout=setTimeout(searchUsers,300);
-};
-
-async function searchUsers(){
-  const q=searchInput.value.trim().toLowerCase();
-  usersGrid.innerHTML="";
-  if(!q) return;
-
-  const snap=await db.collection("users")
-    .where("username",">=",q)
-    .where("username","<=",q+"\uf8ff")
-    .get();
-
+async function openProfile(uid,name){
+  profileName.textContent="@"+name;
+  profileSheet.classList.add("show");
+  profilePosts.innerHTML="";
+  const snap=await db.collection("posts").where("userId","==",uid).get();
   snap.forEach(d=>{
-    const u=d.data();
-    usersGrid.innerHTML+=`
-      <div class="user-card fade-in" onclick="openUser('${d.id}')">
-        <div class="user-avatar">${u.username?.[0]||"A"}</div>
-        <div class="user-name">@${u.username}</div>
+    profilePosts.innerHTML+=`
+      <div class="post fade">
+        <div class="post-text">${d.data().text}</div>
       </div>`;
   });
 }
 
-function openUser(id){
-  location.href="user.html?id="+id;
+function closeProfile(){
+  profileSheet.classList.remove("show");
 }
 
-/* TABS */
-function switchTab(tab){
-  currentTab=tab;
-  allTab.classList.toggle("active",tab==="all");
-  favTab.classList.toggle("active",tab==="fav");
+async function createPost(){
+  if(!postText.value.trim())return;
+  await db.collection("posts").add({
+    text:postText.value,
+    userId:currentUser.uid,
+    username:currentUser.displayName||"anon",
+    createdAt:new Date(),
+    likes:0,
+    commentsCount:0
+  });
+  postText.value="";
   loadPosts();
 }
 
 function logout(){
   auth.signOut().then(()=>location.href="index.html");
 }
-
-setInterval(()=>{
-  time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-},1000);
 </script>
 
 </body>

@@ -1,374 +1,179 @@
-<!-- В начале файла feed.html, ПЕРЕД вашим script -->
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-
-<script>
-// Firebase конфиг ДО основного кода
-const firebaseConfig = {
-  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain: "czhmass.firebaseapp.com",
-  projectId: "czhmass",
-  storageBucket: "czhmass.firebasestorage.app",
-  messagingSenderId: "1064257019843",
-  appId: "1:1064257019843:web:65488b45be2f86838ca776"<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-    <!-- ... ваши meta и стили ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лента - czhmass.com</title>
     
-    <!-- ДОБАВЬТЕ ЭТО ПРЯМО ЗДЕСЬ -->
+    <!-- Firebase скрипты -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     
     <style>
-    /* ваши стили */
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .post { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+        .btn { background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
+        .navbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <!-- ... ваша HTML разметка ... -->
+    <div class="navbar">
+        <h2>czhmass.com</h2>
+        <div>
+            <button class="btn" onclick="window.location.href='profile.html'">Профиль</button>
+            <button class="btn" id="adminBtn" style="display:none;" onclick="window.location.href='admin.html'">Админ</button>
+            <button class="btn" onclick="logout()">Выйти</button>
+        </div>
+    </div>
     
+    <div>
+        <h3>Новый пост:</h3>
+        <textarea id="postText" placeholder="Что нового?"></textarea>
+        <button class="btn" onclick="createPost()">Опубликовать</button>
+        <div id="message" style="margin:10px 0;"></div>
+    </div>
+    
+    <hr>
+    
+    <h3>Лента постов:</h3>
+    <div id="posts">Загрузка...</div>
+
     <script>
-    // ДОБАВЬТЕ ЭТО ПЕРВЫМИ СТРОКАМИ В <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-      authDomain: "czhmass.firebaseapp.com",
-      projectId: "czhmass",
-      storageBucket: "czhmass.firebasestorage.app",
-      messagingSenderId: "1064257019843",
-      appId: "1:1064257019843:web:65488b45be2f86838ca776"
-    };
-    
-    // Инициализация
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    
-    // Теперь остальной ваш код...
-    // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-    // ... и т.д.
+        // ===== FIREBASE КОНФИГ (ТОЛЬКО ОДИН РАЗ!) =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+            authDomain: "czhmass.firebaseapp.com",
+            projectId: "czhmass",
+            storageBucket: "czhmass.firebasestorage.app",
+            messagingSenderId: "1064257019843",
+            appId: "1:1064257019843:web:65488b45be2f86838ca776"
+        };
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase инициализирован');
+        }
+        
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                alert('Сначала войдите!');
+                window.location.href = 'index.html';
+            } else {
+                console.log('Пользователь:', user.email);
+                loadPosts();
+                checkAdmin(user.uid);
+            }
+        });
+        
+        // ===== ЗАГРУЗКА ПОСТОВ =====
+        async function loadPosts() {
+            try {
+                const snapshot = await db.collection('posts')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .get();
+                
+                let html = '';
+                snapshot.forEach(doc => {
+                    const post = doc.data();
+                    html += `
+                        <div class="post">
+                            <strong>@${post.username}</strong>
+                            <small>(${formatTime(post.createdAt)})</small>
+                            <p>${post.text}</p>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('posts').innerHTML = html || '<p>Пока нет постов</p>';
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                document.getElementById('posts').innerHTML = '<p>Ошибка загрузки</p>';
+            }
+        }
+        
+        // ===== СОЗДАНИЕ ПОСТА =====
+        async function createPost() {
+            const text = document.getElementById('postText').value.trim();
+            if (!text) return;
+            
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            try {
+                // Получаем username из Firestore
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const username = userDoc.data().username;
+                
+                // Создаем пост
+                await db.collection('posts').add({
+                    userId: user.uid,
+                    username: username,
+                    text: text,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: 0
+                });
+                
+                document.getElementById('postText').value = '';
+                showMessage('✅ Пост опубликован!', 'success');
+                loadPosts();
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showMessage('❌ Ошибка: ' + error.message, 'error');
+            }
+        }
+        
+        // ===== ПРОВЕРКА АДМИНА =====
+        async function checkAdmin(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists && userDoc.data().isAdmin) {
+                    document.getElementById('adminBtn').style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.log('Ошибка проверки админа:', error);
+            }
+        }
+        
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+        function showMessage(text, type) {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.style.color = type === 'success' ? 'green' : 'red';
+            setTimeout(() => el.textContent = '', 3000);
+        }
+        
+        function formatTime(timestamp) {
+            if (!timestamp) return 'недавно';
+            try {
+                const date = timestamp.toDate();
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                
+                if (minutes < 1) return 'только что';
+                if (minutes < 60) return `${minutes} мин назад`;
+                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
+                return date.toLocaleDateString('ru-RU');
+            } catch {
+                return 'недавно';
+            }
+        }
+        
+        function logout() {
+            auth.signOut();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
 </html>
-};
-
-// Инициализация Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-console.log('Firebase инициализирован:', firebase.apps.length);
-</script>
-
-<script>
-    // ===== КОНФИГУРАЦИЯ FIREBASE (ТА ЖЕ САМАЯ!) =====
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain: "czhmass.firebaseapp.com",
-  projectId: "czhmass",
-  storageBucket: "czhmass.firebasestorage.app",
-  messagingSenderId: "1064257019843",
-  appId: "1:1064257019843:web:65488b45be2f86838ca776",
-  measurementId: "G-X5HW7Z0ZED"
-};
-    
-    // Инициализация
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    
-    // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-    auth.onAuthStateChanged((user) => {
-        if (!user) {
-            alert('⚠️ Сначала войдите в систему!');
-            window.location.href = 'index.html';
-        } else {
-            console.log('Пользователь авторизован:', user.uid);
-            initializeApp();
-        }
-    });
-    
-    // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
-    let currentUser = null;
-    let userId = null;
-    
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    async function initializeApp() {
-        console.log('🚀 Инициализация приложения...');
-        
-        userId = localStorage.getItem('czhmass_userId');
-        currentUser = localStorage.getItem('czhmass_currentUser');
-        
-        if (!userId || !currentUser) {
-            alert('❌ Ошибка данных пользователя!');
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        // Проверяем админ-права
-        try {
-            const userDoc = await db.collection('users').doc(userId).get();
-            if (userDoc.exists && userDoc.data().isAdmin) {
-                document.getElementById('adminBtn').style.display = 'inline-block';
-                console.log('👑 Админ-панель доступна');
-            }
-        } catch (error) {
-            console.error('Ошибка проверки админ-прав:', error);
-        }
-        
-        // Загружаем посты
-        loadPosts();
-        
-        // Настраиваем обработчики
-        document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchUsers();
-        });
-        
-        document.getElementById('postText')?.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') createPost();
-        });
-        
-        console.log('✅ Приложение инициализировано для:', currentUser);
-    }
-    
-    // ===== ЗАГРУЗКА ПОСТОВ ИЗ FIREBASE =====
-    async function loadPosts() {
-        console.log('📝 Загрузка постов из Firebase...');
-        const postsContainer = document.getElementById('posts');
-        
-        if (!postsContainer) return;
-        
-        try {
-            // Получаем посты, отсортированные по дате
-            const querySnapshot = await db.collection('posts')
-                .orderBy('createdAt', 'desc')
-                .limit(50)
-                .get();
-            
-            if (querySnapshot.empty) {
-                postsContainer.innerHTML = '<div class="empty-state">😴 Пока нет постов. Будьте первым!</div>';
-                return;
-            }
-            
-            let postsHTML = '';
-            querySnapshot.forEach(doc => {
-                const post = doc.data();
-                postsHTML += `
-                    <div class="post">
-                        <div class="post-header">
-                            <span class="post-author">@${escapeHtml(post.username)}</span>
-                            <span class="post-time">${formatFirebaseTime(post.createdAt)}</span>
-                        </div>
-                        <div class="post-content">${escapeHtml(post.text)}</div>
-                        <div style="margin-top: 10px; color: #718096; font-size: 14px;">
-                            👍 ${post.likes || 0} лайков • 💬 ${post.comments?.length || 0} комментариев
-                        </div>
-                    </div>
-                `;
-            });
-            
-            postsContainer.innerHTML = postsHTML;
-            console.log(`✅ Загружено ${querySnapshot.size} постов`);
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки постов:', error);
-            postsContainer.innerHTML = '<div class="error">⚠️ Ошибка загрузки постов</div>';
-        }
-    }
-    
-    // ===== СОЗДАНИЕ ПОСТА В FIREBASE =====
-    async function createPost() {
-        console.log('➕ Создание нового поста...');
-        
-        const textInput = document.getElementById('postText');
-        const text = textInput.value.trim();
-        
-        if (!text) {
-            showMessage('Введите текст поста', 'error');
-            return;
-        }
-        
-        if (!userId || !currentUser) {
-            alert('Вы не авторизованы');
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        try {
-            // Добавляем пост в коллекцию
-            await db.collection('posts').add({
-                userId: userId,
-                username: currentUser,
-                text: text,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                likes: 0,
-                comments: [],
-                edited: false
-            });
-            
-            // Обновляем счетчик постов пользователя
-            await db.collection('users').doc(userId).update({
-                postsCount: firebase.firestore.FieldValue.increment(1),
-                lastPostTime: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // Очищаем поле
-            textInput.value = '';
-            textInput.focus();
-            
-            // Показываем уведомление
-            showMessage('✅ Пост опубликован для всех пользователей!', 'success');
-            
-            // Обновляем ленту
-            setTimeout(loadPosts, 500);
-            
-        } catch (error) {
-            console.error('❌ Ошибка создания поста:', error);
-            showMessage('❌ Ошибка: ' + error.message, 'error');
-        }
-    }
-    
-    // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ В FIREBASE =====
-    async function searchUsers() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        
-        if (!searchTerm) {
-            document.getElementById('searchResults').style.display = 'none';
-            return;
-        }
-        
-        try {
-            // Ищем пользователей по username
-            const querySnapshot = await db.collection('users')
-                .where('username', '>=', searchTerm)
-                .where('username', '<=', searchTerm + '\uf8ff')
-                .limit(20)
-                .get();
-            
-            const resultsDiv = document.getElementById('searchResults');
-            const usersList = document.getElementById('usersList');
-            
-            if (querySnapshot.empty) {
-                usersList.innerHTML = '<p style="text-align:center; color:#718096;">Пользователи не найдены</p>';
-            } else {
-                usersList.innerHTML = '';
-                querySnapshot.forEach(doc => {
-                    const user = doc.data();
-                    if (user.username === currentUser) return; // Пропускаем себя
-                    
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'user-result';
-                    userDiv.innerHTML = `
-                        <div class="user-info">
-                            <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
-                            <div>
-                                <strong>@${escapeHtml(user.username)}</strong>
-                                <div style="color:#718096; font-size:14px;">
-                                    Постов: ${user.postsCount || 0} • ${user.isAdmin ? '👑 Админ' : 'Пользователь'}
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn" onclick="viewUserProfile('${doc.id}')" 
-                                style="padding: 8px 16px; font-size: 14px;">
-                            Профиль
-                        </button>
-                    `;
-                    usersList.appendChild(userDiv);
-                });
-            }
-            
-            resultsDiv.style.display = 'block';
-            
-        } catch (error) {
-            console.error('Ошибка поиска:', error);
-        }
-    }
-    
-    // ===== ПРОСМОТР ПРОФИЛЯ =====
-    async function viewUserProfile(userDocId) {
-        try {
-            const userDoc = await db.collection('users').doc(userDocId).get();
-            if (!userDoc.exists) return;
-            
-            const user = userDoc.data();
-            
-            // Получаем посты этого пользователя
-            const postsQuery = await db.collection('posts')
-                .where('userId', '==', userDocId)
-                .orderBy('createdAt', 'desc')
-                .limit(5)
-                .get();
-            
-            let postsText = '';
-            postsQuery.forEach(doc => {
-                const post = doc.data();
-                postsText += `• ${post.text.substring(0, 50)}${post.text.length > 50 ? '...' : ''}\n`;
-            });
-            
-            alert(`👤 Профиль @${user.username}\n\n` +
-                  `📧 Email: ${user.email || 'скрыт'}\n` +
-                  `📊 Постов: ${user.postsCount || 0}\n` +
-                  `👑 Админ: ${user.isAdmin ? 'Да' : 'Нет'}\n` +
-                  `📅 Зарегистрирован: ${user.createdAt ? user.createdAt.toDate().toLocaleDateString('ru-RU') : 'неизвестно'}\n\n` +
-                  `📝 Последние посты:\n${postsText || 'Нет постов'}`);
-                  
-        } catch (error) {
-            console.error('Ошибка загрузки профиля:', error);
-        }
-    }
-    
-    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-    function showMessage(text, type) {
-        const messageEl = document.getElementById('message');
-        if (!messageEl) return;
-        
-        messageEl.textContent = text;
-        messageEl.className = `message message-${type}`;
-        messageEl.style.display = 'block';
-        
-        setTimeout(() => {
-            messageEl.style.display = 'none';
-        }, 4000);
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML.replace(/\n/g, '<br>');
-    }
-    
-    function formatFirebaseTime(timestamp) {
-        if (!timestamp) return 'недавно';
-        try {
-            const postTime = timestamp.toDate();
-            const now = new Date();
-            const diff = now - postTime;
-            const minutes = Math.floor(diff / 60000);
-            
-            if (minutes < 1) return 'только что';
-            if (minutes < 60) return `${minutes} мин назад`;
-            if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
-            return postTime.toLocaleDateString('ru-RU');
-        } catch {
-            return 'недавно';
-        }
-    }
-    
-    function logout() {
-        if (confirm('Вы уверены, что хотите выйти?')) {
-            auth.signOut().then(() => {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            });
-        }
-    }
-    
-    // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('📄 DOM загружен');
-        // Авторизация проверяется в onAuthStateChanged
-    });
-</script>

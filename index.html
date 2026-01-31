@@ -96,6 +96,7 @@
 
         .input-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
         input {
@@ -111,6 +112,14 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input.error {
+            border-color: #e53e3e;
+        }
+
+        input.success {
+            border-color: #38a169;
         }
 
         .btn {
@@ -198,6 +207,23 @@
             text-align: center;
         }
 
+        .loading-dots {
+            display: inline-block;
+            width: 20px;
+            text-align: left;
+        }
+
+        .loading-dots:after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
         @media (max-width: 480px) {
             .container {
                 border-radius: 12px;
@@ -241,13 +267,12 @@
             <div id="registerForm" class="form">
                 <div class="input-group">
                     <input type="text" id="regUsername" placeholder="Имя пользователя (будет видно всем)" 
-                           required minlength="3" maxlength="20"
-                           oninput="checkUsernameAvailability(this.value)">
+                           required minlength="3" maxlength="20">
                     <div class="username-check" id="usernameCheck">
-                        <span id="usernameCheckText">Проверяем...</span>
+                        <span id="usernameCheckText">Введите имя пользователя</span>
                     </div>
                     <div class="privacy-note">
-                        Только латинские буквы, цифры, _ и . 
+                        Только латинские буквы, цифры, _ и . (минимум 3 символа)
                     </div>
                 </div>
                 <div class="input-group">
@@ -287,52 +312,72 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase инициализирован');
         }
+        
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // ===== ПЕРЕМЕННЫЕ ДЛЯ ПРОВЕРКИ USERNAME =====
         let usernameAvailable = false;
         let usernameCheckTimeout = null;
-        let currentUsername = '';
+        let isCheckingUsername = false;
+        let lastCheckedUsername = '';
 
         // ===== ПРОВЕРКА USERNAME =====
         async function checkUsernameAvailability(username) {
             const checkDiv = document.getElementById('usernameCheck');
             const checkText = document.getElementById('usernameCheckText');
+            const usernameInput = document.getElementById('regUsername');
             const registerBtn = document.getElementById('registerBtn');
             
-            currentUsername = username.trim().toLowerCase();
+            const cleanUsername = username.trim().toLowerCase();
             
-            if (currentUsername.length < 3) {
-                checkDiv.style.display = 'none';
+            if (cleanUsername.length < 3) {
+                checkDiv.style.display = 'block';
+                checkDiv.className = 'username-check';
+                checkText.textContent = 'Введите имя пользователя (мин. 3 символа)';
+                usernameInput.classList.remove('success', 'error');
                 usernameAvailable = false;
                 registerBtn.disabled = true;
                 return;
             }
 
             // Проверяем допустимые символы
-            if (!/^[a-z0-9_.]+$/.test(currentUsername)) {
+            if (!/^[a-z0-9_.]+$/.test(cleanUsername)) {
                 checkDiv.style.display = 'block';
                 checkDiv.className = 'username-check username-taken';
                 checkText.textContent = '✗ Только латинские буквы, цифры, _ и .';
+                usernameInput.classList.add('error');
+                usernameInput.classList.remove('success');
                 usernameAvailable = false;
                 registerBtn.disabled = true;
                 return;
             }
 
+            // Если проверяем тот же username, не делаем запрос
+            if (cleanUsername === lastCheckedUsername && isCheckingUsername) {
+                return;
+            }
+
+            lastCheckedUsername = cleanUsername;
+            isCheckingUsername = true;
+
             // Показываем проверку
             checkDiv.style.display = 'block';
             checkDiv.className = 'username-check username-checking';
-            checkText.textContent = '⏳ Проверяем доступность...';
+            checkText.innerHTML = 'Проверка доступности<span class="loading-dots"></span>';
+            usernameInput.classList.remove('success', 'error');
             registerBtn.disabled = true;
 
             // Очищаем предыдущий таймер
             if (usernameCheckTimeout) clearTimeout(usernameCheckTimeout);
             
+            // Делаем задержку перед проверкой (дебаунс)
             usernameCheckTimeout = setTimeout(async () => {
                 try {
                     const snapshot = await db.collection('users')
-                        .where('username', '==', currentUsername)
+                        .where('username', '==', cleanUsername)
                         .limit(1)
                         .get();
 
@@ -340,24 +385,43 @@
                         // Username свободен
                         checkDiv.className = 'username-check username-available';
                         checkText.textContent = '✓ Имя пользователя доступно';
+                        usernameInput.classList.add('success');
+                        usernameInput.classList.remove('error');
                         usernameAvailable = true;
                         registerBtn.disabled = false;
                     } else {
                         // Username занят
                         checkDiv.className = 'username-check username-taken';
                         checkText.textContent = '✗ Имя пользователя уже занято';
+                        usernameInput.classList.add('error');
+                        usernameInput.classList.remove('success');
                         usernameAvailable = false;
                         registerBtn.disabled = true;
                     }
+                    
+                    isCheckingUsername = false;
+                    
                 } catch (error) {
                     console.error('Ошибка проверки username:', error);
                     checkDiv.className = 'username-check username-taken';
-                    checkText.textContent = '✗ Ошибка проверки';
+                    checkText.textContent = '✗ Ошибка проверки. Попробуйте позже.';
+                    usernameInput.classList.add('error');
+                    usernameInput.classList.remove('success');
                     usernameAvailable = false;
                     registerBtn.disabled = true;
+                    isCheckingUsername = false;
                 }
             }, 800);
         }
+
+        // ===== ОБРАБОТЧИКИ ДЛЯ USERNAME =====
+        document.getElementById('regUsername').addEventListener('input', function(e) {
+            checkUsernameAvailability(e.target.value);
+        });
+
+        document.getElementById('regUsername').addEventListener('blur', function(e) {
+            checkUsernameAvailability(e.target.value);
+        });
 
         // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
         function switchTab(tabName, event) {
@@ -370,6 +434,10 @@
 
             document.getElementById(tabName + 'Form').classList.add('active');
             event.target.classList.add('active');
+            
+            // Сбрасываем сообщения при переключении
+            document.getElementById('loginMessage').style.display = 'none';
+            document.getElementById('registerMessage').style.display = 'none';
         }
 
         function showMessage(element, text, type) {
@@ -587,6 +655,14 @@
         // Инициализация при загрузке
         window.addEventListener('load', () => {
             console.log('🚀 Страница регистрации загружена');
+            
+            // Сбрасываем состояние при загрузке
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regConfirm').value = '';
+            document.getElementById('usernameCheck').style.display = 'none';
+            document.getElementById('registerBtn').disabled = true;
         });
     </script>
 </body>

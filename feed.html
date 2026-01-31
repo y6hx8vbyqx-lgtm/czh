@@ -1,13 +1,3 @@
-// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    console.log('🚨 Ошибка поймана:', {msg, url, lineNo, error});
-    alert('Ошибка: ' + msg + '\nСтрока: ' + lineNo + '\nОбновите страницу');
-    return true;
-};
-
-// Отключаем строгий режим если он вызывает проблемы
-// "use strict";
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -15,12 +5,13 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Лента - czhmass.com</title>
     <style>
+        /* (Стили остаются такими же, как у вас, они уже хорошие) */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: #f5f8fa;
@@ -29,8 +20,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             padding: 0;
             min-height: 100vh;
         }
-        
-        /* Навигация */
+
         .navbar {
             background: white;
             padding: 15px 20px;
@@ -43,20 +33,20 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
+
         .logo {
             font-size: 24px;
             font-weight: bold;
             color: #667eea;
             text-decoration: none;
         }
-        
+
         .nav-buttons {
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .btn {
             background: #667eea;
             color: white;
@@ -71,40 +61,39 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             display: inline-block;
             text-align: center;
         }
-        
+
         .btn:hover {
             background: #5a67d8;
             transform: translateY(-1px);
         }
-        
+
         .btn-profile {
             background: #48bb78;
         }
-        
+
         .btn-admin {
             background: #805ad5;
             display: none;
         }
-        
+
         .btn-logout {
             background: #e53e3e;
         }
-        
-        /* Поиск */
+
         .search-container {
             background: white;
             padding: 20px;
             margin: 0;
             border-bottom: 1px solid #e2e8f0;
         }
-        
+
         .search-box {
             display: flex;
             gap: 10px;
             max-width: 600px;
             margin: 0 auto;
         }
-        
+
         .search-input {
             flex: 1;
             padding: 12px 20px;
@@ -113,13 +102,12 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             font-size: 16px;
             transition: border 0.2s;
         }
-        
+
         .search-input:focus {
             outline: none;
             border-color: #667eea;
         }
-        
-        /* Создание поста */
+
         .create-post-container {
             background: white;
             padding: 25px;
@@ -128,13 +116,13 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             max-width: 600px;
         }
-        
+
         .create-post-title {
             font-size: 20px;
             margin-bottom: 15px;
             color: #2d3748;
         }
-        
+
         .post-textarea {
             width: 100%;
             min-height: 120px;
@@ -147,25 +135,24 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             margin-bottom: 15px;
             transition: border 0.2s;
         }
-        
+
         .post-textarea:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         .post-hint {
             font-size: 14px;
             color: #718096;
             margin-bottom: 15px;
         }
-        
-        /* Лента постов */
+
         .feed-container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         .feed-title {
             font-size: 22px;
             margin-bottom: 20px;
@@ -174,7 +161,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             align-items: center;
             gap: 10px;
         }
-        
+
         .post {
             background: white;
             padding: 25px;
@@ -184,30 +171,30 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             border-left: 4px solid #667eea;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        
+
         .post:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(0,0,0,0.1);
         }
-        
+
         .post-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .post-author {
             font-weight: bold;
             color: #667eea;
             font-size: 17px;
         }
-        
+
         .post-time {
             color: #a0aec0;
             font-size: 14px;
         }
-        
+
         .post-content {
             font-size: 16px;
             line-height: 1.7;
@@ -215,8 +202,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             white-space: pre-wrap;
             word-break: break-word;
         }
-        
-        /* Результаты поиска */
+
         .search-results {
             background: white;
             padding: 20px;
@@ -226,7 +212,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             max-width: 600px;
             display: none;
         }
-        
+
         .user-result {
             display: flex;
             justify-content: space-between;
@@ -234,20 +220,334 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             padding: 15px;
             border-bottom: 1px solid #e2e8f0;
         }
-        
+
         .user-result:last-child {
             border-bottom: none;
         }
-        
+
         .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
+
         .user-avatar {
             width: 50px;
             height: 50px;
             background: #667eea;
             color: white;
-            border-radius:
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .message-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .message-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 12px 15px; }
+            .logo { font-size: 20px; }
+            .btn { padding: 8px 15px; font-size: 14px; }
+            .search-container,
+            .create-post-container,
+            .feed-container,
+            .search-results { margin: 10px; padding: 15px; }
+            .post { padding: 20px; }
+            .nav-buttons { gap: 5px; }
+        }
+
+        .loading { text-align: center; padding: 40px; color: #a0aec0; }
+        .empty-state { text-align: center; padding: 50px 20px; color: #a0aec0; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 15px; }
+        .hidden { display: none !important; }
+    </style>
+
+    <!-- Скрипт проверки авторизации, который выполняется ДО загрузки страницы -->
+    <script>
+        (function() {
+            'use strict';
+            const currentUser = localStorage.getItem('czhmass_currentUser');
+            if (!currentUser) {
+                alert('⚠️ Сначала войдите в систему!');
+                window.location.href = 'index.html';
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <a href="feed.html" class="logo">czhmass.com</a>
+        <div class="nav-buttons">
+            <button class="btn btn-profile" onclick="window.location.href='profile.html'">👤 Профиль</button>
+            <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
+            <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
+        </div>
+    </nav>
+
+    <!-- Поиск пользователей -->
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="🔍 Найти пользователя..."
+                   aria-label="Поиск пользователей">
+            <button class="btn" onclick="searchUsers()">Найти</button>
+        </div>
+    </div>
+
+    <!-- Результаты поиска -->
+    <div class="search-results" id="searchResults">
+        <h3 style="margin-bottom: 20px; color: #2d3748;">Найденные пользователи:</h3>
+        <div id="usersList"></div>
+    </div>
+
+    <!-- Создание поста -->
+    <div class="create-post-container">
+        <h2 class="create-post-title">💭 Новый пост</h2>
+        <textarea class="post-textarea" id="postText"
+                  placeholder="Что у вас нового? Поделитесь с миром..."></textarea>
+        <div class="post-hint">Нажмите Ctrl+Enter для быстрой публикации</div>
+        <button class="btn" onclick="createPost()" style="width: 100%; padding: 15px; font-size: 16px;">
+            📤 Опубликовать
+        </button>
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- Лента постов -->
+    <div class="feed-container">
+        <h2 class="feed-title">📰 Лента постов</h2>
+        <div id="posts">
+            <div class="loading">Загрузка постов...</div>
+        </div>
+    </div>
+
+    <!-- Основной JavaScript код приложения -->
+    <script>
+        // Глобальные переменные
+        let currentUser = null;
+        let users = {};
+        let isAdmin = false;
+
+        // Инициализация приложения
+        function initializeApp() {
+            console.log('🚀 Инициализация приложения...');
+
+            // Загружаем данные
+            currentUser = localStorage.getItem('czhmass_currentUser');
+            try {
+                users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            } catch (e) {
+                console.error('Ошибка загрузки пользователей:', e);
+                users = {};
+            }
+
+            // Проверяем админ-права
+            if (users[currentUser] && users[currentUser].isAdmin) {
+                isAdmin = true;
+                document.getElementById('adminBtn').style.display = 'inline-block';
+                console.log('👑 Админ-панель доступна');
+            }
+
+            // Загружаем посты
+            loadPosts();
+
+            // Настраиваем обработчики
+            document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchUsers();
+            });
+
+            document.getElementById('postText')?.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') createPost();
+            });
+
+            console.log('✅ Приложение инициализировано для:', currentUser);
+        }
+
+        // Загрузка постов
+        function loadPosts() {
+            const postsContainer = document.getElementById('posts');
+            if (!postsContainer) return;
+
+            let allPosts = [];
+
+            // Собираем посты всех пользователей
+            for (const username in users) {
+                const user = users[username];
+                if (user && Array.isArray(user.posts)) {
+                    user.posts.forEach((text, index) => {
+                        if (text && text.trim()) {
+                            allPosts.push({
+                                username: username,
+                                text: text.trim(),
+                                time: user.postTimes?.[index] || new Date().toISOString()
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Сортируем и отображаем
+            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            if (allPosts.length === 0) {
+                postsContainer.innerHTML = '<div class="empty-state">Пока нет постов. Будьте первым!</div>';
+                return;
+            }
+
+            let postsHTML = '';
+            allPosts.forEach(post => {
+                postsHTML += `
+                    <div class="post">
+                        <div class="post-header">
+                            <span class="post-author">@${escapeHtml(post.username)}</span>
+                            <span class="post-time">${formatTime(post.time)}</span>
+                        </div>
+                        <div class="post-content">${escapeHtml(post.text)}</div>
+                    </div>
+                `;
+            });
+
+            postsContainer.innerHTML = postsHTML;
+        }
+
+        // Создание нового поста
+        function createPost() {
+            const textInput = document.getElementById('postText');
+            const text = textInput.value.trim();
+
+            if (!text) {
+                showMessage('Введите текст поста', 'error');
+                return;
+            }
+
+            // Гарантируем структуру данных
+            if (!users[currentUser]) {
+                users[currentUser] = { posts: [], postTimes: [] };
+            }
+            if (!Array.isArray(users[currentUser].posts)) {
+                users[currentUser].posts = [];
+            }
+            if (!Array.isArray(users[currentUser].postTimes)) {
+                users[currentUser].postTimes = [];
+            }
+
+            // Добавляем пост
+            users[currentUser].posts.push(text);
+            users[currentUser].postTimes.push(new Date().toISOString());
+
+            // Сохраняем
+            try {
+                localStorage.setItem('czhmass_users', JSON.stringify(users));
+                showMessage('✅ Пост опубликован!', 'success');
+                textInput.value = '';
+                loadPosts(); // Обновляем ленту
+            } catch (e) {
+                console.error('Ошибка сохранения:', e);
+                showMessage('❌ Ошибка при сохранении', 'error');
+            }
+        }
+
+        // Поиск пользователей
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (!searchTerm) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+
+            const results = Object.keys(users).filter(username =>
+                username.toLowerCase().includes(searchTerm) && username !== currentUser
+            );
+
+            const usersList = document.getElementById('usersList');
+            if (results.length === 0) {
+                usersList.innerHTML = '<p style="text-align:center; color:#718096;">Пользователи не найдены</p>';
+            } else {
+                usersList.innerHTML = results.map(username => `
+                    <div class="user-result">
+                        <div class="user-info">
+                            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
+                            <div>@${username}</div>
+                        </div>
+                        <button class="btn" onclick="viewUserProfile('${username}')">Профиль</button>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('searchResults').style.display = 'block';
+        }
+
+        // Просмотр профиля
+        function viewUserProfile(username) {
+            const user = users[username];
+            if (!user) return;
+
+            alert(`Профиль @${username}\n` +
+                  `Постов: ${user.posts?.length || 0}\n` +
+                  `Email: ${user.email || 'не указан'}`);
+        }
+
+        // Вспомогательные функции
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message message-${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => { messageEl.style.display = 'none'; }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        function formatTime(timeString) {
+            try {
+                const minutes = Math.floor((Date.now() - new Date(timeString)) / 60000);
+                if (minutes < 1) return 'только что';
+                if (minutes < 60) return `${minutes} мин назад`;
+                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
+                return new Date(timeString).toLocaleDateString('ru-RU');
+            } catch {
+                return 'недавно';
+            }
+        }
+
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('czhmass_currentUser');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Запуск приложения после загрузки страницы
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

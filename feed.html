@@ -127,7 +127,7 @@
             background: rgba(255, 59, 48, 0.3);
         }
 
-        /* Кнопка профиля - УЛУЧШЕННАЯ ДЛЯ МОБИЛЬНЫХ */
+        /* Кнопка профиля */
         .profile-btn {
             background: rgba(255, 255, 255, 0.1);
             color: white;
@@ -314,7 +314,7 @@
             word-wrap: break-word;
         }
 
-        /* Футер поста с лайками */
+        /* Футер поста с действиями */
         .post-footer {
             display: flex;
             align-items: center;
@@ -323,50 +323,39 @@
             border-top: 0.5px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Лайки */
-        .like-container {
+        .post-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 20px;
         }
 
-        .like-btn {
+        .action-btn {
             background: none;
             border: none;
-            font-size: 24px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 22px;
             cursor: pointer;
-            padding: 6px;
-            border-radius: 12px;
-            width: 44px;
-            height: 44px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.15s ease;
-            user-select: none;
+            gap: 6px;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
         }
 
-        .like-btn:hover {
-            background: rgba(255, 59, 48, 0.1);
-            transform: scale(1.05);
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
         }
 
-        .like-btn.liked {
+        .action-btn.liked {
             color: #ff3b30;
-            background: rgba(255, 59, 48, 0.15);
         }
 
-        .like-btn:not(.liked) {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .like-count {
-            font-size: 16px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.8);
-            min-width: 24px;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
+        .action-count {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* Кнопка удаления */
@@ -395,6 +384,260 @@
 
         .delete-post:hover {
             background: rgba(255, 59, 48, 0.2);
+        }
+
+        /* ===== МОДАЛЬНОЕ ОКНО КОММЕНТАРИЕВ ===== */
+        .comments-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000000;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .comments-header {
+            padding: 60px 20px 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comments-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .close-comments {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .close-comments:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .comments-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #000000;
+        }
+
+        /* Оригинальный пост в модалке */
+        .original-post {
+            background: rgba(28, 28, 30, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .original-post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .original-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+        }
+
+        .original-username {
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .original-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
+
+        .original-content {
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Комментарий */
+        .comment {
+            display: flex;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .comment-username {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .comment-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .comment-action-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .comment-action-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .comment-like-btn.liked {
+            color: #ff3b30;
+        }
+
+        .delete-comment {
+            color: #ff3b30;
+            font-size: 11px;
+        }
+
+        /* Форма добавления комментария */
+        .add-comment-form {
+            padding: 20px;
+            background: rgba(28, 28, 30, 0.8);
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .comment-input-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .comment-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            min-height: 44px;
+            max-height: 100px;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .send-comment-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-comment-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .send-comment-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Счетчик комментариев */
+        .comments-count {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
         }
 
         /* Сообщения */
@@ -455,7 +698,7 @@
             font-style: italic;
         }
 
-        /* Анимация лайка */
+        /* Анимации */
         @keyframes heartPop {
             0% { transform: scale(1); }
             50% { transform: scale(1.2); }
@@ -466,7 +709,22 @@
             animation: heartPop 0.3s ease;
         }
 
-        /* ===== УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ ===== */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .comment {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* ===== МОБИЛЬНАЯ ВЕРСИЯ ===== */
         @media (max-width: 768px) {
             .navbar {
                 width: 95%;
@@ -488,18 +746,12 @@
                 padding: 16px;
             }
             
-            /* Кнопки навигации для мобильных */
             .nav-buttons {
                 gap: 6px;
             }
             
-            .btn {
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-            
             .btn span:not(.btn-icon) {
-                display: none; /* Скрываем текст на мобильных */
+                display: none;
             }
             
             .btn-icon {
@@ -507,7 +759,6 @@
                 font-size: 16px;
             }
             
-            /* Кнопка профиля на мобильных - ТОЛЬКО АВАТАРКА */
             .profile-btn {
                 padding: 6px;
                 min-width: 44px;
@@ -521,26 +772,28 @@
             }
             
             .profile-info {
-                display: none; /* Скрываем текст на мобильных */
+                display: none;
             }
             
-            /* Кнопка выхода - с иконкой дверь */
-            .btn-logout {
-                padding: 8px 12px;
-                min-width: 44px;
-                justify-content: center;
-            }
-            
-            /* Кнопка админа - с иконкой короны */
+            .btn-logout,
             .btn-admin {
                 padding: 8px 12px;
                 min-width: 44px;
                 justify-content: center;
             }
             
-            /* Уменьшаем логотип */
             .logo {
                 font-size: 18px;
+            }
+            
+            /* Комментарии на мобильных */
+            .comments-header {
+                padding-top: 50px;
+                padding-bottom: 15px;
+            }
+            
+            .comments-container {
+                padding: 15px;
             }
         }
 
@@ -551,10 +804,6 @@
             
             .logo {
                 font-size: 16px;
-            }
-            
-            .btn {
-                padding: 6px 10px;
             }
             
             .profile-btn,
@@ -583,33 +832,10 @@
             .post-content {
                 font-size: 15px;
             }
-        }
-
-        /* Для очень маленьких экранов */
-        @media (max-width: 360px) {
-            .navbar {
-                padding: 6px 10px;
-            }
             
-            .logo {
-                font-size: 14px;
-            }
-            
-            .nav-buttons {
+            .action-btn {
+                font-size: 20px;
                 gap: 4px;
-            }
-            
-            .profile-btn,
-            .btn-logout,
-            .btn-admin {
-                min-width: 36px;
-                padding: 5px 6px;
-            }
-            
-            .dynamic-island {
-                width: 100px;
-                height: 30px;
-                font-size: 13px;
             }
         }
     </style>
@@ -670,6 +896,32 @@
         </div>
     </div>
 
+    <!-- ===== МОДАЛЬНОЕ ОКНО КОММЕНТАРИЕВ ===== -->
+    <div class="comments-modal" id="commentsModal">
+        <div class="comments-header">
+            <h2 class="comments-title">Комментарии</h2>
+            <button class="close-comments" onclick="closeComments()">✕</button>
+        </div>
+        
+        <div class="comments-container" id="commentsContainer">
+            <!-- Оригинальный пост и комментарии загрузятся через JS -->
+        </div>
+        
+        <div class="add-comment-form">
+            <div class="comment-input-container">
+                <textarea 
+                    class="comment-input" 
+                    id="commentInput"
+                    placeholder="Добавьте комментарий..."
+                    maxlength="300"
+                ></textarea>
+                <button class="send-comment-btn" id="sendCommentBtn" onclick="addComment()">
+                    📤
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Сообщения -->
     <div id="message" class="message"></div>
 
@@ -689,6 +941,7 @@
         let currentUser = null;
         let currentUserData = null;
         let postsCache = new Map();
+        let currentPostId = null; // ID поста для комментариев
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -738,7 +991,7 @@
             return username ? username.charAt(0).toUpperCase() : 'А';
         }
 
-        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ В ОСТРОВКЕ =====
+        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ =====
         function updateTime() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('ru-RU', {
@@ -752,45 +1005,295 @@
         setInterval(updateTime, 1000);
         updateTime();
 
-        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
-        function updateProfileButton(userData) {
-            const avatar = document.getElementById('profileAvatar');
+        // ===== КОММЕНТАРИИ =====
+        // Открыть комментарии
+        function openComments(postId, postData) {
+            currentPostId = postId;
+            const modal = document.getElementById('commentsModal');
+            const container = document.getElementById('commentsContainer');
             
-            if (userData && userData.username) {
-                // На десктопе показываем букву, на мобильных - иконку
-                if (window.innerWidth > 768) {
-                    avatar.textContent = getAvatarLetter(userData.username);
-                    avatar.querySelector('.btn-icon')?.remove();
-                } else {
-                    const icon = avatar.querySelector('.btn-icon');
-                    if (!icon) {
-                        avatar.innerHTML = '<span class="btn-icon">👤</span>';
-                    }
+            // Показываем модальное окно
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // Показываем загрузку
+            container.innerHTML = `
+                <div class="loading">Загрузка комментариев...</div>
+            `;
+            
+            // Загружаем оригинальный пост
+            const postHTML = `
+                <div class="original-post">
+                    <div class="original-post-header">
+                        <div class="original-avatar">${getAvatarLetter(postData.username)}</div>
+                        <div>
+                            <div class="original-username">@${escapeHtml(postData.username)}</div>
+                            <div class="original-time">${formatTime(postData.createdAt)}</div>
+                        </div>
+                    </div>
+                    <div class="original-content">${escapeHtml(postData.text)}</div>
+                </div>
+                <div id="commentsList"></div>
+            `;
+            
+            container.innerHTML = postHTML;
+            
+            // Загружаем комментарии
+            loadComments(postId);
+            
+            // Фокус на поле ввода
+            setTimeout(() => {
+                document.getElementById('commentInput').focus();
+            }, 300);
+        }
+
+        // Закрыть комментарии
+        function closeComments() {
+            const modal = document.getElementById('commentsModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            currentPostId = null;
+            
+            // Очищаем поле ввода
+            document.getElementById('commentInput').value = '';
+        }
+
+        // Загрузить комментарии
+        async function loadComments(postId) {
+            try {
+                const commentsList = document.getElementById('commentsList');
+                
+                const snapshot = await db.collection('posts')
+                    .doc(postId)
+                    .collection('comments')
+                    .orderBy('createdAt', 'asc')
+                    .get();
+                
+                if (snapshot.empty) {
+                    commentsList.innerHTML = '<div class="empty">Пока нет комментариев. Будьте первым!</div>';
+                    return;
                 }
+                
+                let commentsHTML = '';
+                
+                snapshot.forEach((doc) => {
+                    const comment = doc.data();
+                    const commentId = doc.id;
+                    const likes = comment.likes || 0;
+                    const likedBy = comment.likedBy || [];
+                    const isLiked = likedBy.includes(currentUser?.uid);
+                    
+                    commentsHTML += `
+                        <div class="comment" data-comment-id="${commentId}">
+                            <div class="comment-avatar">${getAvatarLetter(comment.username)}</div>
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-username">@${escapeHtml(comment.username)}</span>
+                                    <span class="comment-time">${formatTime(comment.createdAt)}</span>
+                                </div>
+                                <div class="comment-text">${escapeHtml(comment.text)}</div>
+                                <div class="comment-actions">
+                                    <button class="comment-action-btn comment-like-btn ${isLiked ? 'liked' : ''}" 
+                                            onclick="toggleCommentLike('${postId}', '${commentId}', this)">
+                                        <span>${isLiked ? '❤️' : '🤍'}</span>
+                                        <span>${likes}</span>
+                                    </button>
+                                    ${comment.userId === currentUser?.uid ? `
+                                        <button class="comment-action-btn delete-comment" 
+                                                onclick="deleteComment('${postId}', '${commentId}')">
+                                            Удалить
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                commentsList.innerHTML = commentsHTML;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки комментариев:', error);
+                const commentsList = document.getElementById('commentsList');
+                commentsList.innerHTML = '<div class="error">Ошибка загрузки комментариев</div>';
             }
         }
 
-        // ===== АДАПТИВНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА =====
-        function updateMobileUI() {
-            const profileBtn = document.getElementById('profileBtn');
-            const adminBtn = document.getElementById('adminBtn');
-            const logoutBtn = document.querySelector('.btn-logout');
+        // Добавить комментарий
+        async function addComment() {
+            if (!currentPostId || !currentUser) return;
             
-            if (window.innerWidth <= 768) {
-                // Мобильная версия - показываем только иконки
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'none', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-            } else {
-                // Десктоп версия - показываем текст
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'flex', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
+            const commentInput = document.getElementById('commentInput');
+            const commentText = commentInput.value.trim();
+            const sendBtn = document.getElementById('sendCommentBtn');
+            
+            if (!commentText) {
+                showMessage('Введите комментарий', 'error');
+                return;
+            }
+            
+            if (commentText.length > 300) {
+                showMessage('Комментарий слишком длинный (макс. 300 символов)', 'error');
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = '...';
+            
+            try {
+                // Добавляем комментарий
+                await db.collection('posts')
+                    .doc(currentPostId)
+                    .collection('comments')
+                    .add({
+                        text: commentText,
+                        userId: currentUser.uid,
+                        username: currentUserData.username,
+                        createdAt: new Date(),
+                        likes: 0,
+                        likedBy: []
+                    });
+                
+                // Обновляем счетчик комментариев в посте
+                await db.collection('posts')
+                    .doc(currentPostId)
+                    .update({
+                        commentsCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                
+                // Очищаем поле ввода
+                commentInput.value = '';
+                
+                // Перезагружаем комментарии
+                loadComments(currentPostId);
+                
+                // Обновляем счетчик комментариев в ленте
+                updatePostCommentsCount(currentPostId);
+                
+            } catch (error) {
+                console.error('Ошибка добавления комментария:', error);
+                showMessage('Ошибка: ' + error.message, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📤';
             }
         }
 
-        // Слушаем изменение размера окна
-        window.addEventListener('resize', updateMobileUI);
+        // Лайк комментария
+        async function toggleCommentLike(postId, commentId, likeBtn) {
+            if (!currentUser) {
+                showMessage('Войдите, чтобы оценивать комментарии', 'error');
+                return;
+            }
+            
+            const likeSpan = likeBtn.querySelector('span:first-child');
+            const countSpan = likeBtn.querySelector('span:last-child');
+            let currentCount = parseInt(countSpan.textContent) || 0;
+            const isLiked = likeBtn.classList.contains('liked');
+            
+            // Оптимистичное обновление UI
+            if (isLiked) {
+                likeBtn.classList.remove('liked');
+                likeSpan.textContent = '🤍';
+                countSpan.textContent = Math.max(0, currentCount - 1);
+            } else {
+                likeBtn.classList.add('liked');
+                likeSpan.textContent = '❤️';
+                countSpan.textContent = currentCount + 1;
+            }
+            
+            // Анимация
+            likeBtn.classList.add('like-pop');
+            setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
+            
+            // Фоновая операция
+            updateCommentLikeInFirestore(postId, commentId, !isLiked).catch(error => {
+                console.error('Ошибка синхронизации лайка комментария:', error);
+                // Откатываем UI
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeSpan.textContent = '❤️';
+                    countSpan.textContent = currentCount;
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeSpan.textContent = '🤍';
+                    countSpan.textContent = Math.max(0, currentCount - 1);
+                }
+            });
+        }
+
+        async function updateCommentLikeInFirestore(postId, commentId, shouldLike) {
+            const commentRef = db.collection('posts')
+                .doc(postId)
+                .collection('comments')
+                .doc(commentId);
+            
+            try {
+                if (shouldLike) {
+                    await commentRef.update({
+                        likes: firebase.firestore.FieldValue.increment(1),
+                        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    });
+                } else {
+                    await commentRef.update({
+                        likes: firebase.firestore.FieldValue.increment(-1),
+                        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                    });
+                }
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Удалить комментарий
+        async function deleteComment(postId, commentId) {
+            if (!confirm('Удалить этот комментарий?')) return;
+            
+            try {
+                await db.collection('posts')
+                    .doc(postId)
+                    .collection('comments')
+                    .doc(commentId)
+                    .delete();
+                
+                // Обновляем счетчик комментариев в посте
+                await db.collection('posts')
+                    .doc(postId)
+                    .update({
+                        commentsCount: firebase.firestore.FieldValue.increment(-1)
+                    });
+                
+                // Удаляем из UI
+                const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+                if (commentElement) {
+                    commentElement.style.opacity = '0';
+                    commentElement.style.transform = 'translateX(-20px)';
+                    setTimeout(() => {
+                        commentElement.remove();
+                    }, 300);
+                }
+                
+                // Обновляем счетчик в ленте
+                updatePostCommentsCount(postId);
+                
+            } catch (error) {
+                console.error('Ошибка удаления комментария:', error);
+                showMessage('Ошибка удаления', 'error');
+            }
+        }
+
+        // Обновить счетчик комментариев в посте ленты
+        function updatePostCommentsCount(postId) {
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                const commentsBtn = postElement.querySelector('.comments-btn');
+                const countSpan = commentsBtn.querySelector('.action-count');
+                let currentCount = parseInt(countSpan.textContent) || 0;
+                
+                // Инкрементируем счетчик (можно сделать точнее через real-time)
+                countSpan.textContent = currentCount + 1;
+            }
+        }
 
         // ===== СОЗДАНИЕ ПОСТА =====
         async function createPost() {
@@ -822,7 +1325,8 @@
                     username: currentUserData.username,
                     createdAt: new Date(),
                     likes: 0,
-                    likedBy: []
+                    likedBy: [],
+                    commentsCount: 0 // Добавляем счетчик комментариев
                 });
                 
                 await db.collection('users').doc(currentUser.uid).update({
@@ -844,51 +1348,40 @@
             }
         }
 
-        // ===== СУПЕР БЫСТРЫЕ ЛАЙКИ =====
+        // ===== ЛАЙКИ ПОСТОВ =====
         async function toggleLike(postId, likeBtn) {
             if (!currentUser) {
                 showMessage('Войдите, чтобы ставить лайки', 'error');
                 return;
             }
             
-            // МГНОВЕННО обновляем UI
-            const countSpan = likeBtn.nextElementSibling;
+            const countSpan = likeBtn.querySelector('.action-count');
             let currentCount = parseInt(countSpan.textContent) || 0;
             const isLiked = likeBtn.classList.contains('liked');
             
-            // Оптимистичное обновление UI
             if (isLiked) {
                 likeBtn.classList.remove('liked');
-                likeBtn.textContent = '🤍';
-                countSpan.textContent = Math.max(0, currentCount - 1);
+                likeBtn.innerHTML = '🤍 <span class="action-count">' + Math.max(0, currentCount - 1) + '</span>';
             } else {
                 likeBtn.classList.add('liked');
-                likeBtn.textContent = '❤️';
-                countSpan.textContent = currentCount + 1;
+                likeBtn.innerHTML = '❤️ <span class="action-count">' + (currentCount + 1) + '</span>';
             }
             
-            // Анимация
             likeBtn.classList.add('like-pop');
             setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
             
-            // Фоновая операция в Firestore
             updateLikeInFirestore(postId, !isLiked).catch(error => {
                 console.error('Ошибка синхронизации лайка:', error);
-                // Откатываем UI если ошибка
                 if (isLiked) {
                     likeBtn.classList.add('liked');
-                    likeBtn.textContent = '❤️';
-                    countSpan.textContent = currentCount;
+                    likeBtn.innerHTML = '❤️ <span class="action-count">' + currentCount + '</span>';
                 } else {
                     likeBtn.classList.remove('liked');
-                    likeBtn.textContent = '🤍';
-                    countSpan.textContent = Math.max(0, currentCount - 1);
+                    likeBtn.innerHTML = '🤍 <span class="action-count">' + Math.max(0, currentCount - 1) + '</span>';
                 }
-                showMessage('Ошибка синхронизации', 'error');
             });
         }
 
-        // Фоновая функция для обновления лайка в Firestore
         async function updateLikeInFirestore(postId, shouldLike) {
             const postRef = db.collection('posts').doc(postId);
             
@@ -931,6 +1424,7 @@
                     const post = doc.data();
                     const postId = doc.id;
                     const likes = post.likes || 0;
+                    const commentsCount = post.commentsCount || 0;
                     const likedBy = post.likedBy || [];
                     const isLiked = likedBy.includes(currentUser?.uid);
                     
@@ -956,12 +1450,17 @@
                             </div>
                             <div class="post-content">${escapeHtml(post.text)}</div>
                             <div class="post-footer">
-                                <div class="like-container">
-                                    <button class="like-btn ${isLiked ? 'liked' : ''}" 
+                                <div class="post-actions">
+                                    <button class="action-btn ${isLiked ? 'liked' : ''}" 
                                             onclick="toggleLike('${postId}', this)">
                                         ${isLiked ? '❤️' : '🤍'}
+                                        <span class="action-count">${likes}</span>
                                     </button>
-                                    <span class="like-count">${likes}</span>
+                                    <button class="action-btn comments-btn" 
+                                            onclick="openComments('${postId}', ${JSON.stringify(post).replace(/'/g, "\\'")})">
+                                        💬
+                                        <span class="action-count">${commentsCount}</span>
+                                    </button>
                                 </div>
                                 <div class="post-time">${formatTime(post.createdAt)}</div>
                             </div>
@@ -973,16 +1472,30 @@
                 
             } catch (error) {
                 console.error('Ошибка загрузки постов:', error);
-                document.getElementById('postsContainer').innerHTML = 
-                    '<div class="error">Ошибка загрузки ленты</div>';
+                postsContainer.innerHTML = '<div class="error">Ошибка загрузки ленты</div>';
             }
         }
 
         // ===== УДАЛЕНИЕ ПОСТА =====
         async function deletePost(postId) {
-            if (!confirm('Удалить этот пост?')) return;
+            if (!confirm('Удалить этот пост и все комментарии?')) return;
             
             try {
+                // Удаляем все комментарии поста
+                const commentsSnapshot = await db.collection('posts')
+                    .doc(postId)
+                    .collection('comments')
+                    .get();
+                
+                if (!commentsSnapshot.empty) {
+                    const batch = db.batch();
+                    commentsSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                }
+                
+                // Удаляем пост
                 await db.collection('posts').doc(postId).delete();
                 
                 if (currentUser) {
@@ -1018,10 +1531,10 @@
                     if (userDoc.exists) {
                         currentUserData = userDoc.data();
                         
-                        updateProfileButton(currentUserData);
-                        updateMobileUI(); // Обновляем UI для текущего размера экрана
+                        // Обновляем профиль
+                        updateProfileButton();
                         
-                        // ПОКАЗЫВАЕМ КНОПКУ АДМИНА ЕСЛИ ПОЛЬЗОВАТЕЛЬ АДМИН
+                        // Показываем админку если нужно
                         if (currentUserData.isAdmin) {
                             document.getElementById('adminBtn').style.display = 'flex';
                         }
@@ -1040,49 +1553,78 @@
             }
         });
 
-        // ===== REAL-TIME ОБНОВЛЕНИЕ ЛАЙКОВ =====
+        // ===== REAL-TIME ОБНОВЛЕНИЯ =====
         function setupRealtimeUpdates() {
             if (!currentUser) return;
             
+            // Обновления лайков постов
             db.collection('posts')
                 .orderBy('createdAt', 'desc')
                 .limit(30)
                 .onSnapshot((snapshot) => {
                     snapshot.docChanges().forEach((change) => {
-                        const postId = change.doc.id;
-                        const postData = change.doc.data();
-                        
-                        postsCache.set(postId, {
-                            ...postData,
-                            id: postId,
-                            isLiked: (postData.likedBy || []).includes(currentUser?.uid)
-                        });
-                        
-                        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                        if (postElement && change.type === 'modified') {
-                            const countSpan = postElement.querySelector('.like-count');
-                            const likeBtn = postElement.querySelector('.like-btn');
+                        if (change.type === 'modified') {
+                            const postId = change.doc.id;
+                            const postData = change.doc.data();
+                            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
                             
-                            if (countSpan) {
-                                countSpan.textContent = postData.likes || 0;
-                            }
-                            
-                            if (likeBtn) {
+                            if (postElement) {
+                                // Обновляем лайки
+                                const likeBtn = postElement.querySelector('.action-btn:first-child');
+                                const likeCount = postElement.querySelector('.action-count:first-child');
                                 const isLiked = (postData.likedBy || []).includes(currentUser?.uid);
-                                if (isLiked) {
-                                    likeBtn.classList.add('liked');
-                                    likeBtn.textContent = '❤️';
-                                } else {
-                                    likeBtn.classList.remove('liked');
-                                    likeBtn.textContent = '🤍';
+                                
+                                if (likeBtn && likeCount) {
+                                    likeCount.textContent = postData.likes || 0;
+                                    if (isLiked) {
+                                        likeBtn.classList.add('liked');
+                                        likeBtn.innerHTML = '❤️ <span class="action-count">' + (postData.likes || 0) + '</span>';
+                                    } else {
+                                        likeBtn.classList.remove('liked');
+                                        likeBtn.innerHTML = '🤍 <span class="action-count">' + (postData.likes || 0) + '</span>';
+                                    }
+                                }
+                                
+                                // Обновляем комментарии
+                                const commentsBtn = postElement.querySelector('.comments-btn .action-count');
+                                if (commentsBtn) {
+                                    commentsBtn.textContent = postData.commentsCount || 0;
                                 }
                             }
                         }
                     });
                 });
+            
+            // Обновления комментариев если открыто модальное окно
+            if (currentPostId) {
+                db.collection('posts')
+                    .doc(currentPostId)
+                    .collection('comments')
+                    .onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added' && document.getElementById('commentsModal').style.display === 'flex') {
+                                loadComments(currentPostId);
+                            }
+                        });
+                    });
+            }
         }
 
         setTimeout(setupRealtimeUpdates, 2000);
+
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ПРОФИЛЯ =====
+        function updateProfileButton() {
+            const avatar = document.getElementById('profileAvatar');
+            const username = document.getElementById('profileUsername');
+            
+            if (currentUserData && currentUserData.username) {
+                username.textContent = currentUserData.username;
+                if (window.innerWidth > 768) {
+                    avatar.textContent = getAvatarLetter(currentUserData.username);
+                    avatar.querySelector('.btn-icon')?.remove();
+                }
+            }
+        }
 
         // ===== ВЫХОД =====
         function logout() {
@@ -1095,19 +1637,32 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.addEventListener('load', () => {
-            console.log('🚀 Лента загружена');
+            console.log('🚀 Лента с комментариями загружена');
             
-            // Инициализируем мобильный UI
-            updateMobileUI();
+            // Обновляем UI для мобильных
+            updateProfileButton();
             
+            // Фокус на поле ввода поста
             document.getElementById('postText').focus();
             
+            // Enter для отправки поста
             document.getElementById('postText').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     createPost();
                 }
             });
+            
+            // Enter для отправки комментария
+            document.getElementById('commentInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    addComment();
+                }
+            });
+            
+            // Адаптация к размеру окна
+            window.addEventListener('resize', updateProfileButton);
         });
     </script>
 </body>

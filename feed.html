@@ -9,176 +9,93 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
 
 <style>
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.9);
   --border:#1f1f1f;
-  --text:#fff;
   --sub:#9a9a9a;
   --accent:linear-gradient(135deg,#667eea,#764ba2);
-  --danger:#ff453a;
 }
-*{box-sizing:border-box}
 body{
   margin:0;
   background:var(--bg);
-  color:var(--text);
+  color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
 }
-.fade-in{animation:fade .35s ease}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
-
-.dynamic-island{
-  position:fixed;top:12px;left:50%;transform:translateX(-50%);
-  width:120px;height:34px;border-radius:20px;
-  background:#111;display:flex;align-items:center;justify-content:center;
-  font-weight:600;z-index:1000;
-}
-
-.navbar{
-  position:fixed;top:60px;left:50%;transform:translateX(-50%);
-  width:92%;max-width:430px;
-  background:var(--card);backdrop-filter:blur(16px);
-  border-radius:18px;padding:10px 14px;
-  display:flex;justify-content:space-between;align-items:center;
-  z-index:999;
-}
-.logo{
-  font-weight:700;
-  background:var(--accent);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.nav-btns{display:flex;gap:8px}
-.nav-btn{
-  background:#1c1c1e;border:none;color:#fff;
-  padding:8px 12px;border-radius:12px;font-size:16px;
-}
-
 .container{
-  max-width:480px;margin:auto;
-  padding:130px 14px 80px;
+  max-width:480px;
+  margin:auto;
+  padding:120px 14px 80px;
 }
-
 .create{
-  background:var(--card);border-radius:22px;
-  padding:16px;margin-bottom:16px;
+  background:var(--card);
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:16px;
 }
 .create textarea{
-  width:100%;min-height:90px;
-  background:#1c1c1e;border:1px solid var(--border);
-  border-radius:16px;padding:12px;color:#fff;
+  width:100%;
+  min-height:90px;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px;
+  color:#fff;
 }
-.create button{
-  width:100%;margin-top:12px;
-  padding:14px;border:none;border-radius:16px;
-  background:var(--accent);color:#fff;font-weight:600;
+.create-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
 }
-
+.btn-photo{
+  width:33%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:16px;
+  font-size:22px;
+  color:#fff;
+}
+.btn-post{
+  width:67%;
+  background:var(--accent);
+  border:none;
+  border-radius:16px;
+  color:#fff;
+  font-weight:600;
+}
 .post{
   background:var(--card);
   border-radius:24px;
   padding:16px;
   margin-bottom:14px;
 }
-.post-header{
-  display:flex;align-items:center;gap:10px;
-}
-.avatar{
-  width:42px;height:42px;border-radius:14px;
-  background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;
-}
-.post-user{font-weight:600}
-.post-time{color:var(--sub);font-size:13px}
-.post-text{margin:10px 0 6px}
-.post-actions{
-  display:flex;align-items:center;gap:18px;
-}
-.action{
-  background:none;border:none;
-  color:var(--sub);font-size:18px;
-}
-.action.liked{color:#ff2d55;animation:pop .2s}
-@keyframes pop{50%{transform:scale(1.2)}}
-
-.trash{
-  margin-left:auto;
-  background:none;border:none;
-  color:var(--danger);font-size:18px;
-}
-
-/* COMMENTS */
-.sheet{
-  position:fixed;inset:0;
-  background:#000;
-  transform:translateY(100%);
-  transition:.35s ease;
-  display:flex;flex-direction:column;
-  z-index:2000;
-}
-.sheet.show{transform:translateY(0)}
-.sheet-header{
-  padding:16px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;
-}
-.sheet-body{
-  flex:1;overflow:auto;padding:16px;
-}
-.comment{
-  background:var(--card);
-  border-radius:20px;padding:14px;margin-bottom:12px;
-}
-.comment-head{
-  display:flex;align-items:center;gap:10px;
-}
-.comment-text{margin-top:6px}
-.sheet-footer{
-  padding:12px;border-top:1px solid var(--border);
-  display:flex;gap:8px;
-}
-.sheet-footer input{
-  flex:1;background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:14px;padding:10px;color:#fff;
+.post img{
+  width:100%;
+  margin-top:10px;
+  border-radius:18px;
+  object-fit:cover;
 }
 </style>
 </head>
 
 <body>
 
-<div class="dynamic-island" id="time"></div>
-
-<div class="navbar">
-  <div class="logo">czhmass</div>
-  <div class="nav-btns">
-    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
-    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-    <button class="nav-btn" onclick="logout()">🚪</button>
-  </div>
-</div>
-
 <div class="container">
   <div class="create">
     <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
-    <button onclick="createPost()">📝 Опубликовать</button>
-  </div>
-  <div id="feed"></div>
-</div>
 
-<div class="sheet" id="commentsSheet">
-  <div class="sheet-header">
-    <strong>Комментарии</strong>
-    <button class="action" onclick="closeComments()">✕</button>
+    <input type="file" id="postImage" accept="image/*" hidden>
+
+    <div class="create-actions">
+      <button class="btn-photo" onclick="postImage.click()">📷</button>
+      <button class="btn-post" onclick="createPost()">📝 Опубликовать</button>
+    </div>
   </div>
-  <div class="sheet-body" id="commentsBody"></div>
-  <div class="sheet-footer">
-    <input id="commentInput" placeholder="Комментарий">
-    <button class="action" onclick="addComment()">📤</button>
-  </div>
+
+  <div id="feed"></div>
 </div>
 
 <script>
@@ -187,137 +104,73 @@ firebase.initializeApp({
   authDomain:"czhmass.firebaseapp.com",
   projectId:"czhmass"
 });
-const db=firebase.firestore();
-const auth=firebase.auth();
 
-let currentUser,userData;
-let postsCache=new Map();
-let currentPostId=null;
+const db = firebase.firestore();
+const auth = firebase.auth();
+const storage = firebase.storage();
 
-auth.onAuthStateChanged(async u=>{
-  if(!u)return location.href="index.html";
-  currentUser=u;
-  const snap=await db.collection("users").doc(u.uid).get();
-  userData=snap.data()||{};
-  if(userData.isAdmin) adminBtn.style.display="block";
+let currentUser = null;
+let userData = null;
+
+auth.onAuthStateChanged(async user=>{
+  if(!user) return location.href="index.html";
+  currentUser = user;
+  const u = await db.collection("users").doc(user.uid).get();
+  userData = u.data() || {};
   loadPosts();
 });
 
+async function createPost(){
+  const text = postText.value.trim();
+  const file = postImage.files[0];
+
+  if(!text && !file){
+    alert("Добавьте текст или фото");
+    return;
+  }
+
+  let imageUrl = null;
+
+  if(file){
+    const ref = storage.ref(
+      `posts/${currentUser.uid}/${Date.now()}_${file.name}`
+    );
+    await ref.put(file);
+    imageUrl = await ref.getDownloadURL();
+  }
+
+  await db.collection("posts").add({
+    text,
+    imageUrl,
+    userId: currentUser.uid,
+    username: userData.username || "anon",
+    createdAt: new Date(),
+    likes: 0,
+    likedBy: [],
+    commentsCount: 0
+  });
+
+  postText.value = "";
+  postImage.value = "";
+  loadPosts();
+}
+
 async function loadPosts(){
   feed.innerHTML="";
-  const snap=await db.collection("posts").orderBy("createdAt","desc").get();
+  const snap = await db.collection("posts")
+    .orderBy("createdAt","desc").get();
+
   snap.forEach(doc=>{
-    const p=doc.data();postsCache.set(doc.id,p);
-    const liked=p.likedBy?.includes(currentUser.uid);
-    feed.innerHTML+=`
-    <div class="post fade-in">
-      <div class="post-header">
-        <div class="avatar">${p.username?.[0]||"A"}</div>
-        <div>
-          <div class="post-user">@${p.username||"anon"}</div>
-          <div class="post-time">${new Date(p.createdAt.seconds*1000).toLocaleString()}</div>
-        </div>
-        ${(p.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
+    const p = doc.data();
+    feed.innerHTML += `
+      <div class="post">
+        <strong>@${p.username}</strong>
+        <div>${p.text || ""}</div>
+        ${p.imageUrl ? `<img src="${p.imageUrl}">` : ""}
       </div>
-      <div class="post-text">${p.text}</div>
-      <div class="post-actions">
-        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-          ${liked?"❤️":"🤍"} ${p.likes||0}
-        </button>
-        <button class="action" onclick="openComments('${doc.id}')">
-          💬 ${p.commentsCount||0}
-        </button>
-      </div>
-    </div>`;
+    `;
   });
 }
-
-async function toggleLike(id){
-  const p=postsCache.get(id);
-  const liked=p.likedBy?.includes(currentUser.uid);
-  await db.collection("posts").doc(id).update({
-    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
-    likedBy:liked
-      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-  });
-  loadPosts();
-}
-
-async function createPost(){
-  if(!postText.value.trim())return;
-  await db.collection("posts").add({
-    text:postText.value,
-    userId:currentUser.uid,
-    username:userData.username,
-    createdAt:new Date(),
-    likes:0,likedBy:[],commentsCount:0
-  });
-  postText.value="";loadPosts();
-}
-
-async function deletePost(id){
-  if(!confirm("Удалить пост?"))return;
-  await db.collection("posts").doc(id).delete();
-  loadPosts();
-}
-
-function openComments(id){
-  currentPostId=id;
-  commentsSheet.classList.add("show");
-  loadComments();
-}
-function closeComments(){
-  commentsSheet.classList.remove("show");
-}
-
-async function loadComments(){
-  commentsBody.innerHTML="";
-  const snap=await db.collection("posts").doc(currentPostId)
-    .collection("comments").orderBy("createdAt").get();
-  snap.forEach(d=>{
-    const c=d.data();
-    commentsBody.innerHTML+=`
-    <div class="comment fade-in">
-      <div class="comment-head">
-        <div class="avatar">${c.username?.[0]||"A"}</div>
-        <strong>@${c.username||"anon"}</strong>
-        ${(c.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deleteComment('${d.id}')">🗑</button>`:""}
-      </div>
-      <div class="comment-text">${c.text}</div>
-    </div>`;
-  });
-}
-
-async function addComment(){
-  if(!commentInput.value)return;
-  await db.collection("posts").doc(currentPostId)
-    .collection("comments").add({
-      text:commentInput.value,
-      userId:currentUser.uid,
-      username:userData.username,
-      createdAt:new Date()
-    });
-  await db.collection("posts").doc(currentPostId)
-    .update({commentsCount:firebase.firestore.FieldValue.increment(1)});
-  commentInput.value="";
-  loadComments();loadPosts();
-}
-
-async function deleteComment(id){
-  await db.collection("posts").doc(currentPostId)
-    .collection("comments").doc(id).delete();
-  loadComments();
-}
-
-function logout(){
-  auth.signOut().then(()=>location.href="index.html");
-}
-setInterval(()=>{
-  time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-},1000);
 </script>
 
 </body>

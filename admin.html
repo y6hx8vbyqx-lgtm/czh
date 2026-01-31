@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель - czhmass.com</title>
     
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -324,12 +323,6 @@
             border: 1px solid #fecaca;
         }
 
-        .email-note {
-            font-size: 12px;
-            color: #a0aec0;
-            margin-top: 4px;
-        }
-
         @media (max-width: 768px) {
             .stats {
                 grid-template-columns: 1fr;
@@ -377,17 +370,6 @@
         </div>
     </div>
 
-    <!-- ПОИСК -->
-    <div class="section">
-        <h3>🔍 Поиск</h3>
-        <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" 
-                   placeholder="Поиск по имени, email или тексту поста...">
-            <button class="btn" onclick="searchContent()">Искать</button>
-            <button class="btn btn-warning" onclick="clearSearch()">Сбросить</button>
-        </div>
-    </div>
-
     <!-- ПОЛЬЗОВАТЕЛИ -->
     <div class="section">
         <h3>👥 Управление пользователями</h3>
@@ -397,7 +379,6 @@
                 <tr>
                     <th>Пользователь</th>
                     <th>Email</th>
-                    <th>Приватность</th>
                     <th>Постов</th>
                     <th>Дата регистрации</th>
                     <th>Действия</th>
@@ -418,7 +399,6 @@
             <thead>
                 <tr>
                     <th>Автор</th>
-                    <th>Email автора</th>
                     <th>Текст</th>
                     <th>Дата</th>
                     <th>Действия</th>
@@ -544,9 +524,11 @@
 
         // ===== МОДАЛЬНОЕ ОКНО =====
         let pendingAction = null;
+        let pendingData = null;
 
-        function showConfirm(action, title, text) {
+        function showConfirm(action, title, text, data = null) {
             pendingAction = action;
+            pendingData = data;
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalText').textContent = text;
             document.getElementById('confirmModal').style.display = 'flex';
@@ -555,6 +537,7 @@
         function closeModal() {
             document.getElementById('confirmModal').style.display = 'none';
             pendingAction = null;
+            pendingData = null;
         }
 
         document.getElementById('confirmButton').onclick = async function() {
@@ -569,6 +552,16 @@
                         break;
                     case 'deleteAllUsers':
                         await deleteAllUsers();
+                        break;
+                    case 'deleteUser':
+                        if (pendingData) {
+                            await deleteUser(pendingData.userId, pendingData.username);
+                        }
+                        break;
+                    case 'deletePost':
+                        if (pendingData) {
+                            await deletePost(pendingData.postId, pendingData.username);
+                        }
                         break;
                 }
             } catch (error) {
@@ -689,8 +682,6 @@
                     const isCurrentUser = userId === currentUser.uid;
                     
                     let postsCount = user.postsCount || 0;
-                    const emailStatus = user.displayEmail ? 'публичный' : 'скрыт';
-                    const emailStatusClass = user.displayEmail ? 'privacy-public' : 'privacy-private';
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -704,13 +695,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            <div>${escapeHtml(user.email || 'Нет email')}</div>
-                            <div class="email-note">Админы всегда видят email</div>
-                        </td>
-                        <td>
-                            <span class="privacy-status ${emailStatusClass}">${emailStatus}</span>
-                        </td>
+                        <td>${escapeHtml(user.email || 'Нет email')}</td>
                         <td>${postsCount}</td>
                         <td>${formatDate(user.createdAt)}</td>
                         <td>
@@ -721,7 +706,7 @@
                                         ${user.isAdmin ? '👑 Снять' : '👑 Назначить'}
                                     </button>
                                     <button class="btn btn-danger" style="padding:6px 12px; font-size:13px;" 
-                                            onclick="deleteUser('${userId}', '${escapeHtml(user.username)}')">
+                                            onclick="confirmDeleteUser('${userId}', '${escapeHtml(user.username)}')">
                                         🗑️ Удалить
                                     </button>
                                 ` : `
@@ -765,28 +750,12 @@
                 table.style.display = 'table';
                 tbody.innerHTML = '';
 
-                // Получаем всех пользователей для email
-                const usersSnapshot = await db.collection('users').get();
-                const usersMap = new Map();
-                usersSnapshot.forEach(doc => {
-                    usersMap.set(doc.id, doc.data());
-                });
-
                 snapshot.forEach(doc => {
                     const post = doc.data();
                     const postId = doc.id;
                     const shortText = post.text && post.text.length > 100 
                         ? post.text.substring(0, 100) + '...' 
                         : post.text || '';
-                    
-                    // Получаем email автора
-                    let userEmail = 'Неизвестно';
-                    let displayEmailStatus = '';
-                    if (usersMap.has(post.userId)) {
-                        const userData = usersMap.get(post.userId);
-                        userEmail = userData.email || 'Нет email';
-                        displayEmailStatus = userData.displayEmail ? '' : '🔒';
-                    }
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -799,17 +768,13 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            ${escapeHtml(userEmail)} ${displayEmailStatus}
-                            <div class="email-note">${displayEmailStatus ? 'Скрыт для пользователей' : 'Публичный'}</div>
-                        </td>
                         <td class="post-content" title="${escapeHtml(post.text || '')}">
                             ${escapeHtml(shortText)}
                         </td>
                         <td>${formatTime(post.createdAt)}</td>
                         <td>
                             <button class="btn btn-danger" style="padding:6px 12px; font-size:13px;" 
-                                    onclick="deletePost('${postId}', '${escapeHtml(post.username)}')">
+                                    onclick="confirmDeletePost('${postId}', '${escapeHtml(post.username)}')">
                                 🗑️ Удалить
                             </button>
                         </td>
@@ -838,6 +803,7 @@
 
                 showMessage(`✅ Пользователь @${username} ${!isCurrentlyAdmin ? 'назначен админом' : 'лишен прав админа'}`, 'success');
                 
+                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -849,31 +815,39 @@
             }
         }
 
+        function confirmDeleteUser(userId, username) {
+            showConfirm('deleteUser', 'Удалить пользователя?', `Вы уверены, что хотите удалить пользователя @${username}? Все его посты также будут удалены.`, { userId, username });
+        }
+
         async function deleteUser(userId, username) {
             if (userId === currentUser.uid) {
                 showMessage('❌ Нельзя удалить самого себя', 'error');
                 return;
             }
 
-            if (!confirm(`Удалить пользователя @${username}?\nВсе его посты также будут удалены.`)) {
-                return;
-            }
-
             try {
+                console.log(`🗑️ Удаление пользователя ${username} (ID: ${userId})`);
+                
+                // Удаляем пользователя
                 await db.collection('users').doc(userId).delete();
                 
+                // Удаляем посты пользователя
                 const postsSnapshot = await db.collection('posts')
                     .where('userId', '==', userId)
                     .get();
                 
-                const batch = db.batch();
-                postsSnapshot.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-
+                if (!postsSnapshot.empty) {
+                    const batch = db.batch();
+                    postsSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    console.log(`✅ Удалено ${postsSnapshot.size} постов пользователя`);
+                }
+                
                 showMessage(`✅ Пользователь @${username} удален`, 'success');
                 
+                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -882,19 +856,20 @@
 
             } catch (error) {
                 console.error('❌ Ошибка удаления пользователя:', error);
-                showMessage('Ошибка: ' + error.message, 'error');
+                showMessage('Ошибка удаления: ' + error.message, 'error');
             }
         }
 
-        async function deletePost(postId, username) {
-            if (!confirm(`Удалить пост пользователя @${username}?`)) {
-                return;
-            }
+        function confirmDeletePost(postId, username) {
+            showConfirm('deletePost', 'Удалить пост?', `Вы уверены, что хотите удалить пост пользователя @${username}?`, { postId, username });
+        }
 
+        async function deletePost(postId, username) {
             try {
                 await db.collection('posts').doc(postId).delete();
                 showMessage('✅ Пост удален', 'success');
                 
+                // Обновляем посты
                 setTimeout(loadPosts, 1000);
                 setTimeout(loadStatistics, 1000);
 
@@ -906,8 +881,15 @@
 
         async function deleteAllPosts() {
             try {
+                // Получаем все посты
                 const snapshot = await db.collection('posts').get();
                 
+                if (snapshot.empty) {
+                    showMessage('Нет постов для удаления', 'error');
+                    return;
+                }
+                
+                // Удаляем пачкой
                 const batch = db.batch();
                 let count = 0;
                 
@@ -918,6 +900,7 @@
                 
                 await batch.commit();
                 
+                // Обновляем счетчики постов у пользователей
                 const usersSnapshot = await db.collection('users').get();
                 const usersBatch = db.batch();
                 
@@ -929,6 +912,7 @@
                 
                 showMessage(`✅ Удалено ${count} постов`, 'success');
                 
+                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadPosts();
@@ -942,7 +926,13 @@
 
         async function deleteAllUsers() {
             try {
+                // Получаем всех пользователей кроме себя
                 const snapshot = await db.collection('users').get();
+                
+                if (snapshot.size <= 1) {
+                    showMessage('Нет других пользователей для удаления', 'error');
+                    return;
+                }
                 
                 const batch = db.batch();
                 let count = 0;
@@ -956,10 +946,12 @@
                 
                 await batch.commit();
                 
+                // Удаляем все посты
                 await deleteAllPosts();
                 
                 showMessage(`✅ Удалено ${count} пользователей`, 'success');
                 
+                // Обновляем данные
                 setTimeout(() => {
                     loadStatistics();
                     loadUsers();
@@ -969,44 +961,6 @@
                 console.error('❌ Ошибка удаления всех пользователей:', error);
                 showMessage('Ошибка: ' + error.message, 'error');
             }
-        }
-
-        function searchContent() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            showMessage(`Поиск по запросу: "${query}"`, 'success');
-            
-            // Простая фильтрация таблиц
-            filterTable('usersTable', query);
-            filterTable('postsTable', query);
-        }
-
-        function filterTable(tableId, query) {
-            const table = document.getElementById(tableId);
-            if (!table || table.style.display === 'none') return;
-            
-            const rows = table.getElementsByTagName('tr');
-            let visibleCount = 0;
-            
-            for (let i = 1; i < rows.length; i++) { // Начинаем с 1, пропускаем заголовок
-                const row = rows[i];
-                const text = row.textContent.toLowerCase();
-                if (text.includes(query)) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-            
-            if (visibleCount === 0 && rows.length > 1) {
-                showMessage('Ничего не найдено', 'error');
-            }
-        }
-
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            loadUsers();
-            loadPosts();
         }
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====

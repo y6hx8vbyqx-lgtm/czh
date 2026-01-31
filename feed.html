@@ -22,24 +22,15 @@
             color: #ffffff;
             min-height: 100vh;
             overflow-x: hidden;
+            padding-top: 10px;
         }
 
-        /* iOS Челка (динамический островок) */
-        .ios-notch {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 120px;
-            background: linear-gradient(180deg, #000000 0%, rgba(0,0,0,0.9) 80%, transparent 100%);
-            z-index: 1000;
-            padding-top: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
+        /* iOS Динамический островок БЕЗ ТЕМНОГО ФОНА */
         .dynamic-island {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
             width: 120px;
             height: 35px;
             background: rgba(40, 40, 40, 0.95);
@@ -53,6 +44,7 @@
             -webkit-backdrop-filter: blur(20px);
             border: 0.5px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
         }
 
         .island-time {
@@ -64,7 +56,7 @@
         /* Навигация */
         .navbar {
             position: fixed;
-            top: 85px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -116,10 +108,22 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        .btn-admin {
+            background: linear-gradient(135deg, #805ad5, #6b46c1);
+        }
+
+        .btn-admin:hover {
+            background: linear-gradient(135deg, #6b46c1, #553c9a);
+        }
+
         .btn-logout {
             background: rgba(255, 59, 48, 0.2);
             color: #ff3b30;
             padding: 8px 12px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 59, 48, 0.3);
         }
 
         /* Кнопка профиля */
@@ -182,7 +186,7 @@
 
         /* Основной контент */
         .container {
-            padding: 160px 20px 100px;
+            padding: 140px 20px 100px;
             max-width: 500px;
             margin: 0 auto;
         }
@@ -309,7 +313,7 @@
             word-wrap: break-word;
         }
 
-        /* Футер поста с лайками - ОПТИМИЗИРОВАННЫЙ */
+        /* Футер поста с лайками */
         .post-footer {
             display: flex;
             align-items: center;
@@ -395,7 +399,7 @@
         /* Сообщения */
         .message {
             position: fixed;
-            top: 140px;
+            top: 130px;
             left: 50%;
             transform: translateX(-50%);
             padding: 12px 24px;
@@ -465,22 +469,18 @@
         @media (max-width: 768px) {
             .navbar {
                 width: 95%;
-                top: 80px;
+                top: 65px;
                 padding: 10px 16px;
             }
             
             .container {
-                padding: 150px 15px 80px;
-            }
-            
-            .ios-notch {
-                height: 110px;
-                padding-top: 45px;
+                padding: 130px 15px 80px;
             }
             
             .dynamic-island {
                 width: 110px;
                 height: 32px;
+                top: 10px;
             }
             
             .post-ios {
@@ -515,11 +515,13 @@
                 min-width: 40px;
             }
             
-            .btn-logout span {
+            .btn-logout span,
+            .btn-admin span {
                 display: none;
             }
             
-            .btn-logout {
+            .btn-logout,
+            .btn-admin {
                 padding: 8px;
                 min-width: 40px;
             }
@@ -527,11 +529,9 @@
     </style>
 </head>
 <body>
-    <!-- iOS Челка с динамическим островком -->
-    <div class="ios-notch">
-        <div class="dynamic-island">
-            <span class="island-time" id="currentTime">--:--</span>
-        </div>
+    <!-- iOS Динамический островок -->
+    <div class="dynamic-island">
+        <span class="island-time" id="currentTime">--:--</span>
     </div>
 
     <!-- Навигация -->
@@ -545,6 +545,12 @@
                     <span class="profile-username" id="profileUsername">Профиль</span>
                     <span class="profile-label">Мой аккаунт</span>
                 </div>
+            </button>
+            
+            <!-- Кнопка администратора (скрыта по умолчанию) -->
+            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;">
+                <span>👑</span>
+                <span>Админ</span>
             </button>
             
             <button class="btn btn-logout" onclick="logout()">
@@ -593,7 +599,7 @@
         let db, auth;
         let currentUser = null;
         let currentUserData = null;
-        let postsCache = new Map(); // Кэш постов для быстрых лайков
+        let postsCache = new Map();
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -698,7 +704,7 @@
                     username: currentUserData.username,
                     createdAt: new Date(),
                     likes: 0,
-                    likedBy: [] // Массив пользователей, которые лайкнули
+                    likedBy: []
                 });
                 
                 await db.collection('users').doc(currentUser.uid).update({
@@ -709,7 +715,6 @@
                 
                 showMessage('Пост опубликован!', 'success');
                 
-                // Перезагружаем ленту
                 setTimeout(loadPosts, 300);
                 
             } catch (error) {
@@ -771,13 +776,11 @@
             
             try {
                 if (shouldLike) {
-                    // Добавляем лайк
                     await postRef.update({
                         likes: firebase.firestore.FieldValue.increment(1),
                         likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                     });
                 } else {
-                    // Убираем лайк
                     await postRef.update({
                         likes: firebase.firestore.FieldValue.increment(-1),
                         likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
@@ -804,8 +807,6 @@
                 }
                 
                 let postsHTML = '';
-                
-                // Очищаем кэш
                 postsCache.clear();
                 
                 snapshot.forEach((doc) => {
@@ -815,7 +816,6 @@
                     const likedBy = post.likedBy || [];
                     const isLiked = likedBy.includes(currentUser?.uid);
                     
-                    // Кэшируем данные поста
                     postsCache.set(postId, {
                         ...post,
                         id: postId,
@@ -875,7 +875,6 @@
                 
                 showMessage('Пост удален', 'success');
                 
-                // Удаляем из DOM с анимацией
                 const postElement = document.querySelector(`[data-post-id="${postId}"]`);
                 if (postElement) {
                     postElement.style.opacity = '0';
@@ -903,6 +902,11 @@
                         
                         updateProfileButton(currentUserData);
                         
+                        // ПОКАЗЫВАЕМ КНОПКУ АДМИНА ЕСЛИ ПОЛЬЗОВАТЕЛЬ АДМИН
+                        if (currentUserData.isAdmin) {
+                            document.getElementById('adminBtn').style.display = 'flex';
+                        }
+                        
                         loadPosts();
                     } else {
                         showMessage('Профиль не найден', 'error');
@@ -921,7 +925,6 @@
         function setupRealtimeUpdates() {
             if (!currentUser) return;
             
-            // Слушаем изменения в постах
             db.collection('posts')
                 .orderBy('createdAt', 'desc')
                 .limit(30)
@@ -930,14 +933,12 @@
                         const postId = change.doc.id;
                         const postData = change.doc.data();
                         
-                        // Обновляем кэш
                         postsCache.set(postId, {
                             ...postData,
                             id: postId,
                             isLiked: (postData.likedBy || []).includes(currentUser?.uid)
                         });
                         
-                        // Обновляем UI если пост виден
                         const postElement = document.querySelector(`[data-post-id="${postId}"]`);
                         if (postElement && change.type === 'modified') {
                             const countSpan = postElement.querySelector('.like-count');
@@ -962,7 +963,6 @@
                 });
         }
 
-        // Запускаем real-time обновления после загрузки
         setTimeout(setupRealtimeUpdates, 2000);
 
         // ===== ВЫХОД =====
@@ -976,11 +976,10 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.addEventListener('load', () => {
-            console.log('🚀 Лента загружена (оптимизированная)');
+            console.log('🚀 Лента загружена');
             
             document.getElementById('postText').focus();
             
-            // Enter для отправки
             document.getElementById('postText').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();

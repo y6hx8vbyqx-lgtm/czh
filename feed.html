@@ -1,3 +1,13 @@
+// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    console.log('🚨 Ошибка поймана:', {msg, url, lineNo, error});
+    alert('Ошибка: ' + msg + '\nСтрока: ' + lineNo + '\nОбновите страницу');
+    return true;
+};
+
+// Отключаем строгий режим если он вызывает проблемы
+// "use strict";
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>

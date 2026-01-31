@@ -198,19 +198,6 @@
             border: 1px solid #fecaca;
         }
 
-        .danger-zone {
-            background: #fed7d7;
-            border: 2px solid #feb2b2;
-            padding: 25px;
-            border-radius: 12px;
-            margin-top: 40px;
-        }
-
-        .danger-title {
-            color: #9b2c2c;
-            margin-bottom: 15px;
-        }
-        
         .loading {
             text-align: center;
             padding: 40px;
@@ -222,7 +209,7 @@
     <div class="container">
         <nav class="navbar">
             <a href="feed.html" class="logo">czhmass.com</a>
-            <button class="btn btn-back" onclick="goBack()">← Назад в профиль</button>
+            <button class="btn btn-back" onclick="goToProfile()">← Назад в профиль</button>
         </nav>
 
         <div class="settings-card">
@@ -231,98 +218,73 @@
             
             <div id="loading" class="loading" style="display: none;">Загрузка настроек...</div>
             
-            <!-- КТО ВИДИТ ПРОФИЛЬ -->
-            <div class="privacy-section" id="privacySettings">
-                <h2 class="section-title">👁️ Видимость профиля</h2>
-                
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать email в профиле</div>
-                        <div class="option-description">
-                            По умолчанию email видят только администраторы. 
-                            Если включить - ваш email будет виден всем.
+            <div id="privacySettings">
+                <!-- КТО ВИДИТ ПРОФИЛЬ -->
+                <div class="privacy-section">
+                    <h2 class="section-title">👁️ Видимость профиля</h2>
+                    
+                    <div class="privacy-option">
+                        <div class="option-info">
+                            <div class="option-title">Показывать email в профиле</div>
+                            <div class="option-description">
+                                По умолчанию email видят только администраторы. 
+                                Если включить - ваш email будет виден всем.
+                            </div>
                         </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleEmail">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleEmail">
-                        <span class="toggle-slider"></span>
-                    </label>
+
+                    <div class="privacy-option">
+                        <div class="option-info">
+                            <div class="option-title">Разрешить упоминания</div>
+                            <div class="option-description">
+                                Другие пользователи смогут упоминать вас в постах (@ваш_юзернейм)
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleMentions">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Разрешить упоминания</div>
-                        <div class="option-description">
-                            Другие пользователи смогут упоминать вас в постах (@ваш_юзернейм)
+                <!-- ПРОФИЛЬНЫЕ ДАННЫЕ -->
+                <div class="privacy-section">
+                    <h2 class="section-title">📊 Профильная информация</h2>
+                    
+                    <div class="privacy-option">
+                        <div class="option-info">
+                            <div class="option-title">Показывать количество постов</div>
+                            <div class="option-description">
+                                Отображать статистику постов в вашем профиле
+                            </div>
                         </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="togglePostsCount" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleMentions">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
 
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать профиль в поиске</div>
-                        <div class="option-description">
-                            Ваш профиль будет появляться в результатах поиска других пользователей
+                    <div class="privacy-option">
+                        <div class="option-info">
+                            <div class="option-title">Показывать дату регистрации</div>
+                            <div class="option-description">
+                                Отображать, когда вы зарегистрировались на сайте
+                            </div>
                         </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleJoinDate" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleProfileVisible" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
                 </div>
-            </div>
-
-            <!-- ПРОФИЛЬНЫЕ ДАННЫЕ -->
-            <div class="privacy-section">
-                <h2 class="section-title">📊 Профильная информация</h2>
-                
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать количество постов</div>
-                        <div class="option-description">
-                            Отображать статистику постов в вашем профиле
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="togglePostsCount" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать дату регистрации</div>
-                        <div class="option-description">
-                            Отображать, когда вы зарегистрировались на сайте
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleJoinDate" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- ОПАСНАЯ ЗОНА -->
-            <div class="danger-zone">
-                <h3 class="danger-title">⚠️ Конфиденциальность данных</h3>
-                <p style="color: #9b2c2c; margin-bottom: 15px;">
-                    Ваш email: <strong id="userEmail">загрузка...</strong>
-                </p>
-                <p style="color: #744210; margin-bottom: 20px;">
-                    Администраторы всегда видят полную информацию для модерации.
-                </p>
-                <button class="btn" style="background: #e53e3e;" onclick="downloadMyData()">
-                    📥 Скачать мои данные
-                </button>
             </div>
 
             <div style="margin-top: 30px; display: flex; gap: 15px;">
-                <button class="btn btn-back" onclick="cancelSettings()">Отмена</button>
+                <button class="btn btn-back" onclick="goToProfile()">Отмена</button>
                 <button class="btn" onclick="savePrivacySettings()" id="saveBtn">Сохранить настройки</button>
             </div>
 
@@ -344,7 +306,6 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         let db, auth;
         let currentUserId = null;
-        let originalSettings = {}; // Сохраняем оригинальные настройки
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -362,21 +323,9 @@
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        function goBack() {
-            // Просто перенаправляем в профиль без сохранения
+        function goToProfile() {
+            // Просто перенаправляем в профиль
             window.location.href = 'profile.html';
-        }
-
-        function cancelSettings() {
-            // Возвращаем переключатели в исходное состояние
-            document.getElementById('toggleEmail').checked = originalSettings.displayEmail || false;
-            document.getElementById('toggleMentions').checked = originalSettings.allowMentions !== false;
-            document.getElementById('toggleProfileVisible').checked = originalSettings.profileVisible !== false;
-            document.getElementById('togglePostsCount').checked = originalSettings.showPostsCount !== false;
-            document.getElementById('toggleJoinDate').checked = originalSettings.showJoinDate !== false;
-            
-            showMessage('Настройки сброшены к исходным', 'success');
-            setTimeout(goBack, 1000);
         }
 
         // ===== ЗАГРУЗКА НАСТРОЕК =====
@@ -394,30 +343,19 @@
                 document.getElementById('privacySettings').style.opacity = '0.5';
                 
                 currentUserId = user.uid;
-                document.getElementById('userEmail').textContent = user.email;
 
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     
-                    // Сохраняем оригинальные настройки
-                    originalSettings = {
-                        displayEmail: userData.displayEmail || false,
-                        allowMentions: userData.allowMentions !== false,
-                        profileVisible: userData.profileVisible !== false,
-                        showPostsCount: userData.showPostsCount !== false,
-                        showJoinDate: userData.showJoinDate !== false
-                    };
-                    
                     // Устанавливаем переключатели
-                    document.getElementById('toggleEmail').checked = originalSettings.displayEmail;
-                    document.getElementById('toggleMentions').checked = originalSettings.allowMentions;
-                    document.getElementById('toggleProfileVisible').checked = originalSettings.profileVisible;
-                    document.getElementById('togglePostsCount').checked = originalSettings.showPostsCount;
-                    document.getElementById('toggleJoinDate').checked = originalSettings.showJoinDate;
+                    document.getElementById('toggleEmail').checked = userData.displayEmail || false;
+                    document.getElementById('toggleMentions').checked = userData.allowMentions !== false;
+                    document.getElementById('togglePostsCount').checked = userData.showPostsCount !== false;
+                    document.getElementById('toggleJoinDate').checked = userData.showJoinDate !== false;
                     
-                    console.log('✅ Настройки приватности загружены:', originalSettings);
+                    console.log('✅ Настройки приватности загружены');
                 }
                 
                 // Скрываем загрузку
@@ -445,7 +383,6 @@
                 const settings = {
                     displayEmail: document.getElementById('toggleEmail').checked,
                     allowMentions: document.getElementById('toggleMentions').checked,
-                    profileVisible: document.getElementById('toggleProfileVisible').checked,
                     showPostsCount: document.getElementById('togglePostsCount').checked,
                     showJoinDate: document.getElementById('toggleJoinDate').checked,
                     privacyUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -455,92 +392,16 @@
 
                 showMessage('✅ Настройки приватности сохранены', 'success');
                 
-                // Возвращаемся в профиль через 1.5 секунды
+                // Возвращаемся в профиль через 1 секунду
                 setTimeout(() => {
                     window.location.href = 'profile.html';
-                }, 1500);
+                }, 1000);
 
             } catch (error) {
                 console.error('Ошибка сохранения настроек:', error);
-                showMessage('❌ Ошибка сохранения настроек: ' + error.message, 'error');
+                showMessage('❌ Ошибка сохранения настроек', 'error');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
-            }
-        }
-
-        // ===== СКАЧИВАНИЕ ДАННЫХ =====
-        async function downloadMyData() {
-            const user = auth.currentUser;
-            if (!user) return;
-
-            try {
-                showMessage('📥 Подготовка данных...', 'success');
-                
-                // Получаем данные пользователя
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                const userData = userDoc.data();
-                
-                // Получаем посты пользователя
-                const postsSnapshot = await db.collection('posts')
-                    .where('userId', '==', user.uid)
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const posts = [];
-                postsSnapshot.forEach(doc => {
-                    const postData = doc.data();
-                    // Убираем служебные поля Firebase
-                    delete postData.createdAt; // Убираем Timestamp
-                    posts.push({
-                        id: doc.id,
-                        ...postData
-                    });
-                });
-
-                // Формируем объект данных
-                const userExport = {
-                    profile: {
-                        username: userData.username,
-                        email: user.email,
-                        registered: userData.createdAt ? userData.createdAt.toDate().toISOString() : null,
-                        postsCount: userData.postsCount || 0,
-                        isAdmin: userData.isAdmin || false,
-                        profileViews: userData.profileViews || 0
-                    },
-                    privacySettings: {
-                        displayEmail: userData.displayEmail || false,
-                        allowMentions: userData.allowMentions !== false,
-                        profileVisible: userData.profileVisible !== false,
-                        showPostsCount: userData.showPostsCount !== false,
-                        showJoinDate: userData.showJoinDate !== false
-                    },
-                    posts: posts,
-                    exportDate: new Date().toISOString(),
-                    totalPosts: posts.length
-                };
-
-                // Создаем и скачиваем файл
-                const dataStr = JSON.stringify(userExport, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `czhmass-data-${userData.username}-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(link);
-                link.click();
-                
-                // Очищаем URL через 1 минуту
-                setTimeout(() => {
-                    URL.revokeObjectURL(url);
-                    document.body.removeChild(link);
-                }, 60000);
-                
-                showMessage('✅ Данные успешно скачаны', 'success');
-
-            } catch (error) {
-                console.error('Ошибка скачивания данных:', error);
-                showMessage('❌ Ошибка скачивания данных: ' + error.message, 'error');
             }
         }
 
@@ -556,20 +417,6 @@
         // Запуск при загрузке
         window.addEventListener('load', () => {
             console.log('🔒 Страница настроек приватности загружена');
-            
-            // Предотвращаем перезагрузку при нажатии на переключатели
-            document.querySelectorAll('.toggle-switch input').forEach(toggle => {
-                toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-            });
-            
-            // Предотвращаем отправку формы при нажатии Enter
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                }
-            });
         });
     </script>
 </body>

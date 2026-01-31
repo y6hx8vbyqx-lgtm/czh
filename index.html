@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>czhmass.com</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .form-group {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #eee;
+        }
+        #message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>czhmass.com</h1>
+        <p class="subtitle">Работает без Firebase!</p>
+        
+        <div class="form-group">
+            <h3>📝 Регистрация</h3>
+            <input type="text" id="regUsername" placeholder="Имя пользователя">
+            <input type="email" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Пароль (6+ символов)">
+            <button onclick="register()">Зарегистрироваться</button>
+        </div>
+        
+        <div class="form-group">
+            <h3>🔑 Вход</h3>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <button onclick="login()">Войти</button>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // ===== ЛОКАЛЬНАЯ РЕГИСТРАЦИЯ (без Firebase) =====
+        
+        // Проверяем, если уже вошли
+        if (localStorage.getItem('czhmass_currentUser')) {
+            showMessage('Вы уже вошли как: ' + localStorage.getItem('czhmass_currentUser'), 'info');
+        }
+        
+        // Функция регистрации
+        function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            
+            // Проверка
+            if (!username || !email || !password) {
+                showMessage('Заполните все поля', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Пароль должен быть не менее 6 символов', 'error');
+                return;
+            }
+            
+            // Получаем пользователей из LocalStorage
+            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            
+            // Проверяем, свободно ли имя
+            if (users[username]) {
+                showMessage('Имя "' + username + '" уже занято', 'error');
+                return;
+            }
+            
+            // Проверяем, не занят ли email
+            for (const user in users) {
+                if (users[user].email === email) {
+                    showMessage('Email уже используется', 'error');
+                    return;
+                }
+            }
+            
+            // Сохраняем пользователя
+            users[username] = {
+                email: email,
+                password: password, // В реальном проекте НЕ хранить так пароли!
+                createdAt: new Date().toISOString(),
+                posts: []
+            };
+            
+            localStorage.setItem('czhmass_users', JSON.stringify(users));
+            localStorage.setItem('czhmass_currentUser', username);
+            
+            showMessage('✅ Регистрация успешна! Имя "' + username + '" закреплено.', 'success');
+            
+            // Через 2 секунды переходим в ленту
+            setTimeout(() => {
+                window.location.href = 'feed.html';
+            }, 2000);
+        }
+        
+        // Функция входа
+        function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            
+            // Ищем пользователя по email и паролю
+            let foundUser = null;
+            for (const username in users) {
+                if (users[username].email === email && users[username].password === password) {
+                    foundUser = username;
+                    break;
+                }
+            }
+            
+            if (foundUser) {
+                localStorage.setItem('czhmass_currentUser', foundUser);
+                showMessage('✅ Вход выполнен! Добро пожаловать, ' + foundUser, 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'feed.html';
+                }, 1500);
+            } else {
+                showMessage('❌ Неверный email или пароль', 'error');
+            }
+        }
+        
+        // Функция показа сообщений
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.style.display = 'block';
+            
+            if (type === 'success') {
+                messageEl.style.background = '#d4edda';
+                messageEl.style.color = '#155724';
+                messageEl.style.border = '1px solid #c3e6cb';
+            } else if (type === 'error') {
+                messageEl.style.background = '#f8d7da';
+                messageEl.style.color = '#721c24';
+                messageEl.style.border = '1px solid #f5c6cb';
+            } else {
+                messageEl.style.background = '#d1ecf1';
+                messageEl.style.color = '#0c5460';
+                messageEl.style.border = '1px solid #bee5eb';
+            }
+        }
+        
+        // Enter для отправки форм
+        document.getElementById('regPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') register();
+        });
+        
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+        
+        // Приветствие
+        console.log('czhmass.com загружен (LocalStorage версия)');
+    </script>
+</body>
+</html>

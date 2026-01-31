@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Лента - czhmass.com</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .navbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .search-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .search-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .search-results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .user-result {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .user-info {
+            flex: 1;
+            cursor: pointer;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .user-stats {
+            color: #718096;
+            font-size: 14px;
+        }
+        .follow-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 100px;
+        }
+        .follow-btn.following {
+            background: #48bb78;
+            color: white;
+        }
+        .create-post {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-profile {
+            background: #48bb78;
+            margin-right: 10px;
+        }
+        .post {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .post-header {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .filter-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Модальное окно профиля */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+            padding: 5px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover {
+            background: #f7fafc;
+            color: #e53e3e;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2 style="margin:0;">czhmass.com</h2>
+        <div>
+            <button class="btn-profile" onclick="window.location.href='profile.html'">👤 Профиль</button>
+            <button onclick="logout()">🚪 Выйти</button>
+        </div>
+    </div>
+    
+    <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
+    <div class="search-container">
+        <input type="text" class="search-input" id="searchInput" 
+               placeholder="Поиск пользователей по имени..." 
+               onkeyup="if(event.key==='Enter') searchUsers()">
+        <button class="search-btn" onclick="searchUsers()">🔍 Найти</button>
+    </div>
+    
+    <!-- РЕЗУЛЬТАТЫ ПОИСКА -->
+    <div class="search-results" id="searchResults">
+        <h3 style="margin-top:0;">Найденные пользователи:</h3>
+        <div id="usersList"></div>
+    </div>
+    
+    <!-- ФИЛЬТРЫ ЛЕНТЫ -->
+    <div class="filter-buttons">
+        <button class="filter-btn active" onclick="showAllPosts()">📰 Все посты</button>
+        <button class="filter-btn" onclick="showMyPosts()">👤 Мои посты</button>
+        <button class="filter-btn" onclick="showFollowing()">⭐ Избранные</button>
+    </div>
+    
+    <!-- СОЗДАНИЕ ПОСТА -->
+    <div class="create-post">
+        <h3 style="margin-top:0;">Новый пост</h3>
+        <textarea id="postText" placeholder="Что у вас нового?"></textarea>
+        <button onclick="createPost()">📤 Опубликовать</button>
+        <div id="message" style="margin-top:10px; display:none;"></div>
+    </div>
+    
+    <!-- ЛЕНТА ПОСТОВ -->
+    <div id="posts">
+        <h3>Лента постов:</h3>
+        <div class="empty" id="emptyMsg">Загрузка постов...</div>
+    </div>
+
+    <script>
+        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+        let currentUser = null;
+        let users = {};
+        let allPosts = [];
+        let currentFilter = 'all';
+        let currentModal = null;
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.onload = function() {
+            currentUser = localStorage.getItem('czhmass_currentUser');
+            users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            
+            if (!currentUser) {
+                alert('❌ Сначала войдите в систему!');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            console.log('Текущий пользователь:', currentUser);
+            loadAllPosts();
+        };
+        
+        // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ =====
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultsContainer = document.getElementById('searchResults');
+            const usersList = document.getElementById('usersList');
+            
+            if (!searchTerm) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            const results = [];
+            for (const username in users) {
+                if (username.toLowerCase().includes(searchTerm) && username !== currentUser) {
+                    results.push({
+                        username: username,
+                        postsCount: users[username].posts ? users[username].posts.length : 0,
+                        joined: users[username].createdAt ? 
+                                new Date(users[username].createdAt).toLocaleDateString('ru-RU') : 
+                                'недавно'
+                    });
+                }
+            }
+            
+            if (results.length === 0) {
+                usersList.innerHTML = '<p style="color:#718096; text-align:center;">Пользователи не найдены</p>';
+            } else {
+                usersList.innerHTML = '';
+                results.forEach(user => {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'user-result';
+                    
+                    const isFollowingUser = isFollowing(user.username);
+                    
+                    userElement.innerHTML = `
+                        <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-info" onclick="viewUserProfile('${user.username}')">
+                            <div class="user-name">@${user.username}</div>
+                            <div class="user-stats">
+                                ${user.postsCount} постов • Участник с ${user.joined}
+                            </div>
+                        </div>
+                        <button class="follow-btn ${isFollowingUser ? 'following' : ''}" 
+                                onclick="toggleFollow('${user.username}', this)">
+                            ${isFollowingUser ? '✅ Подписан' : '➕ Подписаться'}
+                        </button>
+                    `;
+                    usersList.appendChild(userElement);
+                });
+            }
+            
+            resultsContainer.style.display = 'block';
+        }
+        
+        // ===== ПОДПИСКИ =====
+        function isFollowing(username) {
+            const following = JSON.parse(localStorage.getItem('czhmass_following') || '{}');
+            return following[currentUser] && following[currentUser].includes(username);
+        }
+        
+        function toggleFollow(username, buttonElement) {
+            let following = JSON.parse(localStorage.getItem('czhmass_following') || '{}');
+            
+            if (!following[currentUser]) {
+                following[currentUser] = [];
+            }
+            
+            const isCurrentlyFollowing = following[currentUser].includes(username);
+            
+            if (isCurrentlyFollowing) {
+                // Отписаться
+                following[currentUser] = following[currentUser].filter(u => u !== username);
+                showMessage(`Вы отписались от @${username}`, 'info');
+                
+                if (buttonElement) {
+                    buttonElement.textContent = '➕ Подписаться';
+                    buttonElement.classList.remove('following');
+                }
+            } else {
+                // Подписаться
+                following[currentUser].push(username);
+                showMessage(`✅ Вы подписались на @${username}`, 'success');
+                
+                if (buttonElement) {
+                    buttonElement.textContent = '✅ Подписан';
+                    buttonElement.classList.add('following');
+                }
+            }
+            
+            localStorage.setItem('czhmass_following', JSON.stringify(following));
+            
+            // Обновляем модальное окно если открыто
+            if (currentModal && currentModal.dataset.username === username) {
+                updateModalFollowButton(username, !isCurrentlyFollowing);
+            }
+            
+            // Обновляем фильтр если нужно
+            if (currentFilter === 'following') {
+                filterPosts();
+            }
+            
+            return !isCurrentlyFollowing;
+        }
+        
+        // ===== МОДАЛЬНОЕ ОКНО ПРОФИЛЯ =====
+        function viewUserProfile(username) {
+            const userData = users[username];
+            if (!userData) return;
+            
+            // Удаляем предыдущее модальное окно
+            if (currentModal) {
+                document.body.removeChild(currentModal);
+            }
+            
+            // Создаем новое
+            currentModal = document.createElement('div');
+            currentModal.className = 'modal-overlay';
+            currentModal.dataset.username = username;
+            
+            const isFollowingUser = isFollowing(username);
+            
+            currentModal.innerHTML = `
+                <div class="modal-content">
+                    <button class="modal-close" onclick="closeUserProfileModal()">×</button>
+                    
+                    <div style="margin-bottom:20px;">
+                        <h3 style="margin:0 30px 0 0;">@${username}</h3>
+                    </div>
+                    
+                    <div style="display:flex; align-items:center; margin-bottom:20px;">
+                        <div style="width:60px; height:60px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:24px; font-weight:bold; margin-right:15px;">
+                            ${username.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="font-weight:bold; font-size:18px;">@${username}</div>
+                            <div style="color:#718096;">${userData.email || 'Нет email'}</div>
+                            <div style="color:#718096; font-size:14px;">
+                                📝 Постов: <strong>${userData.posts ? userData.posts.length : 0}</strong> • 
+                                📅 Участник с: <strong>${userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('ru-RU') : 'недавно'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:20px;">
+                        <h4 style="display:flex; align-items:center; gap:10px;">
+                            <span>📋 Посты пользователя:</span>
+                            <span style="font-size:14px; color:#718096; font-weight:normal;">
+                                (последние ${Math.min(5, userData.posts ? userData.posts.length : 0)})
+                            </span>
+                        </h4>
+                        ${userData.posts && userData.posts.length > 0 ? 
+                          userData.posts.slice(-5).reverse().map((post, index) => 
+                            `<div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:10px; border-left:3px solid #${index % 2 === 0 ? '48bb78' : '667eea'}">
+                                <div style="color:#4a5568; line-height:1.5;">${escapeHtml(post)}</div>
+                                <div style="color:#a0aec0; font-size:12px; margin-top:8px; text-align:right;">
+                                    Пост #${userData.posts.length - index}
+                                </div>
+                            </div>`
+                          ).join('') : 
+                          '<div style="text-align:center; padding:30px; color:#a0aec0; background:#f8f9fa; border-radius:8px;">
+                            <div style="font-size:48px; margin-bottom:10px;">📭</div>
+                            <p style="margin:0;">Пользователь еще не написал ни одного поста</p>
+                          </div>'}
+                    </div>
+                    
+                    <div style="margin-top:25px; display:flex; gap:10px; justify-content:center;">
+                        <button id="modalFollowBtn" 
+                                onclick="toggleFollowFromModal('${username}')" 
+                                style="background:${isFollowingUser ? '#e53e3e' : '#667eea'}; 
+                                       color:white; border:none; padding:12px 24px; border-radius:8px; 
+                                       cursor:pointer; font-size:16px; font-weight:bold; flex:1;">
+                            ${isFollowingUser ? '❌ Отписаться' : '➕ Подписаться'}
+                        </button>
+                        <button onclick="closeUserProfileModal()" 
+                                style="background:#e2e8f0; color:#4a5568; border:none; padding:12px 24px; 
+                                       border-radius:8px; cursor:pointer; font-size:16px; flex:1;">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Закрытие по клику на фон
+            currentModal.onclick = function(e) {
+                if (e.target === currentModal) {
+                    closeUserProfileModal();
+                }
+            };
+            
+            // Закрытие по Escape
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') closeUserProfileModal();
+            };
+            document.addEventListener('keydown', handleEscape);
+            
+            // Сохраняем обработчик для удаления
+            currentModal.handleEscape = handleEscape;
+            
+            document.body.appendChild(currentModal);
+        }
+        
+        function closeUserProfileModal() {
+            if (currentModal) {
+                document.removeEventListener('keydown', currentModal.handleEscape);
+                document.body.removeChild(currentModal);
+                currentModal = null;
+            }
+        }
+        
+        function toggleFollowFromModal(username) {
+            const button = document.getElementById('modalFollowBtn');
+            if (!button) return;
+            
+            const newState = toggleFollow(username);
+            
+            // Обновляем кнопку в модальном окне
+            button.textContent = newState ? '❌ Отписаться' : '➕ Подписаться';
+            button.style.background = newState ? '#e53e3e' : '#667eea';
+        }
+        
+        function updateModalFollowButton(username, isNowFollowing) {
+            if (currentModal && currentModal.dataset.username === username) {
+                const button = document.getElementById('modalFollowBtn');
+                if (button) {
+                    button.textContent = isNowFollowing ? '❌ Отписаться' : '➕ Подписаться';
+                    button.style.background = isNowFollowing ? '#e53e3e' : '#667eea';
+                }
+            }
+        }
+        
+        // ===== ОСТАЛЬНЫЕ ФУНКЦИИ (фильтры, посты и т.д.) =====
+        function showAllPosts() {
+            currentFilter = 'all';
+            updateFilterButtons();
+            filterPosts();
+        }
+        
+        function showMyPosts() {
+            currentFilter = 'my';
+            updateFilterButtons();
+            filterPosts();
+        }
+        
+        function showFollowing() {
+            currentFilter = 'following';
+            updateFilterButtons();
+            filterPosts();
+        }
+        
+        function updateFilterButtons() {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.filter-btn')[currentFilter === 'all' ? 0 : currentFilter === 'my' ? 1 : 2].classList.add('active');
+        }
+        
+        function filterPosts() {
+            let filteredPosts = [...allPosts];
+            
+            if (currentFilter === 'my') {
+                filteredPosts = filteredPosts.filter(post => post.username === currentUser);
+            } else if (currentFilter === 'following') {
+                const following = JSON.parse(localStorage.getItem('czhmass_following') || '{}');
+                const followingList = following[currentUser] || [];
+                filteredPosts = filteredPosts.filter(post => 
+                    followingList.includes(post.username) || post.username === currentUser
+                );
+            }
+            
+            displayPosts(filteredPosts);
+        }
+        
+        function loadAllPosts() {
+            users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            
+            allPosts = [];
+            for (const username in users) {
+                if (users[username] && Array.isArray(users[username].posts)) {
+                    users[username].posts.forEach((text, index) => {
+                        allPosts.push({
+                            username: username,
+                            text: text,
+                            time: users[username].postTimes ? 
+                                  (users[username].postTimes[index] || new Date().toISOString()) : 
+                                  new Date().toISOString()
+                        });
+                    });
+                }
+            }
+            
+            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
+            filterPosts();
+        }
+        
+        function displayPosts(posts) {
+            const postsDiv = document.getElementById('posts');
+            
+            if (posts.length === 0) {
+                let message = '';
+                if (currentFilter === 'all') message = 'Пока нет постов. Будьте первым!';
+                if (currentFilter === 'my') message = 'У вас еще нет постов';
+                if (currentFilter === 'following') message = 'Вы ни на кого не подписаны или у избранных нет постов';
+                
+                postsDiv.innerHTML = `<h3>Лента постов:</h3><div class="empty">${message}</div>`;
+                return;
+            }
+            
+            let postsHTML = '<h3>Лента постов:</h3>';
+            posts.forEach(post => {
+                const isMyPost = post.username === currentUser;
+                const isFollowingUser = isFollowing(post.username);
+                
+                postsHTML += `
+                    <div class="post">
+                        <div class="post-header">
+                            <span style="cursor:pointer;" onclick="viewUserProfile('${post.username}')">
+                                @${post.username} ${isMyPost ? '(Вы)' : ''}
+                            </span>
+                            <span style="font-size:14px; color:#a0aec0;">
+                                ${formatTime(post.time)}
+                                ${!isMyPost && !isFollowingUser ? 
+                                  `<button onclick="toggleFollow('${post.username}', this)" style="margin-left:10px; background:#e2e8f0; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;">
+                                    ➕ Подписаться
+                                  </button>` : 
+                                  ''}
+                            </span>
+                        </div>
+                        <div>${escapeHtml(post.text)}</div>
+                    </div>
+                `;
+            });
+            
+            postsDiv.innerHTML = postsHTML;
+        }
+        
+        function createPost() {
+            const text = document.getElementById('postText').value.trim();
+            const messageEl = document.getElementById('message');
+            
+            if (!text) {
+                showMessage('Введите текст поста', 'error');
+                return;
+            }
+            
+            if (!users[currentUser]) {
+                showMessage('Ошибка: пользователь не найден', 'error');
+                return;
+            }
+            
+            if (!Array.isArray(users[currentUser].posts)) {
+                users[currentUser].posts = [];
+            }
+            if (!Array.isArray(users[currentUser].postTimes)) {
+                users[currentUser].postTimes = [];
+            }
+            
+            users[currentUser].posts.push(text);
+            users[currentUser].postTimes.push(new Date().toISOString());
+            
+            try {
+                localStorage.setItem('czhmass_users', JSON.stringify(users));
+                showMessage('✅ Пост опубликован!', 'success');
+            } catch (e) {
+                showMessage('❌ Ошибка сохранения', 'error');
+                return;
+            }
+            
+            document.getElementById('postText').value = '';
+            loadAllPosts();
+        }
+        
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.style.display = 'block';
+            messageEl.style.color = type === 'success' ? '#48bb78' : '#e53e3e';
+            messageEl.style.padding = '10px';
+            messageEl.style.borderRadius = '5px';
+            messageEl.style.marginTop = '10px';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+        
+        function formatTime(timeString) {
+            try {
+                const postTime = new Date(timeString);
+                const now = new Date();
+                const diff = now - postTime;
+                const minutes = Math.floor(diff / 60000);
+                
+                if (minutes < 1) return 'только что';
+                if (minutes < 60) return `${minutes} мин назад`;
+                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
+                return postTime.toLocaleDateString('ru-RU');
+            } catch {
+                return 'недавно';
+            }
+        }
+        
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('czhmass_currentUser');
+                window.location.href = 'index.html';
+            }
+        }
+        
+        document.getElementById('postText').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') createPost();
+        });
+    </script>
+</body>
+</html>

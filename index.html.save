@@ -1,0 +1,195 @@
+<script>
+    // Простая регистрация в LocalStorage
+    function register() {
+        const username = document.getElementById('regUsername').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        
+        if (!username || !email || !password) {
+            alert('Заполните все поля');
+            return;
+        }
+        
+        // Получаем всех пользователей
+        const users = JSON.parse(localStorage.getItem('users') || '{}');
+        
+        // Проверяем, свободно ли имя
+        if (users[username]) {
+            alert('Имя уже занято!');
+            return;
+        }
+        
+        // Сохраняем пользователя
+        users[username] = {
+            email: email,
+            password: password, // В реальном проекте так НЕ делать!
+            posts: [],
+            createdAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('currentUser', username);
+        
+        alert('✅ Регистрация успешна!');
+        window.location.href = 'feed.html';
+    }
+    
+    // Простой вход
+    function login() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        const users = JSON.parse(localStorage.getItem('users') || '{}');
+        
+        // Ищем пользователя
+        for (const username in users) {
+            if (users[username].email === email && 
+                users[username].password === password) {
+                
+                localStorage.setItem('currentUser', username);
+                alert('✅ Вход выполнен!');
+                window.location.href = 'feed.html';
+                return;
+            }
+        }
+        
+        alert('❌ Неверный email или пароль');
+    }
+    
+    // Проверяем, если уже вошли
+    if (localStorage.getItem('currentUser')) {
+        alert('Вы уже вошли как: ' + localStorage.getItem('currentUser'));
+        // window.location.href = 'feed.html'; // раскомментируйте позже
+    }
+</script><!DOCTYPE html>
+<html>
+<head>
+    <title>czhmass.com</title>
+    <meta charset="UTF-8">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>czhmass.com</h1>
+        <div class="form-group">
+            <h3>Регистрация</h3>
+            <input type="text" id="regUsername" placeholder="Имя">
+            <input type="email" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Пароль (6+ символов)">
+            <button onclick="register()">Зарегистрироваться</button>
+        </div>
+        <div class="form-group">
+            <h3>Вход</h3>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <button onclick="login()">Войти</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBm-GvHCM2NPMGZ6QoytLPkIIOSIm54heY",
+            authDomain: "czhmass.firebaseapp.com",
+            projectId: "czhmass",
+            storageBucket: "czhmass.appspot.com",
+            messagingSenderId: "1064257019843",
+            appId: "1:1064257019843:web:6848b45be2f86838ca776",
+            measurementId: "G-X5HW72OZED"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        async function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            
+            if (!username || !email || !password) {
+                alert('Заполните все поля');
+                return;
+            }
+            
+            try {
+                alert('Регистрируем...');
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                await db.collection('users').doc(user.uid).set({
+                    username: username,
+                    email: email,
+                    createdAt: new Date()
+                });
+                
+                alert('✅ Успех!');
+            } catch (error) {
+                alert('❌ Ошибка: ' + error.message);
+            }
+        }
+        
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                alert('✅ Вход выполнен!');
+            } catch (error) {
+                alert('❌ Ошибка: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Профиль - czhmass.com</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+        }
+        .username {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 28px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #718096;
+            margin-top: 5px;
+        }
+        .posts-title {
+            font-size: 20px;
+            margin: 30px 0 15px;
+            color: #4a5568;
+        }
+        .post {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #48bb78;
+        }
+        .post-content {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .post-date {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        .btn-logout {
+            background: #e53e3e;
+        }
+        .btn-logout:hover {
+            background: #c53030;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #667eea;">czhmass.com</h1>
+            <p style="color: #718096;">Ваш профиль</p>
+        </div>
+
+        <div class="profile-card">
+            <div class="avatar" id="userAvatar">U</div>
+            <h2 class="username" id="usernameDisplay">@username</h2>
+            <p style="text-align: center; color: #718096;" id="userEmail">email@example.com</p>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="postsCount">0</div>
+                    <div class="stat-label">Постов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="daysCount">1</div>
+                    <div class="stat-label">Дней в сети</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="activityScore">0</div>
+                    <div class="stat-label">Активность</div>
+                </div>
+            </div>
+            
+            <h3 class="posts-title">📝 Мои посты:</h3>
+            <div id="userPosts">
+                <div class="empty">Пока нет постов. Напишите первый пост в ленте!</div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn" onclick="window.location.href='feed.html'">📰 Перейти в ленту</button>
+                <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+        const currentUser = localStorage.getItem('czhmass_currentUser');
+        if (!currentUser) {
+            alert('❌ Сначала войдите в систему!');
+            window.location.href = 'index.html';
+        }
+        
+        // ===== ЗАГРУЗКА ДАННЫХ =====
+        const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+        const userData = users[currentUser] || {};
+        
+        // ===== ОТОБРАЖЕНИЕ ПРОФИЛЯ =====
+        document.getElementById('userAvatar').textContent = currentUser.charAt(0).toUpperCase();
+        document.getElementById('usernameDisplay').textContent = '@' + currentUser;
+        document.getElementById('userEmail').textContent = userData.email || 'Email не указан';
+        
+        // ===== СТАТИСТИКА =====
+        const posts = userData.posts || [];
+        document.getElementById('postsCount').textContent = posts.length;
+        
+        // Дней в сети
+        const joinDate = new Date(userData.createdAt || Date.now());
+        const daysInNetwork = Math.max(1, Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24)));
+        document.getElementById('daysCount').textContent = daysInNetwork;
+        
+        // Активность (простая формула)
+        const activityScore = Math.min(100, posts.length * 10 + daysInNetwork * 2);
+        document.getElementById('activityScore').textContent = activityScore;
+        
+        // ===== ПОКАЗ ПОСТОВ =====
+        function displayUserPosts() {
+            const postsContainer = document.getElementById('userPosts');
+            
+            if (posts.length === 0) {
+                postsContainer.innerHTML = '<div class="empty">Пока нет постов. Напишите первый пост в ленте!</div>';
+                return;
+            }
+            
+            postsContainer.innerHTML = '';
+            
+            // Показываем посты в обратном порядке (новые сверху)
+            [...posts].reverse().forEach((postText, index) => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                
+                // Номер поста
+                const postNumber = posts.length - index;
+                
+                postElement.innerHTML = `
+                    <div class="post-content">${escapeHtml(postText)}</div>
+                    <div class="post-date">Пост #${postNumber}</div>
+                `;
+                
+                postsContainer.appendChild(postElement);
+            });
+        }
+        
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+        
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('czhmass_currentUser');
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.onload = function() {
+            displayUserPosts();
+            console.log('Профиль загружен для пользователя:', currentUser);
+        };
+    </script>
+</body>
+</html>

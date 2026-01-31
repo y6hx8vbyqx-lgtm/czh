@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админ-панель - czhmass.com</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a202c;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .navbar {
+            background: #2d3748;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #2d3748;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .section {
+            background: #2d3748;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #4a5568;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #4a5568;
+        }
+        tr:hover {
+            background: #4a5568;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .btn-delete {
+            background: #e53e3e;
+            color: white;
+        }
+        .btn-warning {
+            background: #d69e2e;
+            color: white;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            background: #4a5568;
+            border: none;
+            border-radius: 5px;
+            color: white;
+        }
+        .danger-zone {
+            background: #742a2a;
+            border: 2px solid #e53e3e;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #2d3748;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2 style="margin:0;">🔐 Админ-панель czhmass.com</h2>
+        <div>
+            <button class="btn btn-primary" onclick="window.location.href='feed.html'">📰 Лента</button>
+            <button class="btn" onclick="logout()">🚪 Выйти</button>
+        </div>
+    </div>
+    
+    <!-- СТАТИСТИКА -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="totalUsers">0</div>
+            <div>Пользователей</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalPosts">0</div>
+            <div>Всего постов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="todayPosts">0</div>
+            <div>Постов сегодня</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="adminName">-</div>
+            <div>Текущий админ</div>
+        </div>
+    </div>
+    
+    <!-- ПОИСК -->
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchAdmin" 
+               placeholder="Поиск по пользователям или постам..." 
+               onkeyup="searchContent()">
+        <button class="btn btn-primary" onclick="searchContent()">🔍 Поиск</button>
+    </div>
+    
+    <!-- ПОЛЬЗОВАТЕЛИ -->
+    <div class="section">
+        <h3>👥 Пользователи</h3>
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Постов</th>
+                    <th>Дата регистрации</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Строки добавятся через JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- ПОСТЫ -->
+    <div class="section">
+        <h3>📝 Все посты</h3>
+        <table id="postsTable">
+            <thead>
+                <tr>
+                    <th>Автор</th>
+                    <th>Текст</th>
+                    <th>Дата</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Строки добавятся через JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- ОПАСНАЯ ЗОНА -->
+    <div class="section danger-zone">
+        <h3 style="color:#e53e3e;">⚠️ Опасная зона</h3>
+        <p style="color:#fed7d7;">Эти действия нельзя отменить!</p>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-delete" onclick="deleteAllPosts()">🗑️ Удалить ВСЕ посты</button>
+            <button class="btn btn-delete" onclick="deleteAllUsers()">👥 Удалить ВСЕХ пользователей</button>
+            <button class="btn btn-warning" onclick="resetSystem()">🔄 Сбросить всю систему</button>
+        </div>
+    </div>
+    
+    <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Подтвердите действие</h3>
+            <p id="modalText">Вы уверены?</p>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-delete" id="confirmAction">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== ПЕРЕМЕННЫЕ =====
+        let currentUser = null;
+        let users = {};
+        let allPosts = [];
+        let currentAdmin = null;
+        
+        // ===== ПРОВЕРКА АДМИНА =====
+        function checkAdmin() {
+            currentUser = localStorage.getItem('czhmass_currentUser');
+            users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            
+            if (!currentUser) {
+                alert('❌ Сначала войдите в систему!');
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            // Проверяем, админ ли текущий пользователь
+            const userData = users[currentUser];
+            if (!userData || !userData.isAdmin) {
+                alert('⛔ У вас нет прав администратора!');
+                window.location.href = 'feed.html';
+                return false;
+            }
+            
+            currentAdmin = currentUser;
+            return true;
+        }
+        
+        // ===== ЗАГРУЗКА ДАННЫХ =====
+        function loadAdminData() {
+            if (!checkAdmin()) return;
+            
+            // Обновляем статистику
+            updateStats();
+            
+            // Загружаем пользователей
+            loadUsersTable();
+            
+            // Загружаем посты
+            loadPostsTable();
+        }
+        
+        // ===== СТАТИСТИКА =====
+        function updateStats() {
+            const userCount = Object.keys(users).length;
+            let postCount = 0;
+            let todayPosts = 0;
+            const today = new Date().toDateString();
+            
+            // Считаем посты
+            for (const username in users) {
+                if (users[username].posts) {
+                    postCount += users[username].posts.length;
+                    
+                    // Посты за сегодня
+                    if (users[username].postTimes) {
+                        users[username].postTimes.forEach(time => {
+                            if (new Date(time).toDateString() === today) {
+                                todayPosts++;
+                            }
+                        });
+                    }
+                }
+            }
+            
+            document.getElementById('totalUsers').textContent = userCount;
+            document.getElementById('totalPosts').textContent = postCount;
+            document.getElementById('todayPosts').textContent = todayPosts;
+            document.getElementById('adminName').textContent = '@' + currentAdmin;
+        }
+        
+        // ===== ТАБЛИЦА ПОЛЬЗОВАТЕЛЕЙ =====
+        function loadUsersTable() {
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
+            
+            for (const username in users) {
+                const user = users[username];
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>
+                        <strong>${username}</strong>
+                        ${user.isAdmin ? ' 👑' : ''}
+                        ${username === currentAdmin ? ' (Вы)' : ''}
+                    </td>
+                    <td>${user.email || 'Нет email'}</td>
+                    <td>${user.posts ? user.posts.length : 0}</td>
+                    <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU') : 'Неизвестно'}</td>
+                    <td>
+                        ${username !== currentAdmin ? 
+                            `<button class="btn btn-delete" onclick="deleteUser('${username}')">🗑️ Удалить</button>
+                             <button class="btn btn-warning" onclick="viewUserPosts('${username}')">📝 Посты</button>` : 
+                            '<span style="color:#a0aec0;">Вы</span>'}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            }
+        }
+        
+        // ===== ТАБЛИЦА ПОСТОВ =====
+        function loadPostsTable() {
+            const tbody = document.querySelector('#postsTable tbody');
+            tbody.innerHTML = '';
+            
+            allPosts = [];
+            
+            // Собираем все посты
+            for (const username in users) {
+                if (users[username].posts) {
+                    users[username].posts.forEach((text, index) => {
+                        allPosts.push({
+                            username: username,
+                            text: text,
+                            time: users[username].postTimes ? 
+                                  (users[username].postTimes[index] || new Date().toISOString()) : 
+                                  new Date().toISOString(),
+                            userIndex: index
+                        });
+                    });
+                }
+            }
+            
+            // Сортируем по дате (новые сверху)
+            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            // Отображаем
+            allPosts.forEach(post => {
+                const row = document.createElement('tr');
+                const shortText = post.text.length > 50 ? 
+                    post.text.substring(0, 50) + '...' : 
+                    post.text;
+                
+                row.innerHTML = `
+                    <td>
+                        <strong>${post.username}</strong>
+                        ${users[post.username] && users[post.username].isAdmin ? ' 👑' : ''}
+                    </td>
+                    <td title="${escapeHtml(post.text)}">${escapeHtml(shortText)}</td>
+                    <td>${formatTime(post.time)}</td>
+                    <td>
+                        <button class="btn btn-delete" onclick="deletePost('${post.username}', ${post.userIndex})">
+                            🗑️ Удалить
+                        </button>
+                        <button class="btn btn-primary" onclick="viewFullPost('${post.username}', ${post.userIndex})">
+                            👁️ Просмотр
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // ===== ФУНКЦИИ УДАЛЕНИЯ =====
+        function deleteUser(username) {
+            if (username === currentAdmin) {
+                alert('❌ Нельзя удалить самого себя!');
+                return;
+            }
+            
+            showConfirmModal(
+                `Удалить пользователя @${username}?`,
+                `Все посты пользователя (${users[username].posts ? users[username].posts.length : 0}) также будут удалены.`,
+                () => {
+                    delete users[username];
+                    localStorage.setItem('czhmass_users', JSON.stringify(users));
+                    loadAdminData();
+                    showMessage(`✅ Пользователь @${username} удален`);
+                }
+            );
+        }
+        
+        function deletePost(username, postIndex) {
+            showConfirmModal(
+                'Удалить пост?',
+                `Пост пользователя @${username} будет удален безвозвратно.`,
+                () => {
+                    if (users[username] && users[username].posts) {
+                        users[username].posts.splice(postIndex, 1);
+                        if (users[username].postTimes) {
+                            users[username].postTimes.splice(postIndex, 1);
+                        }
+                        localStorage.setItem('czhmass_users', JSON.stringify(users));
+                        loadAdminData();
+                        showMessage('✅ Пост удален');
+                    }
+                }
+            );
+        }
+        
+        function deleteAllPosts() {
+            showConfirmModal(
+                'УДАЛИТЬ ВСЕ ПОСТЫ?',
+                'Это действие удалит ВСЕ посты всех пользователей. Нельзя отменить!',
+                () => {
+                    for (const username in users) {
+                        users[username].posts = [];
+                        users[username].postTimes = [];
+                    }
+                    localStorage.setItem('czhmass_users', JSON.stringify(users));
+                    loadAdminData();
+                    showMessage('✅ Все посты удалены');
+                }
+            );
+        }
+        
+        function deleteAllUsers() {
+            showConfirmModal(
+                'УДАЛИТЬ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ?',
+                'Останется только ваш аккаунт. Все данные будут потеряны!',
+                () => {
+                    const adminUser = users[currentAdmin];
+                    localStorage.setItem('czhmass_users', JSON.stringify({
+                        [currentAdmin]: adminUser
+                    }));
+                    loadAdminData();
+                    showMessage('✅ Все пользователи удалены (кроме вас)');
+                }
+            );
+        }
+        
+        function resetSystem() {
+            showConfirmModal(
+                'СБРОСИТЬ ВСЮ СИСТЕМУ?',
+                'Удалится ВСЁ: пользователи, посты, настройки. Начнете с чистого листа!',
+                () => {
+                    localStorage.clear();
+                    alert('✅ Система сброшена. Перенаправляем на регистрацию...');
+                    window.location.href = 'index.html';
+                }
+            );
+        }
+        
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+        function viewUserPosts(username) {
+            const user = users[username];
+            if (!user || !user.posts) return;
+            
+            let postsText = `Посты пользователя @${username}:\n\n`;
+            user.posts.forEach((post, index) => {
+                postsText += `${index + 1}. ${post}\n\n`;
+            });
+            
+            alert(postsText);
+        }
+        
+        function viewFullPost(username, postIndex) {
+            const post = users[username].posts[postIndex];
+            if (!post) return;
+            
+            alert(`Полный текст поста от @${username}:\n\n${post}`);
+        }
+        
+        function searchContent() {
+            const searchTerm = document.getElementById('searchAdmin').value.toLowerCase();
+            
+            // Поиск в пользователях
+            document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+            
+            // Поиск в постах
+            document.querySelectorAll('#postsTable tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+        
+        function showMessage(text) {
+            alert(text);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatTime(timeString) {
+            try {
+                return new Date(timeString).toLocaleDateString('ru-RU');
+            } catch {
+                return 'неизвестно';
+            }
+        }
+        
+        function logout() {
+            window.location.href = 'feed.html';
+        }
+        
+        // ===== МОДАЛЬНОЕ ОКНО =====
+        function showConfirmModal(title, text, callback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            document.getElementById('confirmModal').style.display = 'flex';
+            
+            const confirmBtn = document.getElementById('confirmAction');
+            confirmBtn.onclick = () => {
+                callback();
+                closeModal();
+            };
+        }
+        
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.onload = function() {
+            if (checkAdmin()) {
+                loadAdminData();
+                console.log('Админ-панель загружена для:', currentAdmin);
+            }
+        };
+        
+        // Закрытие модального окна по клику вне его
+        document.getElementById('confirmModal').onclick = function(e) {
+            if (e.target === this) closeModal();
+        };
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>

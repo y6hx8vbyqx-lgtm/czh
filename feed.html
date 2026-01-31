@@ -11,7 +11,45 @@ const firebaseConfig = {
   projectId: "czhmass",
   storageBucket: "czhmass.firebasestorage.app",
   messagingSenderId: "1064257019843",
-  appId: "1:1064257019843:web:65488b45be2f86838ca776"
+  appId: "1:1064257019843:web:65488b45be2f86838ca776"<!DOCTYPE html>
+<html>
+<head>
+    <!-- ... ваши meta и стили ... -->
+    
+    <!-- ДОБАВЬТЕ ЭТО ПРЯМО ЗДЕСЬ -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <style>
+    /* ваши стили */
+    </style>
+</head>
+<body>
+    <!-- ... ваша HTML разметка ... -->
+    
+    <script>
+    // ДОБАВЬТЕ ЭТО ПЕРВЫМИ СТРОКАМИ В <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+      authDomain: "czhmass.firebaseapp.com",
+      projectId: "czhmass",
+      storageBucket: "czhmass.firebasestorage.app",
+      messagingSenderId: "1064257019843",
+      appId: "1:1064257019843:web:65488b45be2f86838ca776"
+    };
+    
+    // Инициализация
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
+    // Теперь остальной ваш код...
+    // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+    // ... и т.д.
+    </script>
+</body>
+</html>
 };
 
 // Инициализация Firebase

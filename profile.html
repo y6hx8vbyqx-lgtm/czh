@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настройки приватности - czhmass.com</title>
-    
+    <title>Профиль - czhmass.com</title>
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    
+
     <style>
         * {
             box-sizing: border-box;
@@ -24,7 +24,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -44,6 +44,11 @@
             font-weight: 700;
             color: #1877f2;
             text-decoration: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
         }
 
         .btn {
@@ -68,114 +73,142 @@
             color: #050505;
         }
 
-        .settings-card {
+        .btn-settings {
+            background: #805ad5;
+        }
+
+        .profile-card {
             background: white;
             border-radius: 16px;
             padding: 40px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-bottom: 24px;
         }
 
-        .settings-title {
+        .profile-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .username {
             font-size: 28px;
             font-weight: 700;
             color: #1c1e21;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .settings-subtitle {
+        .email-info {
+            margin-bottom: 20px;
+        }
+
+        .email-label {
+            font-size: 14px;
             color: #65676b;
-            margin-bottom: 40px;
+            margin-bottom: 5px;
         }
 
-        .privacy-section {
-            margin-bottom: 40px;
+        .email-value {
+            font-size: 18px;
+            font-weight: 500;
+            color: #1c1e21;
         }
 
-        .section-title {
+        .privacy-note {
+            font-size: 12px;
+            color: #805ad5;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .admin-badge {
+            background: #805ad5;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1877f2;
+        }
+
+        .stat-label {
+            color: #65676b;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .info-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f2f5;
+        }
+
+        .info-title {
             font-size: 20px;
             font-weight: 600;
             margin-bottom: 20px;
             color: #1c1e21;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f2f5;
         }
 
-        .privacy-option {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-item {
+            padding: 16px;
             background: #f8f9fa;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            transition: all 0.2s;
+            border-radius: 10px;
         }
 
-        .privacy-option:hover {
-            background: #edf2f7;
-        }
-
-        .option-info {
-            flex: 1;
-        }
-
-        .option-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #1c1e21;
-        }
-
-        .option-description {
-            color: #65676b;
+        .info-label {
             font-size: 14px;
-            line-height: 1.5;
+            color: #65676b;
+            margin-bottom: 5px;
         }
 
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 30px;
-            margin-left: 20px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #38a169;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(30px);
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1c1e21;
         }
 
         .message {
@@ -198,23 +231,32 @@
             border: 1px solid #fecaca;
         }
 
-        .danger-zone {
-            background: #fed7d7;
-            border: 2px solid #feb2b2;
-            padding: 25px;
-            border-radius: 12px;
-            margin-top: 40px;
-        }
-
-        .danger-title {
-            color: #9b2c2c;
-            margin-bottom: 15px;
-        }
-        
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px;
             color: #65676b;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .profile-card {
+                padding: 25px;
+            }
+            
+            .avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 36px;
+            }
         }
     </style>
 </head>
@@ -222,112 +264,71 @@
     <div class="container">
         <nav class="navbar">
             <a href="feed.html" class="logo">czhmass.com</a>
-            <button class="btn btn-back" onclick="goBack()">← Назад в профиль</button>
+            <div class="nav-buttons">
+                <button class="btn btn-back" onclick="window.location.href='feed.html'">← К ленте</button>
+                <button class="btn btn-settings" onclick="window.location.href='profile-settings.html'">⚙️ Приватность</button>
+            </div>
         </nav>
 
-        <div class="settings-card">
-            <h1 class="settings-title">🔒 Настройки приватности</h1>
-            <p class="settings-subtitle">Управляйте тем, какую информацию видят другие пользователи</p>
-            
-            <div id="loading" class="loading" style="display: none;">Загрузка настроек...</div>
-            
-            <!-- КТО ВИДИТ ПРОФИЛЬ -->
-            <div class="privacy-section" id="privacySettings">
-                <h2 class="section-title">👁️ Видимость профиля</h2>
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar" id="avatar">U</div>
+                <h1 class="username" id="username">Загрузка...</h1>
                 
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать email в профиле</div>
-                        <div class="option-description">
-                            По умолчанию email видят только администраторы. 
-                            Если включить - ваш email будет виден всем.
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleEmail">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Разрешить упоминания</div>
-                        <div class="option-description">
-                            Другие пользователи смогут упоминать вас в постах (@ваш_юзернейм)
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleMentions">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать профиль в поиске</div>
-                        <div class="option-description">
-                            Ваш профиль будет появляться в результатах поиска других пользователей
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleProfileVisible" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- ПРОФИЛЬНЫЕ ДАННЫЕ -->
-            <div class="privacy-section">
-                <h2 class="section-title">📊 Профильная информация</h2>
+                <div id="adminBadge" class="admin-badge" style="display: none;">👑 АДМИНИСТРАТОР</div>
                 
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать количество постов</div>
-                        <div class="option-description">
-                            Отображать статистику постов в вашем профиле
-                        </div>
+                <div class="email-info">
+                    <div class="email-label">Email адрес</div>
+                    <div class="email-value" id="email">загрузка...</div>
+                    <div class="privacy-note">
+                        <span>🔒</span> Виден только вам и администраторам
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="togglePostsCount" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="privacy-option">
-                    <div class="option-info">
-                        <div class="option-title">Показывать дату регистрации</div>
-                        <div class="option-description">
-                            Отображать, когда вы зарегистрировались на сайте
-                        </div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="toggleJoinDate" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
                 </div>
             </div>
 
-            <!-- ОПАСНАЯ ЗОНА -->
-            <div class="danger-zone">
-                <h3 class="danger-title">⚠️ Конфиденциальность данных</h3>
-                <p style="color: #9b2c2c; margin-bottom: 15px;">
-                    Ваш email: <strong id="userEmail">загрузка...</strong>
-                </p>
-                <p style="color: #744210; margin-bottom: 20px;">
-                    Администраторы всегда видят полную информацию для модерации.
-                </p>
-                <button class="btn" style="background: #e53e3e;" onclick="downloadMyData()">
-                    📥 Скачать мои данные
-                </button>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="postsCount">0</div>
+                    <div class="stat-label">Постов</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="accountAge">0</div>
+                    <div class="stat-label">Дней с нами</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="lastLogin">-</div>
+                    <div class="stat-label">Последний вход</div>
+                </div>
             </div>
 
-            <div style="margin-top: 30px; display: flex; gap: 15px;">
-                <button class="btn btn-back" onclick="cancelSettings()">Отмена</button>
-                <button class="btn" onclick="savePrivacySettings()" id="saveBtn">Сохранить настройки</button>
+            <div class="info-section">
+                <h2 class="info-title">📊 Информация о профиле</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">ID пользователя</div>
+                        <div class="info-value" id="userId">загрузка...</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Дата регистрации</div>
+                        <div class="info-value" id="createdAt">загрузка...</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Статус аккаунта</div>
+                        <div class="info-value" id="accountStatus">Активен</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Роль</div>
+                        <div class="info-value" id="role">Пользователь</div>
+                    </div>
+                </div>
             </div>
 
-            <div id="message" class="message"></div>
+            <div id="loadingProfile" class="loading">
+                <div>Загрузка профиля...</div>
+            </div>
         </div>
+
+        <div id="message" class="message"></div>
     </div>
 
     <script>
@@ -343,11 +344,11 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         let db, auth;
-        let currentUserId = null;
-        let originalSettings = {}; // Сохраняем оригинальные настройки
+        let isMyProfile = false;
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase инициализирован');
         }
 
         db = firebase.firestore();
@@ -362,25 +363,56 @@
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        function goBack() {
-            // Просто перенаправляем в профиль без сохранения
-            window.location.href = 'profile.html';
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Неизвестно';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return date.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return 'Неизвестно';
+            }
         }
 
-        function cancelSettings() {
-            // Возвращаем переключатели в исходное состояние
-            document.getElementById('toggleEmail').checked = originalSettings.displayEmail || false;
-            document.getElementById('toggleMentions').checked = originalSettings.allowMentions !== false;
-            document.getElementById('toggleProfileVisible').checked = originalSettings.profileVisible !== false;
-            document.getElementById('togglePostsCount').checked = originalSettings.showPostsCount !== false;
-            document.getElementById('toggleJoinDate').checked = originalSettings.showJoinDate !== false;
-            
-            showMessage('Настройки сброшены к исходным', 'success');
-            setTimeout(goBack, 1000);
+        function calculateDays(timestamp) {
+            if (!timestamp) return 0;
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
+                return Math.floor(diff / (1000 * 60 * 60 * 24));
+            } catch (e) {
+                return 0;
+            }
         }
 
-        // ===== ЗАГРУЗКА НАСТРОЕК =====
-        async function loadPrivacySettings() {
+        function formatLastLogin(timestamp) {
+            if (!timestamp) return 'Сегодня';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
+                
+                if (diff < 60000) return 'Только что';
+                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
+                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
+                if (diff < 172800000) return 'Вчера';
+                
+                return `${Math.floor(diff / 86400000)} дн. назад`;
+            } catch (e) {
+                return 'Недавно';
+            }
+        }
+
+        function getAvatarLetter(username) {
+            return username ? username.charAt(0).toUpperCase() : 'U';
+        }
+
+        // ===== ЗАГРУЗКА ПРОФИЛЯ =====
+        async function loadProfile() {
             const user = auth.currentUser;
             
             if (!user) {
@@ -389,165 +421,50 @@
             }
 
             try {
-                // Показываем загрузку
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('privacySettings').style.opacity = '0.5';
-                
-                currentUserId = user.uid;
-                document.getElementById('userEmail').textContent = user.email;
-
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    
-                    // Сохраняем оригинальные настройки
-                    originalSettings = {
-                        displayEmail: userData.displayEmail || false,
-                        allowMentions: userData.allowMentions !== false,
-                        profileVisible: userData.profileVisible !== false,
-                        showPostsCount: userData.showPostsCount !== false,
-                        showJoinDate: userData.showJoinDate !== false
-                    };
-                    
-                    // Устанавливаем переключатели
-                    document.getElementById('toggleEmail').checked = originalSettings.displayEmail;
-                    document.getElementById('toggleMentions').checked = originalSettings.allowMentions;
-                    document.getElementById('toggleProfileVisible').checked = originalSettings.profileVisible;
-                    document.getElementById('togglePostsCount').checked = originalSettings.showPostsCount;
-                    document.getElementById('toggleJoinDate').checked = originalSettings.showJoinDate;
-                    
-                    console.log('✅ Настройки приватности загружены:', originalSettings);
+                if (!userDoc.exists) {
+                    showMessage('❌ Профиль не найден', 'error');
+                    return;
+                }
+
+                const userData = userDoc.data();
+                
+                // Обновляем аватар
+                const avatarDiv = document.getElementById('avatar');
+                avatarDiv.textContent = getAvatarLetter(userData.username);
+                
+                // Обновляем основную информацию
+                document.getElementById('username').textContent = userData.username || 'Без имени';
+                document.getElementById('email').textContent = user.email;
+                document.getElementById('userId').textContent = user.uid.substring(0, 8) + '...';
+                document.getElementById('createdAt').textContent = formatDate(userData.createdAt);
+                document.getElementById('postsCount').textContent = userData.postsCount || 0;
+                document.getElementById('accountAge').textContent = calculateDays(userData.createdAt);
+                document.getElementById('lastLogin').textContent = formatLastLogin(userData.lastLogin);
+                
+                // Админ-бейдж
+                if (userData.isAdmin) {
+                    document.getElementById('adminBadge').style.display = 'inline-block';
+                    document.getElementById('role').textContent = 'Администратор';
                 }
                 
                 // Скрываем загрузку
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('privacySettings').style.opacity = '1';
+                document.getElementById('loadingProfile').style.display = 'none';
                 
-            } catch (error) {
-                console.error('Ошибка загрузки настроек:', error);
-                showMessage('Ошибка загрузки настроек', 'error');
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('privacySettings').style.opacity = '1';
-            }
-        }
-
-        // ===== СОХРАНЕНИЕ НАСТРОЕК =====
-        async function savePrivacySettings() {
-            if (!currentUserId) return;
-
-            const saveBtn = document.getElementById('saveBtn');
-            const originalText = saveBtn.textContent;
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Сохранение...';
-
-            try {
-                const settings = {
-                    displayEmail: document.getElementById('toggleEmail').checked,
-                    allowMentions: document.getElementById('toggleMentions').checked,
-                    profileVisible: document.getElementById('toggleProfileVisible').checked,
-                    showPostsCount: document.getElementById('togglePostsCount').checked,
-                    showJoinDate: document.getElementById('toggleJoinDate').checked,
-                    privacyUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                await db.collection('users').doc(currentUserId).update(settings);
-
-                showMessage('✅ Настройки приватности сохранены', 'success');
-                
-                // Возвращаемся в профиль через 1.5 секунды
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1500);
+                console.log('✅ Профиль загружен:', userData.username);
 
             } catch (error) {
-                console.error('Ошибка сохранения настроек:', error);
-                showMessage('❌ Ошибка сохранения настроек: ' + error.message, 'error');
-                saveBtn.disabled = false;
-                saveBtn.textContent = originalText;
-            }
-        }
-
-        // ===== СКАЧИВАНИЕ ДАННЫХ =====
-        async function downloadMyData() {
-            const user = auth.currentUser;
-            if (!user) return;
-
-            try {
-                showMessage('📥 Подготовка данных...', 'success');
-                
-                // Получаем данные пользователя
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                const userData = userDoc.data();
-                
-                // Получаем посты пользователя
-                const postsSnapshot = await db.collection('posts')
-                    .where('userId', '==', user.uid)
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const posts = [];
-                postsSnapshot.forEach(doc => {
-                    const postData = doc.data();
-                    // Убираем служебные поля Firebase
-                    delete postData.createdAt; // Убираем Timestamp
-                    posts.push({
-                        id: doc.id,
-                        ...postData
-                    });
-                });
-
-                // Формируем объект данных
-                const userExport = {
-                    profile: {
-                        username: userData.username,
-                        email: user.email,
-                        registered: userData.createdAt ? userData.createdAt.toDate().toISOString() : null,
-                        postsCount: userData.postsCount || 0,
-                        isAdmin: userData.isAdmin || false,
-                        profileViews: userData.profileViews || 0
-                    },
-                    privacySettings: {
-                        displayEmail: userData.displayEmail || false,
-                        allowMentions: userData.allowMentions !== false,
-                        profileVisible: userData.profileVisible !== false,
-                        showPostsCount: userData.showPostsCount !== false,
-                        showJoinDate: userData.showJoinDate !== false
-                    },
-                    posts: posts,
-                    exportDate: new Date().toISOString(),
-                    totalPosts: posts.length
-                };
-
-                // Создаем и скачиваем файл
-                const dataStr = JSON.stringify(userExport, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `czhmass-data-${userData.username}-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(link);
-                link.click();
-                
-                // Очищаем URL через 1 минуту
-                setTimeout(() => {
-                    URL.revokeObjectURL(url);
-                    document.body.removeChild(link);
-                }, 60000);
-                
-                showMessage('✅ Данные успешно скачаны', 'success');
-
-            } catch (error) {
-                console.error('Ошибка скачивания данных:', error);
-                showMessage('❌ Ошибка скачивания данных: ' + error.message, 'error');
+                console.error('❌ Ошибка загрузки профиля:', error);
+                showMessage('Ошибка загрузки профиля', 'error');
+                document.getElementById('loadingProfile').innerHTML = '<div class="error">Ошибка загрузки профиля</div>';
             }
         }
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         auth.onAuthStateChanged((user) => {
             if (user) {
-                loadPrivacySettings();
+                loadProfile();
             } else {
                 window.location.href = 'index.html';
             }
@@ -555,21 +472,7 @@
 
         // Запуск при загрузке
         window.addEventListener('load', () => {
-            console.log('🔒 Страница настроек приватности загружена');
-            
-            // Предотвращаем перезагрузку при нажатии на переключатели
-            document.querySelectorAll('.toggle-switch input').forEach(toggle => {
-                toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-            });
-            
-            // Предотвращаем отправку формы при нажатии Enter
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                }
-            });
+            console.log('🚀 Страница profile.html загружена');
         });
     </script>
 </body>

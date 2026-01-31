@@ -11,169 +11,308 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
 <style>
-body { background:#000; color:#fff; font-family:system-ui; margin:0 }
-.container { max-width:500px; margin:auto; padding:20px }
-.post { background:#111; padding:16px; border-radius:16px; margin-bottom:14px }
-.actions { display:flex; gap:16px; margin-top:10px }
-button { background:none; border:none; color:#fff; cursor:pointer }
-.modal {
-  position:fixed; inset:0; background:#000;
-  display:none; flex-direction:column;
+body{
+    margin:0;
+    background:#000;
+    color:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
 }
-.modal-header { padding:16px; border-bottom:1px solid #222 }
-.modal-body { flex:1; overflow:auto; padding:16px }
-.modal-footer { padding:16px; border-top:1px solid #222 }
-.comment { padding:10px 0; border-bottom:1px solid #222 }
+.dynamic-island{
+    position:fixed;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    width:110px;
+    height:32px;
+    background:#111;
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+}
+.navbar{
+    position:fixed;
+    top:60px;
+    left:50%;
+    transform:translateX(-50%);
+    width:90%;
+    max-width:420px;
+    background:rgba(28,28,30,.85);
+    border-radius:16px;
+    padding:10px 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    z-index:999;
+}
+.logo{
+    font-weight:700;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+.nav-buttons{
+    display:flex;
+    gap:8px;
+}
+.btn{
+    background:rgba(255,255,255,.1);
+    border:none;
+    color:#fff;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+}
+.btn-admin{
+    background:linear-gradient(135deg,#805ad5,#6b46c1);
+}
+.btn-logout{
+    background:rgba(255,59,48,.2);
+    color:#ff3b30;
+}
+.container{
+    max-width:500px;
+    margin:auto;
+    padding:130px 16px 80px;
+}
+.create-post textarea{
+    width:100%;
+    min-height:90px;
+    background:#111;
+    border:1px solid #222;
+    border-radius:14px;
+    padding:12px;
+    color:#fff;
+}
+.create-post button{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff;
+    font-weight:600;
+}
+.post{
+    background:rgba(28,28,30,.85);
+    border-radius:18px;
+    padding:16px;
+    margin-top:14px;
+}
+.post-header{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+.avatar{
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+}
+.post-actions{
+    display:flex;
+    gap:18px;
+    margin-top:12px;
+}
+.action-btn{
+    background:none;
+    border:none;
+    color:#aaa;
+    font-size:20px;
+    cursor:pointer;
+}
+.action-btn.liked{
+    color:#ff3b30;
+}
+.modal{
+    position:fixed;
+    inset:0;
+    background:#000;
+    display:none;
+    flex-direction:column;
+    z-index:2000;
+}
+.modal-header{
+    padding:16px;
+    border-bottom:1px solid #222;
+}
+.modal-body{
+    flex:1;
+    overflow:auto;
+    padding:16px;
+}
+.modal-footer{
+    padding:12px;
+    border-top:1px solid #222;
+    display:flex;
+    gap:8px;
+}
+.modal-footer input{
+    flex:1;
+    background:#111;
+    border:1px solid #222;
+    border-radius:12px;
+    padding:10px;
+    color:#fff;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <textarea id="postInput" placeholder="Что нового?" style="width:100%;height:80px"></textarea>
-  <button onclick="createPost()">Опубликовать</button>
-  <div id="feed"></div>
+<div class="dynamic-island" id="time"></div>
+
+<div class="navbar">
+    <div class="logo">czhmass</div>
+    <div class="nav-buttons">
+        <button class="btn" onclick="location.href='profile.html'">👤</button>
+        <button class="btn btn-admin" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
+        <button class="btn btn-logout" onclick="logout()">🚪</button>
+    </div>
 </div>
 
-<!-- COMMENTS MODAL -->
+<div class="container">
+    <div class="create-post">
+        <textarea id="postText" placeholder="Что у вас нового?"></textarea>
+        <button onclick="createPost()">Опубликовать</button>
+    </div>
+    <div id="feed"></div>
+</div>
+
 <div class="modal" id="commentsModal">
-  <div class="modal-header">
-    <button onclick="closeComments()">✕</button>
-  </div>
-  <div class="modal-body" id="commentsBody"></div>
-  <div class="modal-footer">
-    <input id="commentInput" placeholder="Комментарий..." style="width:80%">
-    <button onclick="addComment()">Отправить</button>
-  </div>
+    <div class="modal-header">
+        <button onclick="closeComments()">✕</button>
+    </div>
+    <div class="modal-body" id="commentsBody"></div>
+    <div class="modal-footer">
+        <input id="commentInput" placeholder="Комментарий">
+        <button onclick="addComment()">📤</button>
+    </div>
 </div>
 
 <script>
-/* ================= FIREBASE ================= */
 firebase.initializeApp({
-  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain: "czhmass.firebaseapp.com",
-  projectId: "czhmass"
+    apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+    authDomain:"czhmass.firebaseapp.com",
+    projectId:"czhmass"
+});
+const db=firebase.firestore();
+const auth=firebase.auth();
+
+let currentUser=null;
+let userData=null;
+let postsCache=new Map();
+let currentPostId=null;
+
+auth.onAuthStateChanged(async user=>{
+    if(!user) return location.href="index.html";
+    currentUser=user;
+    const u=await db.collection("users").doc(user.uid).get();
+    userData=u.data();
+    if(userData?.isAdmin) adminBtn.style.display="block";
+    loadPosts();
 });
 
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-/* ================= STATE ================= */
-let currentUser = null;
-let postsCache = new Map();
-let currentPostId = null;
-
-/* ================= AUTH ================= */
-auth.onAuthStateChanged(user => {
-  if (!user) return location.href = "index.html";
-  currentUser = user;
-  loadPosts();
-});
-
-/* ================= POSTS ================= */
-async function loadPosts() {
-  const feed = document.getElementById("feed");
-  feed.innerHTML = "Загрузка...";
-  const snap = await db.collection("posts").orderBy("createdAt","desc").get();
-  feed.innerHTML = "";
-
-  snap.forEach(doc => {
-    const post = doc.data();
-    postsCache.set(doc.id, post);
-
-    const el = document.createElement("div");
-    el.className = "post";
-    el.innerHTML = `
-      <div>${post.text}</div>
-      <div class="actions">
-        <button onclick="toggleLike('${doc.id}')">❤️ ${post.likes||0}</button>
-        <button onclick="openComments('${doc.id}')">💬 ${post.commentsCount||0}</button>
-      </div>
-    `;
-    feed.appendChild(el);
-  });
-}
-
-async function createPost() {
-  const text = postInput.value.trim();
-  if (!text) return;
-  await db.collection("posts").add({
-    text,
-    userId: currentUser.uid,
-    createdAt: new Date(),
-    likes:0,
-    commentsCount:0
-  });
-  postInput.value = "";
-  loadPosts();
-}
-
-async function toggleLike(id) {
-  const ref = db.collection("posts").doc(id);
-  await ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
-  loadPosts();
-}
-
-/* ================= COMMENTS ================= */
-function openComments(postId) {
-  currentPostId = postId;
-  commentsModal.style.display = "flex";
-  loadComments();
-}
-
-function closeComments() {
-  commentsModal.style.display = "none";
-  currentPostId = null;
-}
-
-async function loadComments() {
-  const body = document.getElementById("commentsBody");
-  body.innerHTML = "";
-
-  const snap = await db.collection("posts")
-    .doc(currentPostId)
-    .collection("comments")
-    .orderBy("createdAt")
-    .get();
-
-  if (snap.empty) {
-    body.innerHTML = "Комментариев нет";
-    return;
-  }
-
-  snap.forEach(doc => {
-    const c = doc.data();
-    const el = document.createElement("div");
-    el.className = "comment";
-    el.textContent = c.text;
-    body.appendChild(el);
-  });
-}
-
-async function addComment() {
-  const text = commentInput.value.trim();
-  if (!text) return;
-
-  await db.collection("posts")
-    .doc(currentPostId)
-    .collection("comments")
-    .add({
-      text,
-      userId: currentUser.uid,
-      createdAt: new Date()
+async function loadPosts(){
+    feed.innerHTML="";
+    const snap=await db.collection("posts").orderBy("createdAt","desc").get();
+    snap.forEach(doc=>{
+        const p=doc.data();
+        postsCache.set(doc.id,p);
+        const liked=p.likedBy?.includes(currentUser.uid);
+        feed.innerHTML+=`
+        <div class="post">
+            <div class="post-header">
+                <div class="avatar">${p.username?.[0]||"A"}</div>
+                <div>@${p.username||"anon"}</div>
+            </div>
+            <div>${p.text}</div>
+            <div class="post-actions">
+                <button class="action-btn ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
+                    ${liked?"❤️":"🤍"} ${p.likes||0}
+                </button>
+                <button class="action-btn" onclick="openComments('${doc.id}')">
+                    💬 ${p.commentsCount||0}
+                </button>
+            </div>
+        </div>`;
     });
-
-  await db.collection("posts")
-    .doc(currentPostId)
-    .update({
-      commentsCount: firebase.firestore.FieldValue.increment(1)
-    });
-
-  commentInput.value = "";
-  loadComments();
-  loadPosts();
 }
+
+async function toggleLike(id){
+    const ref=db.collection("posts").doc(id);
+    const post=postsCache.get(id);
+    const liked=post.likedBy?.includes(currentUser.uid);
+
+    await ref.update({
+        likes: firebase.firestore.FieldValue.increment(liked?-1:1),
+        likedBy: liked
+          ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+          : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+    });
+    loadPosts();
+}
+
+async function createPost(){
+    if(!postText.value.trim())return;
+    await db.collection("posts").add({
+        text:postText.value,
+        userId:currentUser.uid,
+        username:userData.username,
+        createdAt:new Date(),
+        likes:0,
+        likedBy:[],
+        commentsCount:0
+    });
+    postText.value="";
+    loadPosts();
+}
+
+function openComments(id){
+    currentPostId=id;
+    commentsModal.style.display="flex";
+    loadComments();
+}
+function closeComments(){
+    commentsModal.style.display="none";
+}
+
+async function loadComments(){
+    commentsBody.innerHTML="";
+    const snap=await db.collection("posts").doc(currentPostId)
+        .collection("comments").orderBy("createdAt").get();
+    if(snap.empty){commentsBody.innerHTML="Нет комментариев";return;}
+    snap.forEach(d=>{
+        commentsBody.innerHTML+=`<div>${d.data().text}</div>`;
+    });
+}
+async function addComment(){
+    if(!commentInput.value)return;
+    await db.collection("posts").doc(currentPostId)
+      .collection("comments").add({
+        text:commentInput.value,
+        userId:currentUser.uid,
+        createdAt:new Date()
+      });
+    await db.collection("posts").doc(currentPostId)
+      .update({commentsCount:firebase.firestore.FieldValue.increment(1)});
+    commentInput.value="";
+    loadComments();loadPosts();
+}
+
+function logout(){
+    auth.signOut().then(()=>location.href="index.html");
+}
+setInterval(()=>{
+    time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+},1000);
 </script>
-
 </body>
 </html>

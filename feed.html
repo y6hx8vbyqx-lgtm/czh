@@ -1,553 +1,313 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Лента - czhmass.com</title>
-    <style>
-        /* (Стили остаются такими же, как у вас, они уже хорошие) */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+<script>
+    // ===== КОНФИГУРАЦИЯ FIREBASE (ТА ЖЕ САМАЯ!) =====
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+  authDomain: "czhmass.firebaseapp.com",
+  projectId: "czhmass",
+  storageBucket: "czhmass.firebasestorage.app",
+  messagingSenderId: "1064257019843",
+  appId: "1:1064257019843:web:65488b45be2f86838ca776",
+  measurementId: "G-X5HW7Z0ZED"
+};
+    
+    // Инициализация
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            alert('⚠️ Сначала войдите в систему!');
+            window.location.href = 'index.html';
+        } else {
+            console.log('Пользователь авторизован:', user.uid);
+            initializeApp();
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #f5f8fa;
-            color: #1a202c;
-            line-height: 1.6;
-            padding: 0;
-            min-height: 100vh;
+    });
+    
+    // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
+    let currentUser = null;
+    let userId = null;
+    
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    async function initializeApp() {
+        console.log('🚀 Инициализация приложения...');
+        
+        userId = localStorage.getItem('czhmass_userId');
+        currentUser = localStorage.getItem('czhmass_currentUser');
+        
+        if (!userId || !currentUser) {
+            alert('❌ Ошибка данных пользователя!');
+            window.location.href = 'index.html';
+            return;
         }
-
-        .navbar {
-            background: white;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .btn:hover {
-            background: #5a67d8;
-            transform: translateY(-1px);
-        }
-
-        .btn-profile {
-            background: #48bb78;
-        }
-
-        .btn-admin {
-            background: #805ad5;
-            display: none;
-        }
-
-        .btn-logout {
-            background: #e53e3e;
-        }
-
-        .search-container {
-            background: white;
-            padding: 20px;
-            margin: 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 10px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 12px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border 0.2s;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .create-post-container {
-            background: white;
-            padding: 25px;
-            margin: 20px auto;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            max-width: 600px;
-        }
-
-        .create-post-title {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #2d3748;
-        }
-
-        .post-textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            font-family: inherit;
-            resize: vertical;
-            margin-bottom: 15px;
-            transition: border 0.2s;
-        }
-
-        .post-textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .post-hint {
-            font-size: 14px;
-            color: #718096;
-            margin-bottom: 15px;
-        }
-
-        .feed-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .feed-title {
-            font-size: 22px;
-            margin-bottom: 20px;
-            color: #2d3748;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .post {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border-left: 4px solid #667eea;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .post:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-        }
-
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .post-author {
-            font-weight: bold;
-            color: #667eea;
-            font-size: 17px;
-        }
-
-        .post-time {
-            color: #a0aec0;
-            font-size: 14px;
-        }
-
-        .post-content {
-            font-size: 16px;
-            line-height: 1.7;
-            color: #2d3748;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .search-results {
-            background: white;
-            padding: 20px;
-            margin: 0 auto 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            max-width: 600px;
-            display: none;
-        }
-
-        .user-result {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .user-result:last-child {
-            border-bottom: none;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            background: #667eea;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .message {
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            display: none;
-            animation: fadeIn 0.3s;
-        }
-
-        .message-success {
-            background: #c6f6d5;
-            color: #22543d;
-            border: 1px solid #9ae6b4;
-        }
-
-        .message-error {
-            background: #fed7d7;
-            color: #742a2a;
-            border: 1px solid #fc8181;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-            .navbar { padding: 12px 15px; }
-            .logo { font-size: 20px; }
-            .btn { padding: 8px 15px; font-size: 14px; }
-            .search-container,
-            .create-post-container,
-            .feed-container,
-            .search-results { margin: 10px; padding: 15px; }
-            .post { padding: 20px; }
-            .nav-buttons { gap: 5px; }
-        }
-
-        .loading { text-align: center; padding: 40px; color: #a0aec0; }
-        .empty-state { text-align: center; padding: 50px 20px; color: #a0aec0; }
-        .empty-state-icon { font-size: 48px; margin-bottom: 15px; }
-        .hidden { display: none !important; }
-    </style>
-
-    <!-- Скрипт проверки авторизации, который выполняется ДО загрузки страницы -->
-    <script>
-        (function() {
-            'use strict';
-            const currentUser = localStorage.getItem('czhmass_currentUser');
-            if (!currentUser) {
-                alert('⚠️ Сначала войдите в систему!');
-                window.location.href = 'index.html';
-            }
-        })();
-    </script>
-</head>
-<body>
-    <!-- Навигация -->
-    <nav class="navbar">
-        <a href="feed.html" class="logo">czhmass.com</a>
-        <div class="nav-buttons">
-            <button class="btn btn-profile" onclick="window.location.href='profile.html'">👤 Профиль</button>
-            <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
-            <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
-        </div>
-    </nav>
-
-    <!-- Поиск пользователей -->
-    <div class="search-container">
-        <div class="search-box">
-            <input type="text" class="search-input" id="searchInput"
-                   placeholder="🔍 Найти пользователя..."
-                   aria-label="Поиск пользователей">
-            <button class="btn" onclick="searchUsers()">Найти</button>
-        </div>
-    </div>
-
-    <!-- Результаты поиска -->
-    <div class="search-results" id="searchResults">
-        <h3 style="margin-bottom: 20px; color: #2d3748;">Найденные пользователи:</h3>
-        <div id="usersList"></div>
-    </div>
-
-    <!-- Создание поста -->
-    <div class="create-post-container">
-        <h2 class="create-post-title">💭 Новый пост</h2>
-        <textarea class="post-textarea" id="postText"
-                  placeholder="Что у вас нового? Поделитесь с миром..."></textarea>
-        <div class="post-hint">Нажмите Ctrl+Enter для быстрой публикации</div>
-        <button class="btn" onclick="createPost()" style="width: 100%; padding: 15px; font-size: 16px;">
-            📤 Опубликовать
-        </button>
-        <div id="message" class="message"></div>
-    </div>
-
-    <!-- Лента постов -->
-    <div class="feed-container">
-        <h2 class="feed-title">📰 Лента постов</h2>
-        <div id="posts">
-            <div class="loading">Загрузка постов...</div>
-        </div>
-    </div>
-
-    <!-- Основной JavaScript код приложения -->
-    <script>
-        // Глобальные переменные
-        let currentUser = null;
-        let users = {};
-        let isAdmin = false;
-
-        // Инициализация приложения
-        function initializeApp() {
-            console.log('🚀 Инициализация приложения...');
-
-            // Загружаем данные
-            currentUser = localStorage.getItem('czhmass_currentUser');
-            try {
-                users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            } catch (e) {
-                console.error('Ошибка загрузки пользователей:', e);
-                users = {};
-            }
-
-            // Проверяем админ-права
-            if (users[currentUser] && users[currentUser].isAdmin) {
-                isAdmin = true;
+        
+        // Проверяем админ-права
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists && userDoc.data().isAdmin) {
                 document.getElementById('adminBtn').style.display = 'inline-block';
                 console.log('👑 Админ-панель доступна');
             }
-
-            // Загружаем посты
-            loadPosts();
-
-            // Настраиваем обработчики
-            document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') searchUsers();
-            });
-
-            document.getElementById('postText')?.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && e.key === 'Enter') createPost();
-            });
-
-            console.log('✅ Приложение инициализировано для:', currentUser);
+        } catch (error) {
+            console.error('Ошибка проверки админ-прав:', error);
         }
-
-        // Загрузка постов
-        function loadPosts() {
-            const postsContainer = document.getElementById('posts');
-            if (!postsContainer) return;
-
-            let allPosts = [];
-
-            // Собираем посты всех пользователей
-            for (const username in users) {
-                const user = users[username];
-                if (user && Array.isArray(user.posts)) {
-                    user.posts.forEach((text, index) => {
-                        if (text && text.trim()) {
-                            allPosts.push({
-                                username: username,
-                                text: text.trim(),
-                                time: user.postTimes?.[index] || new Date().toISOString()
-                            });
-                        }
-                    });
-                }
-            }
-
-            // Сортируем и отображаем
-            allPosts.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-            if (allPosts.length === 0) {
-                postsContainer.innerHTML = '<div class="empty-state">Пока нет постов. Будьте первым!</div>';
+        
+        // Загружаем посты
+        loadPosts();
+        
+        // Настраиваем обработчики
+        document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchUsers();
+        });
+        
+        document.getElementById('postText')?.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') createPost();
+        });
+        
+        console.log('✅ Приложение инициализировано для:', currentUser);
+    }
+    
+    // ===== ЗАГРУЗКА ПОСТОВ ИЗ FIREBASE =====
+    async function loadPosts() {
+        console.log('📝 Загрузка постов из Firebase...');
+        const postsContainer = document.getElementById('posts');
+        
+        if (!postsContainer) return;
+        
+        try {
+            // Получаем посты, отсортированные по дате
+            const querySnapshot = await db.collection('posts')
+                .orderBy('createdAt', 'desc')
+                .limit(50)
+                .get();
+            
+            if (querySnapshot.empty) {
+                postsContainer.innerHTML = '<div class="empty-state">😴 Пока нет постов. Будьте первым!</div>';
                 return;
             }
-
+            
             let postsHTML = '';
-            allPosts.forEach(post => {
+            querySnapshot.forEach(doc => {
+                const post = doc.data();
                 postsHTML += `
                     <div class="post">
                         <div class="post-header">
                             <span class="post-author">@${escapeHtml(post.username)}</span>
-                            <span class="post-time">${formatTime(post.time)}</span>
+                            <span class="post-time">${formatFirebaseTime(post.createdAt)}</span>
                         </div>
                         <div class="post-content">${escapeHtml(post.text)}</div>
+                        <div style="margin-top: 10px; color: #718096; font-size: 14px;">
+                            👍 ${post.likes || 0} лайков • 💬 ${post.comments?.length || 0} комментариев
+                        </div>
                     </div>
                 `;
             });
-
+            
             postsContainer.innerHTML = postsHTML;
+            console.log(`✅ Загружено ${querySnapshot.size} постов`);
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки постов:', error);
+            postsContainer.innerHTML = '<div class="error">⚠️ Ошибка загрузки постов</div>';
         }
-
-        // Создание нового поста
-        function createPost() {
-            const textInput = document.getElementById('postText');
-            const text = textInput.value.trim();
-
-            if (!text) {
-                showMessage('Введите текст поста', 'error');
-                return;
-            }
-
-            // Гарантируем структуру данных
-            if (!users[currentUser]) {
-                users[currentUser] = { posts: [], postTimes: [] };
-            }
-            if (!Array.isArray(users[currentUser].posts)) {
-                users[currentUser].posts = [];
-            }
-            if (!Array.isArray(users[currentUser].postTimes)) {
-                users[currentUser].postTimes = [];
-            }
-
-            // Добавляем пост
-            users[currentUser].posts.push(text);
-            users[currentUser].postTimes.push(new Date().toISOString());
-
-            // Сохраняем
-            try {
-                localStorage.setItem('czhmass_users', JSON.stringify(users));
-                showMessage('✅ Пост опубликован!', 'success');
-                textInput.value = '';
-                loadPosts(); // Обновляем ленту
-            } catch (e) {
-                console.error('Ошибка сохранения:', e);
-                showMessage('❌ Ошибка при сохранении', 'error');
-            }
+    }
+    
+    // ===== СОЗДАНИЕ ПОСТА В FIREBASE =====
+    async function createPost() {
+        console.log('➕ Создание нового поста...');
+        
+        const textInput = document.getElementById('postText');
+        const text = textInput.value.trim();
+        
+        if (!text) {
+            showMessage('Введите текст поста', 'error');
+            return;
         }
-
-        // Поиск пользователей
-        function searchUsers() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (!searchTerm) {
-                document.getElementById('searchResults').style.display = 'none';
-                return;
-            }
-
-            const results = Object.keys(users).filter(username =>
-                username.toLowerCase().includes(searchTerm) && username !== currentUser
-            );
-
+        
+        if (!userId || !currentUser) {
+            alert('Вы не авторизованы');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        try {
+            // Добавляем пост в коллекцию
+            await db.collection('posts').add({
+                userId: userId,
+                username: currentUser,
+                text: text,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                likes: 0,
+                comments: [],
+                edited: false
+            });
+            
+            // Обновляем счетчик постов пользователя
+            await db.collection('users').doc(userId).update({
+                postsCount: firebase.firestore.FieldValue.increment(1),
+                lastPostTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Очищаем поле
+            textInput.value = '';
+            textInput.focus();
+            
+            // Показываем уведомление
+            showMessage('✅ Пост опубликован для всех пользователей!', 'success');
+            
+            // Обновляем ленту
+            setTimeout(loadPosts, 500);
+            
+        } catch (error) {
+            console.error('❌ Ошибка создания поста:', error);
+            showMessage('❌ Ошибка: ' + error.message, 'error');
+        }
+    }
+    
+    // ===== ПОИСК ПОЛЬЗОВАТЕЛЕЙ В FIREBASE =====
+    async function searchUsers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        if (!searchTerm) {
+            document.getElementById('searchResults').style.display = 'none';
+            return;
+        }
+        
+        try {
+            // Ищем пользователей по username
+            const querySnapshot = await db.collection('users')
+                .where('username', '>=', searchTerm)
+                .where('username', '<=', searchTerm + '\uf8ff')
+                .limit(20)
+                .get();
+            
+            const resultsDiv = document.getElementById('searchResults');
             const usersList = document.getElementById('usersList');
-            if (results.length === 0) {
+            
+            if (querySnapshot.empty) {
                 usersList.innerHTML = '<p style="text-align:center; color:#718096;">Пользователи не найдены</p>';
             } else {
-                usersList.innerHTML = results.map(username => `
-                    <div class="user-result">
+                usersList.innerHTML = '';
+                querySnapshot.forEach(doc => {
+                    const user = doc.data();
+                    if (user.username === currentUser) return; // Пропускаем себя
+                    
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'user-result';
+                    userDiv.innerHTML = `
                         <div class="user-info">
-                            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
-                            <div>@${username}</div>
+                            <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <strong>@${escapeHtml(user.username)}</strong>
+                                <div style="color:#718096; font-size:14px;">
+                                    Постов: ${user.postsCount || 0} • ${user.isAdmin ? '👑 Админ' : 'Пользователь'}
+                                </div>
+                            </div>
                         </div>
-                        <button class="btn" onclick="viewUserProfile('${username}')">Профиль</button>
-                    </div>
-                `).join('');
+                        <button class="btn" onclick="viewUserProfile('${doc.id}')" 
+                                style="padding: 8px 16px; font-size: 14px;">
+                            Профиль
+                        </button>
+                    `;
+                    usersList.appendChild(userDiv);
+                });
             }
-
-            document.getElementById('searchResults').style.display = 'block';
+            
+            resultsDiv.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Ошибка поиска:', error);
         }
-
-        // Просмотр профиля
-        function viewUserProfile(username) {
-            const user = users[username];
-            if (!user) return;
-
-            alert(`Профиль @${username}\n` +
-                  `Постов: ${user.posts?.length || 0}\n` +
-                  `Email: ${user.email || 'не указан'}`);
+    }
+    
+    // ===== ПРОСМОТР ПРОФИЛЯ =====
+    async function viewUserProfile(userDocId) {
+        try {
+            const userDoc = await db.collection('users').doc(userDocId).get();
+            if (!userDoc.exists) return;
+            
+            const user = userDoc.data();
+            
+            // Получаем посты этого пользователя
+            const postsQuery = await db.collection('posts')
+                .where('userId', '==', userDocId)
+                .orderBy('createdAt', 'desc')
+                .limit(5)
+                .get();
+            
+            let postsText = '';
+            postsQuery.forEach(doc => {
+                const post = doc.data();
+                postsText += `• ${post.text.substring(0, 50)}${post.text.length > 50 ? '...' : ''}\n`;
+            });
+            
+            alert(`👤 Профиль @${user.username}\n\n` +
+                  `📧 Email: ${user.email || 'скрыт'}\n` +
+                  `📊 Постов: ${user.postsCount || 0}\n` +
+                  `👑 Админ: ${user.isAdmin ? 'Да' : 'Нет'}\n` +
+                  `📅 Зарегистрирован: ${user.createdAt ? user.createdAt.toDate().toLocaleDateString('ru-RU') : 'неизвестно'}\n\n` +
+                  `📝 Последние посты:\n${postsText || 'Нет постов'}`);
+                  
+        } catch (error) {
+            console.error('Ошибка загрузки профиля:', error);
         }
-
-        // Вспомогательные функции
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message message-${type}`;
-            messageEl.style.display = 'block';
-            setTimeout(() => { messageEl.style.display = 'none'; }, 3000);
+    }
+    
+    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+    function showMessage(text, type) {
+        const messageEl = document.getElementById('message');
+        if (!messageEl) return;
+        
+        messageEl.textContent = text;
+        messageEl.className = `message message-${type}`;
+        messageEl.style.display = 'block';
+        
+        setTimeout(() => {
+            messageEl.style.display = 'none';
+        }, 4000);
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+    
+    function formatFirebaseTime(timestamp) {
+        if (!timestamp) return 'недавно';
+        try {
+            const postTime = timestamp.toDate();
+            const now = new Date();
+            const diff = now - postTime;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return 'только что';
+            if (minutes < 60) return `${minutes} мин назад`;
+            if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
+            return postTime.toLocaleDateString('ru-RU');
+        } catch {
+            return 'недавно';
         }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML.replace(/\n/g, '<br>');
-        }
-
-        function formatTime(timeString) {
-            try {
-                const minutes = Math.floor((Date.now() - new Date(timeString)) / 60000);
-                if (minutes < 1) return 'только что';
-                if (minutes < 60) return `${minutes} мин назад`;
-                if (minutes < 1440) return `${Math.floor(minutes / 60)} ч назад`;
-                return new Date(timeString).toLocaleDateString('ru-RU');
-            } catch {
-                return 'недавно';
-            }
-        }
-
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('czhmass_currentUser');
+    }
+    
+    function logout() {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            auth.signOut().then(() => {
+                localStorage.clear();
                 window.location.href = 'index.html';
-            }
+            });
         }
-
-        // Запуск приложения после загрузки страницы
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
-</body>
-</html>
+    }
+    
+    // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📄 DOM загружен');
+        // Авторизация проверяется в onAuthStateChanged
+    });
+</script>

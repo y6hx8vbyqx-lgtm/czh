@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
-    
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -223,17 +224,48 @@
             background: rgba(255, 255, 255, 0.07);
         }
 
+        /* НОВЫЙ КОНТЕЙНЕР ДЛЯ КНОПОК */
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .post-button {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 14px 30px;
+            padding: 14px 20px;
             border-radius: 15px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            width: 100%;
             transition: transform 0.2s, opacity 0.2s;
+            flex: 1;
+            text-align: center;
+        }
+
+        .photo-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .photo-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
         }
 
         .post-button:hover {
@@ -241,10 +273,50 @@
             opacity: 0.9;
         }
 
-        .post-button:disabled {
+        .post-button:disabled,
+        .photo-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* ПРЕВЬЮ ФОТО */
+        .photo-preview-container {
+            margin-bottom: 15px;
+            border-radius: 15px;
+            overflow: hidden;
+            max-height: 300px;
+            display: none;
+            position: relative;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .remove-photo {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s;
+        }
+
+        .remove-photo:hover {
+            background: rgba(255, 59, 48, 0.8);
         }
 
         /* Пост в стиле iOS */
@@ -312,6 +384,27 @@
             margin-bottom: 20px;
             white-space: pre-wrap;
             word-wrap: break-word;
+        }
+
+        /* ФОТО В ПОСТЕ */
+        .post-photo {
+            margin-bottom: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            max-height: 400px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .post-photo img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .post-photo img:hover {
+            transform: scale(1.02);
         }
 
         /* Футер поста с лайками */
@@ -473,143 +566,91 @@
                 top: 65px;
                 padding: 10px 15px;
             }
-            
+
             .container {
                 padding: 130px 15px 80px;
             }
-            
+
             .dynamic-island {
                 width: 110px;
                 height: 32px;
                 top: 10px;
             }
-            
+
             .post-ios {
                 padding: 16px;
             }
-            
+
             /* Кнопки навигации для мобильных */
             .nav-buttons {
                 gap: 6px;
             }
-            
+
             .btn {
                 padding: 8px 12px;
                 font-size: 13px;
             }
-            
+
             .btn span:not(.btn-icon) {
-                display: none; /* Скрываем текст на мобильных */
+                display: none;
             }
-            
-            .btn-icon {
-                display: inline-block;
-                font-size: 16px;
-            }
-            
-            /* Кнопка профиля на мобильных - ТОЛЬКО АВАТАРКА */
+
             .profile-btn {
                 padding: 6px;
-                min-width: 44px;
-                justify-content: center;
             }
-            
-            .profile-avatar {
-                width: 32px;
-                height: 32px;
-                margin: 0;
-            }
-            
+
             .profile-info {
-                display: none; /* Скрываем текст на мобильных */
+                display: none;
             }
-            
-            /* Кнопка выхода - с иконкой дверь */
-            .btn-logout {
-                padding: 8px 12px;
-                min-width: 44px;
-                justify-content: center;
+
+            /* Адаптивность для фотографий */
+            .post-photo {
+                max-height: 300px;
+                border-radius: 12px;
             }
-            
-            /* Кнопка админа - с иконкой короны */
-            .btn-admin {
-                padding: 8px 12px;
-                min-width: 44px;
-                justify-content: center;
+
+            .photo-button {
+                width: 120px;
+                min-width: 120px;
+                padding: 12px 16px;
+                font-size: 14px;
             }
-            
-            /* Уменьшаем логотип */
-            .logo {
-                font-size: 18px;
+
+            .post-button {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .photo-preview-container {
+                max-height: 250px;
             }
         }
 
         @media (max-width: 480px) {
-            .navbar {
-                padding: 8px 12px;
+            .post-actions {
+                flex-direction: column;
             }
-            
-            .logo {
-                font-size: 16px;
+
+            .photo-button,
+            .post-button {
+                width: 100%;
+                min-width: unset;
             }
-            
-            .btn {
-                padding: 6px 10px;
-            }
-            
-            .profile-btn,
-            .btn-logout,
-            .btn-admin {
-                min-width: 40px;
-                padding: 6px 8px;
-            }
-            
-            .profile-avatar {
-                width: 28px;
-                height: 28px;
-                font-size: 13px;
-            }
-            
-            .user-avatar {
-                width: 36px;
-                height: 36px;
-                font-size: 16px;
-            }
-            
-            .username {
-                font-size: 15px;
-            }
-            
-            .post-content {
-                font-size: 15px;
+
+            .post-photo {
+                max-height: 250px;
             }
         }
 
-        /* Для очень маленьких экранов */
         @media (max-width: 360px) {
-            .navbar {
-                padding: 6px 10px;
-            }
-            
-            .logo {
-                font-size: 14px;
-            }
-            
-            .nav-buttons {
-                gap: 4px;
-            }
-            
-            .profile-btn,
-            .btn-logout,
-            .btn-admin {
-                min-width: 36px;
-                padding: 5px 6px;
-            }
-            
             .dynamic-island {
                 width: 100px;
                 height: 30px;
                 font-size: 13px;
+            }
+
+            .post-photo {
+                max-height: 200px;
             }
         }
     </style>
@@ -621,60 +662,83 @@
     </div>
 
     <!-- Навигация -->
-    <nav class="navbar">
+    <div class="navbar">
         <div class="logo">czhmass</div>
         <div class="nav-buttons">
-            <!-- Кнопка профиля -->
-            <button class="profile-btn" onclick="window.location.href='profile.html'" id="profileBtn" title="Профиль">
-                <div class="profile-avatar" id="profileAvatar">
-                    <span class="btn-icon">👤</span>
-                </div>
-                <div class="profile-info">
-                    <span class="profile-username" id="profileUsername">Профиль</span>
-                    <span class="profile-label">Мой аккаунт</span>
-                </div>
-            </button>
-            
-            <!-- Кнопка администратора -->
-            <button class="btn btn-admin" onclick="window.location.href='admin.html'" id="adminBtn" style="display:none;" title="Админ панель">
-                <span class="btn-icon">👑</span>
+            <button class="btn btn-admin" onclick="openAdmin()">
+                <span class="btn-icon">⚙️</span>
                 <span>Админ</span>
             </button>
-            
-            <!-- Кнопка выхода -->
-            <button class="btn btn-logout" onclick="logout()" title="Выйти">
-                <span class="btn-icon">🚪</span>
+            <button class="profile-btn" onclick="openProfile()">
+                <div class="profile-avatar" id="userAvatar">U</div>
+                <div class="profile-info">
+                    <div class="profile-username" id="username">User</div>
+                    <div class="profile-label">Профиль</div>
+                </div>
+            </button>
+            <button class="btn btn-logout" onclick="logout()">
+                <span class="btn-icon">↩️</span>
                 <span>Выйти</span>
             </button>
         </div>
-    </nav>
+    </div>
 
-    <!-- Основной контейнер -->
+    <!-- Основной контент -->
     <div class="container">
         <!-- Форма создания поста -->
         <div class="create-post">
             <textarea 
-                id="postText" 
+                id="postInput" 
                 class="post-input" 
-                placeholder="Что у вас нового? Пишите анонимно..."
+                placeholder="О чем думаете сегодня? Максимум 500 символов..."
                 maxlength="500"
             ></textarea>
-            <button id="postButton" class="post-button" onclick="createPost()">
-                📝 Опубликовать
-            </button>
+
+            <!-- Превью фото -->
+            <div class="photo-preview-container" id="photoPreviewContainer">
+                <img id="photoPreview" class="photo-preview" src="" alt="Превью фото">
+                <button class="remove-photo" onclick="removePhoto()">✕</button>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="post-actions">
+                <button 
+                    id="photoButton" 
+                    class="photo-button"
+                    onclick="document.getElementById('photoInput').click()"
+                >
+                    📷 Фото
+                </button>
+                <button 
+                    id="postButton" 
+                    class="post-button"
+                    onclick="createPost()"
+                >
+                    Опубликовать
+                </button>
+            </div>
+
+            <!-- Скрытый input для загрузки фото -->
+            <input 
+                type="file" 
+                id="photoInput" 
+                accept="image/*" 
+                style="display: none;"
+                onchange="handlePhotoSelect(event)"
+            >
         </div>
 
-        <!-- Лента постов -->
+        <!-- Контейнер для постов -->
         <div id="postsContainer">
-            <div class="loading">Загрузка ленты...</div>
+            <div class="loading">Загрузка постов...</div>
         </div>
+
+        <!-- Сообщения -->
+        <div id="message" class="message"></div>
     </div>
 
-    <!-- Сообщения -->
-    <div id="message" class="message"></div>
-
     <script>
-        // ===== КОНФИГУРАЦИЯ FIREBASE =====
+        // ===== FIREBASE КОНФИГ И ИНИЦИАЛИЗАЦИЯ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
             authDomain: "czhmass.firebaseapp.com",
@@ -684,11 +748,9 @@
             appId: "1:1064257019843:web:65488b45be2f86838ca776"
         };
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        let db, auth;
+        let db, auth, storage;
         let currentUser = null;
-        let currentUserData = null;
-        let postsCache = new Map();
+        let selectedPhoto = null;
 
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -696,6 +758,7 @@
 
         db = firebase.firestore();
         auth = firebase.auth();
+        storage = firebase.storage();
 
         // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
@@ -703,411 +766,345 @@
             messageDiv.textContent = text;
             messageDiv.className = 'message ' + type;
             messageDiv.style.display = 'block';
-            setTimeout(() => { messageDiv.style.display = 'none'; }, 3000);
+            setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        function formatTime(timestamp) {
-            if (!timestamp) return 'Только что';
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                const now = new Date();
-                const diff = now - date;
-                
-                if (diff < 60000) return 'Только что';
-                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
-                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
-                if (diff < 604800000) return `${Math.floor(diff / 86400000)} дн назад`;
-                
-                return date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'short'
-                });
-            } catch (e) {
-                return 'Недавно';
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function getAvatarLetter(username) {
-            return username ? username.charAt(0).toUpperCase() : 'А';
-        }
-
-        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ В ОСТРОВКЕ =====
         function updateTime() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                             now.getMinutes().toString().padStart(2, '0');
             document.getElementById('currentTime').textContent = timeString;
         }
 
-        setInterval(updateTime, 1000);
-        updateTime();
+        function formatTime(timestamp) {
+            if (!timestamp) return 'только что';
+            
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
 
-        // ===== ОБНОВЛЕНИЕ КНОПКИ ПРОФИЛЯ =====
-        function updateProfileButton(userData) {
-            const avatar = document.getElementById('profileAvatar');
+            if (diffSec < 60) return 'только что';
+            if (diffMin < 60) return `${diffMin} мин назад`;
+            if (diffHour < 24) return `${diffHour} ч назад`;
+            if (diffDay < 7) return `${diffDay} дн назад`;
             
-            if (userData && userData.username) {
-                // На десктопе показываем букву, на мобильных - иконку
-                if (window.innerWidth > 768) {
-                    avatar.textContent = getAvatarLetter(userData.username);
-                    avatar.querySelector('.btn-icon')?.remove();
-                } else {
-                    const icon = avatar.querySelector('.btn-icon');
-                    if (!icon) {
-                        avatar.innerHTML = '<span class="btn-icon">👤</span>';
-                    }
-                }
-            }
-        }
-
-        // ===== АДАПТИВНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА =====
-        function updateMobileUI() {
-            const profileBtn = document.getElementById('profileBtn');
-            const adminBtn = document.getElementById('adminBtn');
-            const logoutBtn = document.querySelector('.btn-logout');
-            
-            if (window.innerWidth <= 768) {
-                // Мобильная версия - показываем только иконки
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'none', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-            } else {
-                // Десктоп версия - показываем текст
-                profileBtn.querySelector('.profile-info')?.style.setProperty('display', 'flex', 'important');
-                adminBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-                logoutBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-            }
-        }
-
-        // Слушаем изменение размера окна
-        window.addEventListener('resize', updateMobileUI);
-
-        // ===== СОЗДАНИЕ ПОСТА =====
-        async function createPost() {
-            const postText = document.getElementById('postText').value.trim();
-            const postButton = document.getElementById('postButton');
-            
-            if (!postText) {
-                showMessage('Введите текст поста', 'error');
-                return;
-            }
-            
-            if (postText.length > 500) {
-                showMessage('Пост слишком длинный (макс. 500 символов)', 'error');
-                return;
-            }
-            
-            if (!currentUser) {
-                showMessage('Вы не авторизованы', 'error');
-                return;
-            }
-            
-            postButton.disabled = true;
-            postButton.textContent = 'Публикация...';
-            
-            try {
-                await db.collection('posts').add({
-                    text: postText,
-                    userId: currentUser.uid,
-                    username: currentUserData.username,
-                    createdAt: new Date(),
-                    likes: 0,
-                    likedBy: []
-                });
-                
-                await db.collection('users').doc(currentUser.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(1)
-                });
-                
-                document.getElementById('postText').value = '';
-                
-                showMessage('Пост опубликован!', 'success');
-                
-                setTimeout(loadPosts, 300);
-                
-            } catch (error) {
-                console.error('Ошибка создания поста:', error);
-                showMessage('Ошибка: ' + error.message, 'error');
-            } finally {
-                postButton.disabled = false;
-                postButton.textContent = '📝 Опубликовать';
-            }
-        }
-
-        // ===== СУПЕР БЫСТРЫЕ ЛАЙКИ =====
-        async function toggleLike(postId, likeBtn) {
-            if (!currentUser) {
-                showMessage('Войдите, чтобы ставить лайки', 'error');
-                return;
-            }
-            
-            // МГНОВЕННО обновляем UI
-            const countSpan = likeBtn.nextElementSibling;
-            let currentCount = parseInt(countSpan.textContent) || 0;
-            const isLiked = likeBtn.classList.contains('liked');
-            
-            // Оптимистичное обновление UI
-            if (isLiked) {
-                likeBtn.classList.remove('liked');
-                likeBtn.textContent = '🤍';
-                countSpan.textContent = Math.max(0, currentCount - 1);
-            } else {
-                likeBtn.classList.add('liked');
-                likeBtn.textContent = '❤️';
-                countSpan.textContent = currentCount + 1;
-            }
-            
-            // Анимация
-            likeBtn.classList.add('like-pop');
-            setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
-            
-            // Фоновая операция в Firestore
-            updateLikeInFirestore(postId, !isLiked).catch(error => {
-                console.error('Ошибка синхронизации лайка:', error);
-                // Откатываем UI если ошибка
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.textContent = '❤️';
-                    countSpan.textContent = currentCount;
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.textContent = '🤍';
-                    countSpan.textContent = Math.max(0, currentCount - 1);
-                }
-                showMessage('Ошибка синхронизации', 'error');
+            return date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
             });
         }
 
-        // Фоновая функция для обновления лайка в Firestore
-        async function updateLikeInFirestore(postId, shouldLike) {
-            const postRef = db.collection('posts').doc(postId);
-            
+        // ===== РАБОТА С ФОТОГРАФИЯМИ =====
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Проверка типа файла
+            if (!file.type.startsWith('image/')) {
+                showMessage('Пожалуйста, выберите файл изображения', 'error');
+                return;
+            }
+
+            // Проверка размера файла (максимум 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('Файл слишком большой. Максимум 5MB', 'error');
+                return;
+            }
+
+            selectedPhoto = file;
+
+            // Показать превью
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photoPreview');
+                const container = document.getElementById('photoPreviewContainer');
+                
+                preview.src = e.target.result;
+                container.style.display = 'block';
+                
+                // Прокрутить к превью
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePhoto() {
+            selectedPhoto = null;
+            document.getElementById('photoPreviewContainer').style.display = 'none';
+            document.getElementById('photoInput').value = '';
+        }
+
+        async function uploadPhoto(file) {
+            if (!file) return null;
+
             try {
-                if (shouldLike) {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(1),
-                        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                    });
-                } else {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.increment(-1),
-                        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                    });
-                }
+                // Генерируем уникальное имя для файла
+                const fileName = `posts/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+                const storageRef = storage.ref().child(fileName);
+                
+                // Загружаем файл
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                
+                return downloadURL;
             } catch (error) {
+                console.error('Ошибка загрузки фото:', error);
                 throw error;
             }
         }
 
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        async function loadPosts() {
+        // ===== СОЗДАНИЕ ПОСТА С ФОТО =====
+        async function createPost() {
+            const postInput = document.getElementById('postInput');
+            const postButton = document.getElementById('postButton');
+            const photoButton = document.getElementById('photoButton');
+            
+            const text = postInput.value.trim();
+            
+            // Проверка ввода
+            if (!text && !selectedPhoto) {
+                showMessage('Введите текст или прикрепите фото', 'error');
+                return;
+            }
+
+            if (text.length > 500) {
+                showMessage('Текст слишком длинный. Максимум 500 символов', 'error');
+                return;
+            }
+
+            // Блокируем кнопки
+            postButton.disabled = true;
+            photoButton.disabled = true;
+            postButton.textContent = 'Публикация...';
+
             try {
-                const snapshot = await db.collection('posts')
-                    .orderBy('createdAt', 'desc')
-                    .limit(30)
-                    .get();
-                    
-                const postsContainer = document.getElementById('postsContainer');
+                let photoURL = null;
                 
-                if (snapshot.empty) {
-                    postsContainer.innerHTML = '<div class="empty">Пока нет постов. Будьте первым!</div>';
-                    return;
+                // Загружаем фото если есть
+                if (selectedPhoto) {
+                    photoURL = await uploadPhoto(selectedPhoto);
                 }
+
+                // Создаем пост в Firestore
+                const postData = {
+                    text: text,
+                    userId: currentUser.uid,
+                    username: currentUser.displayName || 'Анонимный пользователь',
+                    userInitial: (currentUser.displayName || 'А').charAt(0).toUpperCase(),
+                    likes: 0,
+                    likedBy: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    photoURL: photoURL
+                };
+
+                await db.collection('posts').add(postData);
+
+                // Очищаем форму
+                postInput.value = '';
+                removePhoto();
                 
-                let postsHTML = '';
-                postsCache.clear();
+                showMessage('Пост успешно опубликован!', 'success');
+
+            } catch (error) {
+                console.error('Ошибка создания поста:', error);
+                showMessage('Ошибка при публикации поста', 'error');
+            } finally {
+                // Разблокируем кнопки
+                postButton.disabled = false;
+                photoButton.disabled = false;
+                postButton.textContent = 'Опубликовать';
+            }
+        }
+
+        // ===== ОТОБРАЖЕНИЕ ПОСТОВ =====
+        function renderPosts(posts) {
+            const container = document.getElementById('postsContainer');
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="empty">Пока нет постов. Будьте первым!</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post-ios';
+                postElement.id = `post-${post.id}`;
+
+                // Проверяем, лайкнул ли текущий пользователь этот пост
+                const isLiked = post.likedBy && post.likedBy.includes(currentUser.uid);
                 
-                snapshot.forEach((doc) => {
-                    const post = doc.data();
-                    const postId = doc.id;
-                    const likes = post.likes || 0;
-                    const likedBy = post.likedBy || [];
-                    const isLiked = likedBy.includes(currentUser?.uid);
-                    
-                    postsCache.set(postId, {
-                        ...post,
-                        id: postId,
-                        isLiked: isLiked
-                    });
-                    
-                    postsHTML += `
-                        <div class="post-ios" data-post-id="${postId}">
-                            <div class="post-header">
-                                <div class="user-avatar">${getAvatarLetter(post.username)}</div>
-                                <div class="post-user">
-                                    <div class="username">@${escapeHtml(post.username)}</div>
-                                    <div class="post-time">${formatTime(post.createdAt)}</div>
-                                </div>
-                                ${post.userId === currentUser?.uid ? `
-                                    <button class="delete-post" onclick="deletePost('${postId}')" title="Удалить пост">
-                                        🗑️
-                                    </button>
-                                ` : ''}
-                            </div>
-                            <div class="post-content">${escapeHtml(post.text)}</div>
-                            <div class="post-footer">
-                                <div class="like-container">
-                                    <button class="like-btn ${isLiked ? 'liked' : ''}" 
-                                            onclick="toggleLike('${postId}', this)">
-                                        ${isLiked ? '❤️' : '🤍'}
-                                    </button>
-                                    <span class="like-count">${likes}</span>
-                                </div>
-                                <div class="post-time">${formatTime(post.createdAt)}</div>
-                            </div>
+                let photoHTML = '';
+                if (post.photoURL) {
+                    photoHTML = `
+                        <div class="post-photo">
+                            <img src="${post.photoURL}" alt="Фото поста" onclick="openPhoto('${post.photoURL}')">
                         </div>
                     `;
+                }
+
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <div class="user-avatar">${post.userInitial}</div>
+                        <div class="post-user">
+                            <div class="username">${post.username}</div>
+                            <div class="post-time">${formatTime(post.createdAt)}</div>
+                        </div>
+                    </div>
+                    
+                    ${post.text ? `<div class="post-content">${post.text}</div>` : ''}
+                    
+                    ${photoHTML}
+                    
+                    <div class="post-footer">
+                        <div class="like-container">
+                            <button 
+                                class="like-btn ${isLiked ? 'liked' : ''}" 
+                                onclick="toggleLike('${post.id}', ${post.likes}, ${JSON.stringify(post.likedBy || [])})"
+                            >
+                                ${isLiked ? '❤️' : '🤍'}
+                            </button>
+                            <span class="like-count">${post.likes || 0}</span>
+                        </div>
+                    </div>
+                    
+                    ${post.userId === currentUser.uid ? 
+                        `<button class="delete-post" onclick="deletePost('${post.id}')">✕</button>` : 
+                        ''
+                    }
+                `;
+
+                container.appendChild(postElement);
+            });
+        }
+
+        function openPhoto(photoURL) {
+            window.open(photoURL, '_blank');
+        }
+
+        // ===== ЛАЙКИ =====
+        async function toggleLike(postId, currentLikes, likedByArray) {
+            if (!currentUser) return;
+
+            const likeBtn = document.querySelector(`#post-${postId} .like-btn`);
+            const likeCount = document.querySelector(`#post-${postId} .like-count`);
+            
+            const isLiked = likedByArray.includes(currentUser.uid);
+            const newLikes = isLiked ? currentLikes - 1 : currentLikes + 1;
+            const newLikedBy = isLiked 
+                ? likedByArray.filter(id => id !== currentUser.uid)
+                : [...likedByArray, currentUser.uid];
+
+            // Обновляем UI сразу для отзывчивости
+            likeBtn.classList.toggle('liked');
+            likeBtn.innerHTML = isLiked ? '🤍' : '❤️';
+            likeCount.textContent = newLikes;
+            likeBtn.classList.add('like-pop');
+            setTimeout(() => likeBtn.classList.remove('like-pop'), 300);
+
+            // Обновляем в Firestore
+            try {
+                await db.collection('posts').doc(postId).update({
+                    likes: newLikes,
+                    likedBy: newLikedBy
                 });
-                
-                postsContainer.innerHTML = postsHTML;
-                
             } catch (error) {
-                console.error('Ошибка загрузки постов:', error);
-                document.getElementById('postsContainer').innerHTML = 
-                    '<div class="error">Ошибка загрузки ленты</div>';
+                console.error('Ошибка обновления лайка:', error);
+                // Откатываем изменения в UI
+                likeBtn.classList.toggle('liked');
+                likeBtn.innerHTML = isLiked ? '❤️' : '🤍';
+                likeCount.textContent = currentLikes;
+                showMessage('Ошибка при обновлении лайка', 'error');
             }
         }
 
         // ===== УДАЛЕНИЕ ПОСТА =====
         async function deletePost(postId) {
             if (!confirm('Удалить этот пост?')) return;
-            
+
             try {
                 await db.collection('posts').doc(postId).delete();
-                
-                if (currentUser) {
-                    await db.collection('users').doc(currentUser.uid).update({
-                        postsCount: firebase.firestore.FieldValue.increment(-1)
-                    });
-                }
-                
+                document.getElementById(`post-${postId}`).remove();
                 showMessage('Пост удален', 'success');
-                
-                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                if (postElement) {
-                    postElement.style.opacity = '0';
-                    postElement.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        postElement.remove();
-                    }, 300);
-                }
-                
             } catch (error) {
                 console.error('Ошибка удаления поста:', error);
-                showMessage('Ошибка: ' + error.message, 'error');
+                showMessage('Ошибка при удалении поста', 'error');
             }
         }
 
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        currentUserData = userDoc.data();
-                        
-                        updateProfileButton(currentUserData);
-                        updateMobileUI(); // Обновляем UI для текущего размера экрана
-                        
-                        // ПОКАЗЫВАЕМ КНОПКУ АДМИНА ЕСЛИ ПОЛЬЗОВАТЕЛЬ АДМИН
-                        if (currentUserData.isAdmin) {
-                            document.getElementById('adminBtn').style.display = 'flex';
-                        }
-                        
-                        loadPosts();
-                    } else {
-                        showMessage('Профиль не найден', 'error');
-                        setTimeout(() => window.location.href = 'profile.html', 2000);
-                    }
-                } catch (error) {
-                    console.error('Ошибка загрузки профиля:', error);
-                    showMessage('Ошибка загрузки', 'error');
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        // ===== ЗАГРУЗКА ПОСТОВ =====
+        function loadPosts() {
+            const container = document.getElementById('postsContainer');
+            container.innerHTML = '<div class="loading">Загрузка постов...</div>';
 
-        // ===== REAL-TIME ОБНОВЛЕНИЕ ЛАЙКОВ =====
-        function setupRealtimeUpdates() {
-            if (!currentUser) return;
-            
             db.collection('posts')
                 .orderBy('createdAt', 'desc')
-                .limit(30)
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        const postId = change.doc.id;
-                        const postData = change.doc.data();
-                        
-                        postsCache.set(postId, {
-                            ...postData,
-                            id: postId,
-                            isLiked: (postData.likedBy || []).includes(currentUser?.uid)
+                .onSnapshot(snapshot => {
+                    const posts = [];
+                    snapshot.forEach(doc => {
+                        posts.push({
+                            id: doc.id,
+                            ...doc.data()
                         });
-                        
-                        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                        if (postElement && change.type === 'modified') {
-                            const countSpan = postElement.querySelector('.like-count');
-                            const likeBtn = postElement.querySelector('.like-btn');
-                            
-                            if (countSpan) {
-                                countSpan.textContent = postData.likes || 0;
-                            }
-                            
-                            if (likeBtn) {
-                                const isLiked = (postData.likedBy || []).includes(currentUser?.uid);
-                                if (isLiked) {
-                                    likeBtn.classList.add('liked');
-                                    likeBtn.textContent = '❤️';
-                                } else {
-                                    likeBtn.classList.remove('liked');
-                                    likeBtn.textContent = '🤍';
-                                }
-                            }
-                        }
                     });
+                    renderPosts(posts);
+                }, error => {
+                    console.error('Ошибка загрузки постов:', error);
+                    container.innerHTML = '<div class="error">Ошибка загрузки постов</div>';
                 });
         }
 
-        setTimeout(setupRealtimeUpdates, 2000);
-
-        // ===== ВЫХОД =====
-        function logout() {
-            if (confirm('Выйти из аккаунта?')) {
-                auth.signOut().then(() => {
+        // ===== АУТЕНТИФИКАЦИЯ =====
+        function checkAuth() {
+            auth.onAuthStateChanged(user => {
+                if (!user) {
                     window.location.href = 'index.html';
-                });
-            }
+                    return;
+                }
+
+                currentUser = user;
+                
+                // Обновляем информацию о пользователе
+                document.getElementById('username').textContent = 
+                    user.displayName || 'Пользователь';
+                document.getElementById('userAvatar').textContent = 
+                    (user.displayName || 'U').charAt(0).toUpperCase();
+
+                loadPosts();
+            });
         }
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        window.addEventListener('load', () => {
-            console.log('🚀 Лента загружена');
+        function logout() {
+            auth.signOut()
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch(error => {
+                    console.error('Ошибка выхода:', error);
+                    showMessage('Ошибка при выходе', 'error');
+                });
+        }
+
+        function openAdmin() {
+            showMessage('Админ-панель в разработке', 'info');
+        }
+
+        function openProfile() {
+            showMessage('Профиль в разработке', 'info');
+        }
+
+        // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 60000);
             
-            // Инициализируем мобильный UI
-            updateMobileUI();
-            
-            document.getElementById('postText').focus();
-            
-            document.getElementById('postText').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    createPost();
-                }
-            });
+            checkAuth();
         });
     </script>
 </body>

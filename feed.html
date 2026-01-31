@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
 
 <style>
 :root{
@@ -71,10 +72,38 @@ body{
   background:#1c1c1e;border:1px solid var(--border);
   border-radius:16px;padding:12px;color:#fff;
 }
-.create button{
-  width:100%;margin-top:12px;
-  padding:14px;border:none;border-radius:16px;
-  background:var(--accent);color:#fff;font-weight:600;
+
+/* PREVIEW */
+.preview{
+  margin-top:10px;
+}
+.preview img{
+  width:100%;
+  border-radius:16px;
+}
+
+/* BUTTONS ROW */
+.create-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+.photo-btn{
+  width:32%;
+  background:#1c1c1e;
+  border:none;
+  border-radius:16px;
+  font-size:22px;
+  color:#fff;
+}
+.post-btn{
+  width:68%;
+  border:none;
+  border-radius:16px;
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
+  padding:14px;
 }
 
 .post{
@@ -95,6 +124,11 @@ body{
 .post-user{font-weight:600}
 .post-time{color:var(--sub);font-size:13px}
 .post-text{margin:10px 0 6px}
+.post img{
+  width:100%;
+  border-radius:16px;
+  margin-top:8px;
+}
 .post-actions{
   display:flex;align-items:center;gap:18px;
 }
@@ -164,11 +198,21 @@ body{
 <div class="container">
   <div class="create">
     <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
-    <button onclick="createPost()">📝 Опубликовать</button>
+
+    <div class="preview" id="imagePreview"></div>
+
+    <input type="file" id="postImage" accept="image/*" hidden>
+
+    <div class="create-actions">
+      <button class="photo-btn" onclick="postImage.click()">📷</button>
+      <button class="post-btn" onclick="createPost()">📝 Опубликовать</button>
+    </div>
   </div>
+
   <div id="feed"></div>
 </div>
 
+<!-- COMMENTS SHEET (без изменений) -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
     <strong>Комментарии</strong>
@@ -189,10 +233,21 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 const auth=firebase.auth();
+const storage=firebase.storage();
 
 let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
+
+/* PREVIEW */
+postImage.onchange=()=>{
+  imagePreview.innerHTML="";
+  if(postImage.files[0]){
+    const img=document.createElement("img");
+    img.src=URL.createObjectURL(postImage.files[0]);
+    imagePreview.appendChild(img);
+  }
+};
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
@@ -218,9 +273,10 @@ async function loadPosts(){
           <div class="post-time">${new Date(p.createdAt.seconds*1000).toLocaleString()}</div>
         </div>
         ${(p.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
+          `<button class="trash" onclick="deletePost('${doc.id}','${p.imageUrl||""}')">🗑</button>`:""}
       </div>
-      <div class="post-text">${p.text}</div>
+      <div class="post-text">${p.text||""}</div>
+      ${p.imageUrl?`<img src="${p.imageUrl}">`:""}
       <div class="post-actions">
         <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
           ${liked?"❤️":"🤍"} ${p.likes||0}
@@ -231,6 +287,32 @@ async function loadPosts(){
       </div>
     </div>`;
   });
+}
+
+async function createPost(){
+  const text=postText.value.trim();
+  const file=postImage.files[0];
+  if(!text && !file)return;
+
+  let imageUrl=null;
+  if(file){
+    const ref=storage.ref(`posts/${currentUser.uid}/${Date.now()}_${file.name}`);
+    await ref.put(file);
+    imageUrl=await ref.getDownloadURL();
+  }
+
+  await db.collection("posts").add({
+    text,imageUrl,
+    userId:currentUser.uid,
+    username:userData.username,
+    createdAt:new Date(),
+    likes:0,likedBy:[],commentsCount:0
+  });
+
+  postText.value="";
+  postImage.value="";
+  imagePreview.innerHTML="";
+  loadPosts();
 }
 
 async function toggleLike(id){
@@ -245,37 +327,19 @@ async function toggleLike(id){
   loadPosts();
 }
 
-async function createPost(){
-  if(!postText.value.trim())return;
-  await db.collection("posts").add({
-    text:postText.value,
-    userId:currentUser.uid,
-    username:userData.username,
-    createdAt:new Date(),
-    likes:0,likedBy:[],commentsCount:0
-  });
-  postText.value="";loadPosts();
-}
-
-async function deletePost(id){
+async function deletePost(id,imageUrl){
   if(!confirm("Удалить пост?"))return;
+  if(imageUrl) await storage.refFromURL(imageUrl).delete();
   await db.collection("posts").doc(id).delete();
   loadPosts();
 }
 
-function openComments(id){
-  currentPostId=id;
-  commentsSheet.classList.add("show");
-  loadComments();
-}
-function closeComments(){
-  commentsSheet.classList.remove("show");
-}
-
+/* COMMENTS — без изменений */
+function openComments(id){currentPostId=id;commentsSheet.classList.add("show");loadComments();}
+function closeComments(){commentsSheet.classList.remove("show");}
 async function loadComments(){
   commentsBody.innerHTML="";
-  const snap=await db.collection("posts").doc(currentPostId)
-    .collection("comments").orderBy("createdAt").get();
+  const snap=await db.collection("posts").doc(currentPostId).collection("comments").orderBy("createdAt").get();
   snap.forEach(d=>{
     const c=d.data();
     commentsBody.innerHTML+=`
@@ -290,34 +354,26 @@ async function loadComments(){
     </div>`;
   });
 }
-
 async function addComment(){
   if(!commentInput.value)return;
-  await db.collection("posts").doc(currentPostId)
-    .collection("comments").add({
-      text:commentInput.value,
-      userId:currentUser.uid,
-      username:userData.username,
-      createdAt:new Date()
-    });
+  await db.collection("posts").doc(currentPostId).collection("comments").add({
+    text:commentInput.value,
+    userId:currentUser.uid,
+    username:userData.username,
+    createdAt:new Date()
+  });
   await db.collection("posts").doc(currentPostId)
     .update({commentsCount:firebase.firestore.FieldValue.increment(1)});
   commentInput.value="";
   loadComments();loadPosts();
 }
-
 async function deleteComment(id){
-  await db.collection("posts").doc(currentPostId)
-    .collection("comments").doc(id).delete();
+  await db.collection("posts").doc(currentPostId).collection("comments").doc(id).delete();
   loadComments();
 }
 
-function logout(){
-  auth.signOut().then(()=>location.href="index.html");
-}
-setInterval(()=>{
-  time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-},1000);
+function logout(){auth.signOut().then(()=>location.href="index.html");}
+setInterval(()=>{time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});},1000);
 </script>
 
 </body>

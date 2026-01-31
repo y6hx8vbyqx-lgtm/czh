@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента - czhmass.com</title>
 
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -293,6 +294,13 @@
             transition: all 0.3s;
         }
 
+        .privacy-note {
+            color: #65676b;
+            font-size: 14px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .post {
                 padding: 20px;
@@ -315,6 +323,7 @@
         <div class="nav-buttons">
             <button class="btn" onclick="window.location.href='profile.html'">👤 Профиль</button>
             <button class="btn btn-admin" id="adminBtn" onclick="window.location.href='admin.html'">👑 Админ</button>
+            <button class="btn" onclick="window.location.href='profile-settings.html'">⚙️ Приватность</button>
             <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
         </div>
     </nav>
@@ -323,6 +332,9 @@
         <h2>💬 О чем думаете?</h2>
         <textarea class="post-textarea" id="postText" placeholder="Поделитесь чем-нибудь с сообществом..."></textarea>
         <button class="btn" onclick="createPost()">📤 Опубликовать</button>
+        <div class="privacy-note">
+            Ваш username: <span id="currentUsername">загрузка...</span>
+        </div>
         <div id="message" class="message"></div>
     </div>
 
@@ -408,6 +420,60 @@
             });
         }
 
+        // ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ И ИСПРАВЛЕНИЯ USERNAME =====
+        async function ensureCorrectUsername(user) {
+            try {
+                const userDocRef = db.collection('users').doc(user.uid);
+                const userDoc = await userDocRef.get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // Проверяем, правильный ли username (не email часть)
+                    const emailUsername = user.email.split('@')[0];
+                    
+                    if (userData.username === emailUsername) {
+                        // Это старый пользователь с username из email
+                        console.warn('⚠️ Обнаружен старый пользователь с username из email:', emailUsername);
+                        
+                        // Можно предложить исправить или оставить как есть
+                        // Пока просто используем существующий username
+                        return userData.username;
+                    }
+                    
+                    // Новый пользователь с правильным username
+                    return userData.username;
+                } else {
+                    // Документа нет (очень старый пользователь)
+                    console.log('📝 Создаем документ для старого пользователя...');
+                    
+                    // Создаем временный username из email
+                    const tempUsername = user.email.split('@')[0];
+                    
+                    await userDocRef.set({
+                        username: tempUsername,
+                        email: user.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        isAdmin: false,
+                        displayEmail: false,
+                        allowMentions: true,
+                        profileVisible: true,
+                        showPostsCount: true,
+                        showJoinDate: true,
+                        postsCount: 0,
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        isLegacyUser: true // Флаг для старых пользователей
+                    });
+                    
+                    console.log('✅ Документ создан с временным username:', tempUsername);
+                    return tempUsername;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка проверки username:', error);
+                return user.email.split('@')[0]; // Fallback
+            }
+        }
+
         // ===== ОБРАБОТЧИК АВТОРИЗАЦИИ =====
         auth.onAuthStateChanged(async (user) => {
             console.log('🔐 Проверка авторизации:', user ? user.email : 'нет');
@@ -420,45 +486,67 @@
             console.log('✅ Пользователь авторизован:', user.email);
 
             try {
-                const userDocRef = db.collection('users').doc(user.uid);
-                const userDoc = await userDocRef.get();
-
-                if (!userDoc.exists) {
-                    console.log('📝 Создаем документ для пользователя...');
-                    const username = user.email.split('@')[0];
+                // Получаем правильный username (исправляем если нужно)
+                const correctUsername = await ensureCorrectUsername(user);
+                
+                // Загружаем полные данные пользователя
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (userDoc.exists) {
+                    currentUserData = userDoc.data();
                     
-                    await userDocRef.set({
+                    // Обновляем username если он был исправлен
+                    if (correctUsername !== currentUserData.username) {
+                        await db.collection('users').doc(user.uid).update({
+                            username: correctUsername
+                        });
+                        currentUserData.username = correctUsername;
+                    }
+                    
+                    console.log('👤 Данные пользователя:', currentUserData.username);
+                    
+                    // Обновляем время входа
+                    await db.collection('users').doc(user.uid).update({
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    // На всякий случай создаем документ
+                    const username = user.email.split('@')[0];
+                    await db.collection('users').doc(user.uid).set({
                         username: username,
                         email: user.email,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         isAdmin: false,
+                        displayEmail: false,
+                        allowMentions: true,
+                        profileVisible: true,
+                        showPostsCount: true,
+                        showJoinDate: true,
                         postsCount: 0,
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    
-                    console.log('✅ Документ создан для:', username);
                     currentUserData = { username: username, email: user.email, isAdmin: false };
-                } else {
-                    const data = userDoc.data();
-                    currentUserData = data;
-                    console.log('👤 Данные пользователя:', data.username);
-                    
-                    await userDocRef.update({
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                    });
                 }
 
-                localStorage.setItem('czhmass_userId', user.uid);
+                // Сохраняем ПРАВИЛЬНЫЙ username в localStorage
                 localStorage.setItem('czhmass_currentUser', currentUserData.username);
+                localStorage.setItem('czhmass_userId', user.uid);
                 localStorage.setItem('czhmass_userEmail', user.email);
+                localStorage.setItem('czhmass_isAdmin', currentUserData.isAdmin ? 'true' : 'false');
+                
+                // Показываем username пользователю
+                document.getElementById('currentUsername').textContent = currentUserData.username;
 
+                // Проверка админки
                 if (currentUserData.isAdmin) {
                     document.getElementById('adminBtn').style.display = 'inline-block';
                     console.log('👑 Админ-права доступны');
                 }
 
+                // Загружаем посты
                 loadPosts();
 
+                // Настройка горячих клавиш
                 document.getElementById('postText').addEventListener('keydown', (e) => {
                     if (e.ctrlKey && e.key === 'Enter') createPost();
                 });
@@ -561,21 +649,17 @@
             try {
                 console.log('🗑️ Удаление поста:', postId);
                 
-                // Показываем анимацию удаления
                 const postElement = document.getElementById(`post-${postId}`);
                 if (postElement) {
                     postElement.classList.add('deleting');
                 }
                 
-                // Удаляем пост из Firestore
                 await db.collection('posts').doc(postId).delete();
                 
-                // Уменьшаем счетчик постов у пользователя
                 await db.collection('users').doc(user.uid).update({
                     postsCount: firebase.firestore.FieldValue.increment(-1)
                 });
                 
-                // Удаляем из DOM с задержкой для анимации
                 setTimeout(() => {
                     if (postElement) {
                         postElement.remove();
@@ -583,7 +667,6 @@
                     showMessage('✅ Пост удален', 'success');
                 }, 300);
                 
-                // Удаляем из кэша
                 postsCache.delete(postId);
                 
                 console.log('✅ Пост удален успешно');
@@ -591,7 +674,6 @@
             } catch (error) {
                 console.error('❌ Ошибка удаления поста:', error);
                 
-                // Отменяем анимацию удаления при ошибке
                 const postElement = document.getElementById(`post-${postId}`);
                 if (postElement) {
                     postElement.classList.remove('deleting');
@@ -624,41 +706,47 @@
             }
 
             try {
-                let username = currentUserData ? currentUserData.username : null;
+                // ВАЖНО: Берем username из currentUserData (уже исправленный)
+                let username = null;
                 
-                if (!username) {
+                if (currentUserData && currentUserData.username) {
+                    username = currentUserData.username;
+                    console.log('✅ Используем username из кэша:', username);
+                } else {
+                    // Если по какой-то причине нет в кэше, загружаем из Firestore
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
                         username = userDoc.data().username;
+                        console.log('✅ Используем username из Firestore:', username);
                     } else {
+                        // Fallback (должно редко случаться)
                         username = user.email.split('@')[0];
+                        console.warn('⚠️ Используем username из email (fallback):', username);
                     }
                 }
 
-                console.log('📝 Создание поста от:', username);
+                console.log('📝 Создание поста от пользователя:', username);
 
-                // Создаем пост
+                // Создаем пост с ПРАВИЛЬНЫМ username
                 await db.collection('posts').add({
                     text: text,
                     userId: user.uid,
-                    username: username,
-                    userEmail: user.email,
+                    username: username, // Уже исправленный username
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     likes: 0,
                     likedBy: [],
                     comments: []
                 });
 
-                // Увеличиваем счетчик постов у пользователя
+                // Увеличиваем счетчик постов
                 await db.collection('users').doc(user.uid).update({
-                    postsCount: firebase.firestore.FieldValue.increment(1),
-                    lastPostTime: firebase.firestore.FieldValue.serverTimestamp()
+                    postsCount: firebase.firestore.FieldValue.increment(1)
                 });
 
                 textInput.value = '';
-                showMessage('✅ Пост опубликован!', 'success');
+                showMessage('✅ Пост опубликован от @' + username, 'success');
 
-                // Обновляем ленту через 1 сек
+                // Обновляем ленту
                 setTimeout(loadPosts, 1000);
 
             } catch (error) {
@@ -673,9 +761,73 @@
             }
         }
 
+        // ===== ФУНКЦИЯ ДЛЯ РУЧНОГО ИСПРАВЛЕНИЯ USERNAME =====
+        async function fixUsernameManually() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            const newUsername = prompt(
+                'Введите новый username (3-20 символов, латинские буквы, цифры, _ и .):',
+                currentUserData?.username || user.email.split('@')[0]
+            );
+            
+            if (!newUsername) return;
+            
+            if (newUsername.length < 3 || newUsername.length > 20) {
+                showMessage('Username должен быть от 3 до 20 символов', 'error');
+                return;
+            }
+            
+            if (!/^[a-z0-9_.]+$/.test(newUsername.toLowerCase())) {
+                showMessage('Только латинские буквы, цифры, _ и .', 'error');
+                return;
+            }
+            
+            try {
+                // Проверяем уникальность
+                const checkDoc = await db.collection('users')
+                    .where('username', '==', newUsername.toLowerCase())
+                    .limit(1)
+                    .get();
+                
+                if (!checkDoc.empty) {
+                    showMessage('❌ Этот username уже занят', 'error');
+                    return;
+                }
+                
+                // Обновляем username
+                await db.collection('users').doc(user.uid).update({
+                    username: newUsername.toLowerCase()
+                });
+                
+                // Обновляем кэш
+                currentUserData.username = newUsername.toLowerCase();
+                localStorage.setItem('czhmass_currentUser', newUsername.toLowerCase());
+                document.getElementById('currentUsername').textContent = newUsername.toLowerCase();
+                
+                showMessage('✅ Username обновлен!', 'success');
+                
+                // Перезагружаем страницу для применения изменений
+                setTimeout(() => location.reload(), 1000);
+                
+            } catch (error) {
+                console.error('Ошибка обновления username:', error);
+                showMessage('❌ Ошибка обновления username', 'error');
+            }
+        }
+
         // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
         window.addEventListener('load', () => {
             console.log('🚀 Страница feed.html загружена');
+            
+            // Временная кнопка для исправления username (можно удалить позже)
+            const fixButton = document.createElement('button');
+            fixButton.className = 'btn';
+            fixButton.style.background = '#d69e2e';
+            fixButton.style.marginLeft = '10px';
+            fixButton.textContent = '🛠️ Исправить username';
+            fixButton.onclick = fixUsernameManually;
+            document.querySelector('.nav-buttons').appendChild(fixButton);
         });
     </script>
 </body>

@@ -117,13 +117,75 @@
     </div>
     
     <!-- СОЗДАНИЕ ПОСТА -->
-    <div class="create-post">
-        <h3 style="margin-top:0;">Новый пост</h3>
-        <textarea id="postText" placeholder="Что у вас нового?"></textarea>
-        <button class="btn" onclick="createPost()">📤 Опубликовать</button>
-        <div id="message" style="margin-top:10px; display:none;"></div>
-    </div>
+   function createPost() {
+    console.log('=== СОЗДАНИЕ ПОСТА - ИСПРАВЛЕННАЯ ВЕРСИЯ ===');
     
+    const text = document.getElementById('postText').value.trim();
+    const messageEl = document.getElementById('message');
+    
+    console.log('Текущий пользователь:', currentUser);
+    console.log('Все пользователи:', users);
+    
+    if (!text) {
+        showMessage('Введите текст поста', 'error');
+        return;
+    }
+    
+    // ВАЖНО: Проверяем и создаем структуру если нужно
+    if (!currentUser) {
+        showMessage('Ошибка: вы не авторизованы', 'error');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // ЕСЛИ пользователя нет в users - создаем!
+    if (!users[currentUser]) {
+        console.warn('⚠️ Пользователь не найден, создаем нового');
+        users[currentUser] = {
+            email: currentUser + '@czhmass.com', // дефолтный email
+            password: 'auto-generated',
+            posts: [], // ВАЖНО: создаем массив постов
+            postTimes: [], // ВАЖНО: создаем массив времен
+            createdAt: new Date().toISOString(),
+            isAdmin: false
+        };
+        console.log('Создан новый пользователь:', users[currentUser]);
+    }
+    
+    // ГАРАНТИРУЕМ что массивы существуют
+    if (!Array.isArray(users[currentUser].posts)) {
+        console.warn('⚠️ posts не массив, исправляем');
+        users[currentUser].posts = [];
+    }
+    if (!Array.isArray(users[currentUser].postTimes)) {
+        console.warn('⚠️ postTimes не массив, исправляем');
+        users[currentUser].postTimes = [];
+    }
+    
+    console.log('Добавляем пост. Текущие посты:', users[currentUser].posts);
+    
+    // Добавляем пост
+    users[currentUser].posts.push(text);
+    users[currentUser].postTimes.push(new Date().toISOString());
+    
+    console.log('После добавления:', users[currentUser]);
+    
+    try {
+        localStorage.setItem('czhmass_users', JSON.stringify(users));
+        console.log('✅ Данные сохранены в localStorage');
+        showMessage('✅ Пост опубликован!', 'success');
+    } catch (e) {
+        console.error('❌ Ошибка сохранения:', e);
+        showMessage('❌ Ошибка сохранения', 'error');
+        return;
+    }
+    
+    // Очищаем поле и обновляем ленту
+    document.getElementById('postText').value = '';
+    setTimeout(() => {
+        loadPosts();
+    }, 100);
+}
     <!-- ЛЕНТА ПОСТОВ -->
     <div id="posts">
         <h3>📰 Лента постов:</h3>

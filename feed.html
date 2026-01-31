@@ -240,17 +240,78 @@
     </nav>
     
     <!-- СОЗДАНИЕ ПОСТА -->
-    <div class="create-post">
-        <h2>💭 Что у вас нового?</h2>
-        <textarea class="post-textarea" id="postText" placeholder="Поделитесь своими мыслями..."></textarea>
-        <button class="btn" onclick="createPost()" style="width: 100%; padding: 14px; font-size: 16px;">
-            📤 Опубликовать
-        </button>
-        <div id="message" class="message"></div>
-        <div style="margin-top: 12px; color: #65676b; font-size: 14px;">
-            Нажмите Ctrl+Enter для быстрой отправки
-        </div>
-    </div>
+    async function createPost() {
+    console.log('=== DEBUG CREATE POST ===');
+    console.log('auth.currentUser:', auth.currentUser);
+    
+    const textInput = document.getElementById('postText');
+    const text = textInput.value.trim();
+    
+    if (!text) {
+        showMessage('Введите текст поста', 'error');
+        return;
+    }
+    
+    // ПРЯМАЯ ПРОВЕРКА пользователя
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('❌ НЕТ ПОЛЬЗОВАТЕЛЯ В AUTH!');
+        showMessage('❌ Вы не авторизованы. Обновите страницу и войдите заново.', 'error');
+        
+        // Пробуем войти автоматически
+        const email = localStorage.getItem('czhmass_userEmail');
+        const password = prompt('Введите пароль для ' + email);
+        if (password) {
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                location.reload();
+            } catch(e) {
+                alert('Ошибка входа: ' + e.message);
+                window.location.href = 'index.html';
+            }
+        }
+        return;
+    }
+    
+    console.log('✅ Пользователь найден:', user.uid, user.email);
+    
+    try {
+        // Получаем username
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            showMessage('❌ Данные пользователя не найдены в базе', 'error');
+            return;
+        }
+        
+        const username = userDoc.data().username;
+        console.log('Username из базы:', username);
+        
+        // Создаем пост
+        await db.collection('posts').add({
+            userId: user.uid,
+            username: username,
+            text: text,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            likes: 0
+        });
+        
+        textInput.value = '';
+        showMessage('✅ Пост опубликован!', 'success');
+        
+        // Обновляем ленту через 1 секунду
+        setTimeout(loadPosts, 1000);
+        
+    } catch (error) {
+        console.error('❌ Ошибка создания поста:', error);
+        showMessage('❌ Ошибка: ' + error.message, 'error');
+        
+        // Если ошибка прав - показываем инструкцию
+        if (error.code === 'permission-denied') {
+            alert('ОШИБКА ПРАВ!\n\nЗайдите в Firebase Console → Firestore → Rules\nИ установите временные правила:\n\nallow read, write: if true;\n\nЗатем опубликуйте правила.');
+        }
+    }
+}
     
     <!-- ЛЕНТА -->
     <div class="feed-container">

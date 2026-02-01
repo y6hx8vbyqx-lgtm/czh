@@ -150,23 +150,87 @@ body{
 .posts-title{
   font-size:16px;
   font-weight:600;
-  margin-bottom:12px;
+  margin-bottom:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.posts-count{
+  color:var(--sub);
+  font-size:14px;
+  font-weight:normal;
 }
 .post{
   padding:16px;
   border-radius:16px;
   background:#1c1c1e;
   margin-bottom:10px;
+  position:relative;
 }
 .post:last-child{
   margin-bottom:0;
 }
 .post-text{
   margin-bottom:8px;
+  line-height:1.4;
 }
 .post-time{
   color:var(--sub);
   font-size:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.post-actions{
+  display:flex;
+  gap:12px;
+  margin-top:12px;
+}
+.post-action-btn{
+  background:var(--accent);
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:opacity 0.2s;
+}
+.post-action-btn:hover{
+  opacity:0.9;
+}
+.post-action-btn.secondary{
+  background:rgba(255,255,255,0.1);
+}
+.post-action-btn.danger{
+  background:var(--danger);
+}
+.post-action-btn .icon{
+  font-size:14px;
+}
+
+.load-more-btn, .hide-posts-btn{
+  width:100%;
+  background:var(--accent);
+  color:white;
+  border:none;
+  padding:14px;
+  border-radius:14px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:12px;
+  transition:opacity 0.2s;
+}
+.load-more-btn:hover, .hide-posts-btn:hover{
+  opacity:0.9;
+}
+.hide-posts-btn{
+  background:rgba(255,255,255,0.1);
 }
 
 .error{
@@ -211,6 +275,9 @@ const db=firebase.firestore();
 const auth=firebase.auth();
 
 let currentUser, userData;
+let allUserPosts = [];
+let showAllPosts = false;
+const POSTS_PER_PAGE = 1; // Показываем только 1 пост изначально
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
@@ -252,7 +319,10 @@ async function loadProfile(){
         </div>
       </div>
       <div class="posts">
-        <div class="posts-title">Мои посты</div>
+        <div class="posts-title">
+          <span>Мои посты</span>
+          <span class="posts-count">загрузка...</span>
+        </div>
         <div style="text-align:center;color:var(--sub);padding:40px 0;">
           Загрузка постов...
         </div>
@@ -287,11 +357,9 @@ async function loadProfile(){
       });
     }
     
-    // Получаем количество постов пользователя
-    const postsSnap = await db.collection("posts")
-      .where("userId", "==", currentUser.uid)
-      .get();
-    const postsCount = postsSnap.size;
+    // Получаем посты пользователя
+    allUserPosts = await getUserPosts(currentUser.uid);
+    const postsCount = allUserPosts.length;
     
     // Вычисляем дни с нами
     const createdAt = userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
@@ -353,7 +421,7 @@ async function loadProfile(){
       </div>`;
     
     // Загружаем посты пользователя
-    await loadUserPosts();
+    await renderUserPosts();
     
   } catch(error) {
     console.error("Ошибка при загрузке профиля:", error);
@@ -369,13 +437,13 @@ async function loadProfile(){
   }
 }
 
-// Функция для получения постов пользователя (без сложного запроса)
+// Функция для получения постов пользователя
 async function getUserPosts(uid) {
   try {
     // Получаем все посты и фильтруем на клиенте
     const allPostsSnap = await db.collection("posts")
       .orderBy("createdAt", "desc")
-      .limit(50) // Ограничиваем для производительности
+      .limit(100) // Ограничиваем для производительности
       .get();
     
     // Фильтруем по userId
@@ -415,25 +483,29 @@ async function getUserPosts(uid) {
         return dateB - dateA;
       });
       
-      return userPosts.slice(0, 20); // Ограничиваем количество
+      return userPosts.slice(0, 50); // Ограничиваем количество
     }
     
     throw error;
   }
 }
 
-async function loadUserPosts() {
+// Функция для отображения постов пользователя
+async function renderUserPosts() {
   const container = document.getElementById("container");
   
   try {
-    // Получаем посты пользователя
-    const userPosts = await getUserPosts(currentUser.uid);
+    // Определяем, сколько постов показывать
+    const postsToShow = showAllPosts ? allUserPosts : allUserPosts.slice(0, POSTS_PER_PAGE);
     
     // Если постов нет
-    if (userPosts.length === 0) {
+    if (allUserPosts.length === 0) {
       container.innerHTML += `
         <div class="posts">
-          <div class="posts-title">Мои посты</div>
+          <div class="posts-title">
+            <span>Мои посты</span>
+            <span class="posts-count">0 постов</span>
+          </div>
           <div style="text-align:center;color:var(--sub);padding:40px 0;">
             У вас пока нет постов
           </div>
@@ -444,11 +516,15 @@ async function loadUserPosts() {
     // Форматируем посты
     let postsHTML = `
       <div class="posts">
-        <div class="posts-title">Мои посты</div>`;
+        <div class="posts-title">
+          <span>Мои посты</span>
+          <span class="posts-count">${allUserPosts.length} ${getPostWord(allUserPosts.length)}</span>
+        </div>`;
     
-    userPosts.forEach(post => {
+    postsToShow.forEach(post => {
       // Форматируем время
       let timeAgo = "только что";
+      let fullDate = "";
       try {
         if (post.createdAt) {
           const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
@@ -460,12 +536,31 @@ async function loadUserPosts() {
           
           if (days > 7) {
             timeAgo = postDate.toLocaleDateString("ru-RU");
+            fullDate = postDate.toLocaleDateString("ru-RU", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric"
+            }) + ", " + postDate.toLocaleTimeString("ru-RU", {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
           } else if (days > 0) {
             timeAgo = `${days} д назад`;
+            fullDate = postDate.toLocaleDateString("ru-RU");
           } else if (hours > 0) {
             timeAgo = `${hours} ч назад`;
+            fullDate = "Сегодня, " + postDate.toLocaleTimeString("ru-RU", {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
           } else if (minutes > 0) {
             timeAgo = `${minutes} мин назад`;
+            fullDate = "Сегодня, " + postDate.toLocaleTimeString("ru-RU", {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+          } else {
+            fullDate = "Только что";
           }
         }
       } catch (dateError) {
@@ -473,27 +568,156 @@ async function loadUserPosts() {
       }
       
       postsHTML += `
-        <div class="post">
+        <div class="post" id="post-${post.id}">
           <div class="post-text">${post.text}</div>
-          <div class="post-time">${timeAgo}</div>
+          <div class="post-time">
+            <span title="${fullDate}">${timeAgo}</span>
+            <span>❤️ ${post.likes || 0} | 💬 ${post.commentsCount || 0}</span>
+          </div>
+          <div class="post-actions">
+            <button class="post-action-btn" onclick="goToPostInFeed('${post.id}')">
+              <span class="icon">🔍</span> Найти в ленте
+            </button>
+            <button class="post-action-btn secondary" onclick="copyPostLink('${post.id}')">
+              <span class="icon">🔗</span> Ссылка
+            </button>
+            ${(post.userId === currentUser.uid || userData?.isAdmin) ? 
+              `<button class="post-action-btn danger" onclick="deletePost('${post.id}')">
+                <span class="icon">🗑</span> Удалить
+              </button>` : 
+              ''}
+          </div>
         </div>`;
     });
     
+    // Добавляем кнопку "Показать еще" или "Скрыть"
+    if (allUserPosts.length > POSTS_PER_PAGE) {
+      if (!showAllPosts) {
+        postsHTML += `
+          <button class="load-more-btn" onclick="toggleShowAllPosts()">
+            📂 Показать все посты (еще ${allUserPosts.length - POSTS_PER_PAGE})
+          </button>`;
+      } else {
+        postsHTML += `
+          <button class="hide-posts-btn" onclick="toggleShowAllPosts()">
+            📁 Скрыть посты (оставить первый)
+          </button>`;
+      }
+    }
+    
     postsHTML += `</div>`;
-    container.innerHTML += postsHTML;
+    
+    // Добавляем посты в контейнер
+    const existingPosts = document.querySelector('.posts');
+    if (existingPosts) {
+      existingPosts.outerHTML = postsHTML;
+    } else {
+      container.innerHTML += postsHTML;
+    }
     
   } catch(error) {
-    console.error("Ошибка при загрузке постов:", error);
+    console.error("Ошибка при отображении постов:", error);
     
-    container.innerHTML += `
+    const errorHTML = `
       <div class="posts">
-        <div class="posts-title">Мои посты</div>
+        <div class="posts-title">
+          <span>Мои посты</span>
+          <span class="posts-count">${allUserPosts.length} ${getPostWord(allUserPosts.length)}</span>
+        </div>
         <div style="text-align:center;color:var(--danger);padding:40px 0;">
           ${error.message.includes("index") ? 
             "Не удалось загрузить посты (требуется индекс в Firebase)" : 
             "Ошибка при загрузке постов"}
         </div>
       </div>`;
+    
+    const existingPosts = document.querySelector('.posts');
+    if (existingPosts) {
+      existingPosts.outerHTML = errorHTML;
+    } else {
+      container.innerHTML += errorHTML;
+    }
+  }
+}
+
+// Функция для правильного склонения слова "пост"
+function getPostWord(count) {
+  if (count % 10 === 1 && count % 100 !== 11) {
+    return "пост";
+  } else if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
+    return "поста";
+  } else {
+    return "постов";
+  }
+}
+
+// Переключение между режимами показа постов
+function toggleShowAllPosts() {
+  showAllPosts = !showAllPosts;
+  renderUserPosts();
+  
+  // Прокручиваем к постам
+  const postsElement = document.querySelector('.posts');
+  if (postsElement) {
+    postsElement.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// Переход к посту в основной ленте
+function goToPostInFeed(postId) {
+  // Сохраняем ID поста в localStorage
+  localStorage.setItem('scrollToPostId', postId);
+  
+  // Переходим на главную страницу
+  location.href = 'feed.html';
+  
+  // На feed.html нужно будет добавить код, который проверяет
+  // localStorage.getItem('scrollToPostId') и прокручивает к посту
+}
+
+// Копирование ссылки на пост
+function copyPostLink(postId) {
+  const link = `${window.location.origin}/feed.html#post-${postId}`;
+  
+  // Создаем временный элемент для копирования
+  const tempInput = document.createElement('input');
+  tempInput.value = link;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand('copy');
+  document.body.removeChild(tempInput);
+  
+  // Показываем уведомление
+  alert('Ссылка на пост скопирована в буфер обмена!\n\n' + link);
+}
+
+// Удаление поста
+async function deletePost(postId) {
+  if (!confirm("Вы уверены, что хотите удалить этот пост? Это действие нельзя отменить.")) {
+    return;
+  }
+  
+  try {
+    // Удаляем пост
+    await db.collection("posts").doc(postId).delete();
+    
+    // Удаляем из массива
+    allUserPosts = allUserPosts.filter(post => post.id !== postId);
+    
+    // Обновляем отображение
+    await renderUserPosts();
+    
+    // Обновляем счетчик постов в профиле
+    const statValue = document.querySelector('.stat-value:first-child');
+    if (statValue) {
+      statValue.textContent = allUserPosts.length;
+    }
+    
+    alert('Пост успешно удален!');
+    
+  } catch(error) {
+    console.error("Ошибка при удалении поста:", error);
+    alert('Не удалось удалить пост: ' + error.message);
   }
 }
 

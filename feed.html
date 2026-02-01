@@ -336,6 +336,34 @@ body{
   color:var(--bg);
 }
 
+/* Кнопка чата */
+.chat-btn {
+  background: #5ac8fa;
+  border: none;
+  color: var(--bg);
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.chat-btn:hover {
+  opacity: 0.9;
+}
+.chat-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Кнопка чатов в навбаре */
+.chats-btn {
+  background: #5ac8fa;
+  color: var(--bg);
+}
+
 .sheet{
   position:fixed;
   inset:0;
@@ -659,6 +687,7 @@ body{
   <div class="nav-btns">
     <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
+    <button class="nav-btn chats-btn" onclick="location.href='chats.html'">💬</button>
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>
@@ -761,6 +790,7 @@ body{
             <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
           </div>
           <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
+          <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
         </div>
         <div class="profile-stats">
@@ -827,6 +857,7 @@ let searchTimeout = null;
 let currentFeed = 'all'; // 'all' или 'subscriptions'
 let subscriptions = new Set();
 let adminUsers = new Set(); // Кэш для админов
+let blockedUsers = new Set(); // Заблокированные пользователи
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -837,6 +868,7 @@ auth.onAuthStateChanged(async u=>{
   await loadUserData();
   await loadAdminUsers();
   await loadSubscriptions();
+  await loadBlockedUsers();
   loadPosts();
   
   // Инициализируем счетчик слов для поста
@@ -893,6 +925,19 @@ async function loadAdminUsers() {
   }
 }
 
+// Загрузка заблокированных пользователей
+async function loadBlockedUsers() {
+  try {
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const data = userDoc.data();
+      blockedUsers = new Set(data.blockedUsers || []);
+    }
+  } catch(error) {
+    console.error("Ошибка загрузки заблокированных пользователей:", error);
+  }
+}
+
 function getTimeDividerLabel(prevDate, currentDate) {
   if (!prevDate || !currentDate) return null;
   
@@ -932,7 +977,8 @@ async function loadUserData() {
         isAdmin: false,
         lastLogin: new Date(),
         subscribers: [],
-        bio: ""
+        bio: "",
+        blockedUsers: []
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -997,6 +1043,7 @@ async function toggleSubscribe(userId, username) {
     // Обновляем UI
     if (currentProfileUserId === userId) {
       updateProfileSubscribeButton(userId);
+      updateProfileChatButton(userId);
       updateProfileSubscribersCount(userId);
     }
     
@@ -1026,6 +1073,80 @@ function updateProfileSubscribeButton(userId) {
     button.className = isSubscribed ? 'subscribe-btn subscribed' : 'subscribe-btn';
     button.onclick = () => toggleSubscribe(userId, document.getElementById('profileName').textContent.replace('@', ''));
   }
+}
+
+// Обновление кнопки чата в профиле
+function updateProfileChatButton(userId) {
+  const chatBtn = document.getElementById('profileChatBtn');
+  if (!chatBtn) return;
+  
+  if (userId === currentUser.uid) {
+    chatBtn.style.display = 'none';
+  } else {
+    chatBtn.style.display = 'inline-block';
+    const isBlocked = blockedUsers.has(userId);
+    chatBtn.disabled = isBlocked;
+    chatBtn.title = isBlocked ? 'Пользователь заблокирован' : 'Написать сообщение';
+    chatBtn.style.opacity = isBlocked ? '0.5' : '1';
+    
+    // Проверяем взаимную блокировку
+    checkMutualBlock(userId).then(blockStatus => {
+      if (blockStatus.theyBlockedMe) {
+        chatBtn.disabled = true;
+        chatBtn.title = 'Пользователь заблокировал вас';
+        chatBtn.style.opacity = '0.5';
+      }
+    });
+  }
+}
+
+// Проверка взаимной блокировки
+async function checkMutualBlock(userId) {
+  try {
+    const [currentUserDoc, otherUserDoc] = await Promise.all([
+      db.collection("users").doc(currentUser.uid).get(),
+      db.collection("users").doc(userId).get()
+    ]);
+    
+    const currentUserData = currentUserDoc.exists ? currentUserDoc.data() : {};
+    const otherUserData = otherUserDoc.exists ? otherUserDoc.data() : {};
+    
+    const iBlockedThem = (currentUserData.blockedUsers || []).includes(userId);
+    const theyBlockedMe = (otherUserData.blockedUsers || []).includes(currentUser.uid);
+    
+    return { iBlockedThem, theyBlockedMe };
+  } catch(error) {
+    console.error("Ошибка проверки блокировки:", error);
+    return { iBlockedThem: false, theyBlockedMe: false };
+  }
+}
+
+// Переход к чату с пользователем
+function goToChatWithUser() {
+  if (!currentProfileUserId) return;
+  
+  // Проверяем блокировку
+  checkMutualBlock(currentProfileUserId).then(blockStatus => {
+    if (blockStatus.theyBlockedMe) {
+      showNotification('Пользователь заблокировал вас');
+      return;
+    }
+    
+    if (blockStatus.iBlockedThem) {
+      showNotification('Вы заблокировали этого пользователя');
+      return;
+    }
+    
+    // Сохраняем данные пользователя для чата
+    const username = document.getElementById('profileName').textContent.replace('@', '');
+    sessionStorage.setItem('openChatWith', JSON.stringify({
+      userId: currentProfileUserId,
+      username: username
+    }));
+    
+    // Переходим на страницу чатов
+    location.href = 'chats.html';
+  });
 }
 
 async function updateProfileSubscribersCount(userId) {
@@ -1374,6 +1495,7 @@ async function openSearchedProfile(userId, username) {
   }
   
   updateProfileSubscribeButton(userId);
+  updateProfileChatButton(userId);
   await updateProfileSubscribersCount(userId);
   await loadUserBio(userId);
   
@@ -1405,7 +1527,7 @@ async function loadPosts(){
       const allPosts = [];
       allPostsSnap.forEach(doc => {
         const postData = doc.data();
-        if (subscriptions.has(postData.userId)) {
+        if (subscriptions.has(postData.userId) && !blockedUsers.has(postData.userId)) {
           allPosts.push({ id: doc.id, ...postData });
         }
       });
@@ -1432,8 +1554,8 @@ async function loadPosts(){
       return;
     }
     
-    // Для ленты "Все посты"
-    const snap = await query.get();
+    // Для ленты "Все посты" - фильтруем заблокированных
+    const snap = await query.limit(100).get();
     
     if (snap.empty) {
       feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Пока нет постов. Будьте первым!</div>";
@@ -1442,8 +1564,17 @@ async function loadPosts(){
     
     const posts = [];
     snap.forEach(doc => {
-      posts.push({ id: doc.id, ...doc.data() });
+      const postData = doc.data();
+      // Не показываем посты от заблокированных пользователей
+      if (!blockedUsers.has(postData.userId)) {
+        posts.push({ id: doc.id, ...postData });
+      }
     });
+    
+    if (posts.length === 0) {
+      feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Нет доступных постов</div>";
+      return;
+    }
     
     displayPosts(posts, feed);
     
@@ -2098,6 +2229,7 @@ async function openProfile(uid, name){
   }
   
   updateProfileSubscribeButton(uid);
+  updateProfileChatButton(uid);
   await updateProfileSubscribersCount(uid);
   await loadUserBio(uid);
   

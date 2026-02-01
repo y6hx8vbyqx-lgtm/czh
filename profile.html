@@ -1,708 +1,521 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль - czhmass.com</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>czhmass</title>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-        }
+<style>
+:root{
+  --bg:#000;
+  --card:rgba(28,28,30,.95);
+  --border:#1f1f1f;
+  --text:#fff;
+  --sub:#9a9a9a;
+  --accent:linear-gradient(135deg,#667eea,#764ba2);
+  --danger:#ff453a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  padding-bottom:100px;
+}
 
-        body {
-            background: #000000;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-            padding-top: 10px;
-        }
+.dynamic-island{
+  position:fixed;top:12px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;border-radius:20px;
+  background:#111;display:flex;align-items:center;justify-content:center;
+  font-weight:600;z-index:1000;
+}
 
-        /* iOS Динамический островок */
-        .dynamic-island {
-            position: fixed;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 35px;
-            background: rgba(40, 40, 40, 0.95);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 0 15px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-        }
+.navbar{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  width:92%;max-width:430px;
+  background:var(--card);
+  border-radius:18px;
+  padding:10px 14px;
+  display:flex;justify-content:space-between;align-items:center;
+  z-index:999;
+}
+.logo{
+  font-weight:700;
+  background:var(--accent);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  cursor:pointer;
+}
+.nav-btn{
+  background:#1c1c1e;border:none;color:#fff;
+  padding:8px 12px;border-radius:12px;font-size:16px;
+}
 
-        .island-time {
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
-        }
+.container{
+  max-width:430px;
+  margin:auto;
+  padding:130px 14px 30px;
+}
 
-        /* Навигация */
-        .navbar {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: rgba(28, 28, 30, 0.8);
-            padding: 12px 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 999;
-        }
+.profile-header{
+  background:var(--card);
+  border-radius:22px;
+  padding:20px;
+  margin-bottom:14px;
+  text-align:center;
+}
+.profile-avatar{
+  width:100px;height:100px;
+  border-radius:30px;
+  background:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:42px;
+  font-weight:700;
+  margin:0 auto 16px;
+}
+.profile-name{
+  font-size:22px;
+  font-weight:700;
+  margin-bottom:4px;
+}
+.profile-email{
+  color:var(--sub);
+  font-size:14px;
+  margin-bottom:20px;
+}
+.profile-stats{
+  display:flex;
+  justify-content:space-around;
+  border-top:1px solid var(--border);
+  padding-top:16px;
+}
+.stat{
+  text-align:center;
+}
+.stat-value{
+  font-size:20px;
+  font-weight:700;
+}
+.stat-label{
+  color:var(--sub);
+  font-size:12px;
+}
+.profile-info{
+  color:var(--sub);
+  font-size:13px;
+  text-align:center;
+  margin-top:8px;
+}
 
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+.profile-details{
+  background:var(--card);
+  border-radius:22px;
+  padding:20px;
+  margin-bottom:14px;
+}
+.details-title{
+  font-size:16px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+.detail-item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.detail-item:last-child{
+  border-bottom:none;
+}
+.detail-label{
+  color:var(--sub);
+}
+.detail-value{
+  font-weight:500;
+}
 
-        .nav-buttons {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
+.posts{
+  background:var(--card);
+  border-radius:22px;
+  padding:20px;
+}
+.posts-title{
+  font-size:16px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+.post{
+  padding:16px;
+  border-radius:16px;
+  background:#1c1c1e;
+  margin-bottom:10px;
+}
+.post:last-child{
+  margin-bottom:0;
+}
+.post-text{
+  margin-bottom:8px;
+}
+.post-time{
+  color:var(--sub);
+  font-size:12px;
+}
 
-        .btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-width: auto;
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-back {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-settings {
-            background: rgba(52, 199, 89, 0.2);
-            color: #34c759;
-        }
-
-        /* Основной контент */
-        .container {
-            padding: 140px 20px 100px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        /* Карточка профиля в стиле iOS */
-        .profile-card-ios {
-            background: rgba(28, 28, 30, 0.8);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Заголовок профиля */
-        .profile-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .avatar-ios {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 22px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-            font-weight: bold;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-
-        .username-ios {
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 15px;
-        }
-
-        .email-info-ios {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .email-label-ios {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 4px;
-        }
-
-        .email-value-ios {
-            font-size: 16px;
-            font-weight: 500;
-            color: white;
-        }
-
-        .privacy-note-ios {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .admin-badge-ios {
-            background: linear-gradient(135deg, #805ad5, #6b46c1);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 15px;
-            font-size: 13px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-        }
-
-        /* Статистика */
-        .stats-ios {
-            display: flex;
-            justify-content: space-around;
-            margin: 30px 0;
-            padding: 20px 0;
-            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .stat-item-ios {
-            text-align: center;
-            flex: 1;
-        }
-
-        .stat-value-ios {
-            font-size: 28px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 5px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .stat-label-ios {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
-        }
-
-        /* Информационная сетка */
-        .info-section-ios {
-            margin-top: 30px;
-        }
-
-        .info-title-ios {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: rgba(255, 255, 255, 0.9);
-            padding-bottom: 10px;
-            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .info-grid-ios {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .info-item-ios {
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
-            border: 0.5px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.2s;
-        }
-
-        .info-item-ios:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .info-label-ios {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 6px;
-        }
-
-        .info-value-ios {
-            font-size: 15px;
-            font-weight: 500;
-            color: white;
-        }
-
-        /* Сообщения */
-        .message {
-            position: fixed;
-            top: 130px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 15px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 1001;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            display: none;
-            max-width: 90%;
-            text-align: center;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translate(-50%, -20px);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-        }
-
-        .success {
-            background: rgba(52, 199, 89, 0.15);
-            color: #34c759;
-            border-color: rgba(52, 199, 89, 0.3);
-        }
-
-        .error {
-            background: rgba(255, 59, 48, 0.15);
-            color: #ff3b30;
-            border-color: rgba(255, 59, 48, 0.3);
-        }
-
-        /* Загрузка */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 16px;
-        }
-
-        /* Адаптивность для мобильных */
-        @media (max-width: 768px) {
-            .navbar {
-                width: 95%;
-                top: 65px;
-                padding: 10px 15px;
-            }
-            
-            .container {
-                padding: 130px 15px 80px;
-            }
-            
-            .dynamic-island {
-                width: 110px;
-                height: 32px;
-                top: 10px;
-            }
-            
-            .profile-card-ios {
-                padding: 20px;
-            }
-            
-            .nav-buttons {
-                gap: 6px;
-            }
-            
-            .btn {
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-            
-            .btn span:not(.btn-icon) {
-                display: none;
-            }
-            
-            .btn-icon {
-                display: inline-block;
-                font-size: 16px;
-            }
-            
-            .avatar-ios {
-                width: 90px;
-                height: 90px;
-                font-size: 36px;
-                border-radius: 20px;
-            }
-            
-            .info-grid-ios {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-ios {
-                flex-direction: column;
-                gap: 25px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .navbar {
-                padding: 8px 12px;
-            }
-            
-            .logo {
-                font-size: 16px;
-            }
-            
-            .btn {
-                padding: 6px 10px;
-            }
-            
-            .username-ios {
-                font-size: 20px;
-            }
-            
-            .avatar-ios {
-                width: 80px;
-                height: 80px;
-                font-size: 32px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .navbar {
-                padding: 6px 10px;
-            }
-            
-            .logo {
-                font-size: 14px;
-            }
-            
-            .nav-buttons {
-                gap: 4px;
-            }
-            
-            .btn {
-                padding: 5px 8px;
-            }
-            
-            .dynamic-island {
-                width: 100px;
-                height: 30px;
-                font-size: 13px;
-            }
-        }
-    </style>
+.error{
+  background:var(--card);
+  border-radius:22px;
+  padding:40px 20px;
+  text-align:center;
+  margin:20px 0;
+}
+.error-title{
+  color:var(--danger);
+  font-size:18px;
+  margin-bottom:10px;
+}
+.error-text{
+  color:var(--sub);
+  font-size:14px;
+}
+</style>
 </head>
+
 <body>
-    <!-- iOS Динамический островок -->
-    <div class="dynamic-island">
-        <span class="island-time" id="currentTime">--:--</span>
-    </div>
 
-    <!-- Навигация -->
-    <nav class="navbar">
-        <div class="logo">czhmass</div>
-        <div class="nav-buttons">
-            <button class="btn btn-back" onclick="window.location.href='feed.html'" title="Назад">
-                <span class="btn-icon">←</span>
-                <span>Назад</span>
-            </button>
-            <button class="btn btn-settings" onclick="window.location.href='profile-settings.html'" title="Приватность">
-                <span class="btn-icon">⚙️</span>
-                <span>Приватность</span>
-            </button>
+<div class="dynamic-island" id="time"></div>
+
+<div class="navbar">
+  <div class="logo" onclick="goHome()">czhmass</div>
+  <button class="nav-btn" onclick="logout()">🚪</button>
+</div>
+
+<div class="container" id="container">
+  <!-- Контент будет загружен динамически -->
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+  authDomain:"czhmass.firebaseapp.com",
+  projectId:"czhmass"
+});
+const db=firebase.firestore();
+const auth=firebase.auth();
+
+let currentUser, userData;
+
+auth.onAuthStateChanged(async u=>{
+  if(!u)return location.href="index.html";
+  currentUser=u;
+  await loadProfile();
+});
+
+async function loadProfile(){
+  const container = document.getElementById("container");
+  
+  try {
+    // Показываем загрузку
+    container.innerHTML = `
+      <div class="profile-header">
+        <div class="profile-avatar">U</div>
+        <div class="profile-name">Загрузка...</div>
+        <div class="profile-email">Email адрес<br><small>загрузка...</small></div>
+        <div class="profile-info">Виден только вам и администраторам</div>
+        <div class="profile-stats">
+          <div class="stat">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Постов</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Дней с нами</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">-</div>
+            <div class="stat-label">Последний вход</div>
+          </div>
         </div>
-    </nav>
-
-    <!-- Основной контейнер -->
-    <div class="container">
-        <!-- Карточка профиля -->
-        <div class="profile-card-ios">
-            <div class="profile-header">
-                <div class="avatar-ios" id="avatar">U</div>
-                <h1 class="username-ios" id="username">Загрузка...</h1>
-
-                <div id="adminBadge" class="admin-badge-ios" style="display: none;">
-                    <span class="btn-icon">👑</span>
-                    <span>АДМИНИСТРАТОР</span>
-                </div>
-
-                <div class="email-info-ios">
-                    <div class="email-label-ios">Email адрес</div>
-                    <div class="email-value-ios" id="email">загрузка...</div>
-                    <div class="privacy-note-ios">
-                        <span>🔒</span>
-                        Виден только вам и администраторам
-                    </div>
-                </div>
-            </div>
-
-            <div class="stats-ios">
-                <div class="stat-item-ios">
-                    <div class="stat-value-ios" id="postsCount">0</div>
-                    <div class="stat-label-ios">Постов</div>
-                </div>
-                <div class="stat-item-ios">
-                    <div class="stat-value-ios" id="accountAge">0</div>
-                    <div class="stat-label-ios">Дней с нами</div>
-                </div>
-                <div class="stat-item-ios">
-                    <div class="stat-value-ios" id="lastLogin">-</div>
-                    <div class="stat-label-ios">Последний вход</div>
-                </div>
-            </div>
-
-            <div class="info-section-ios">
-                <h2 class="info-title-ios">📊 Информация о профиле</h2>
-                <div class="info-grid-ios">
-                    <div class="info-item-ios">
-                        <div class="info-label-ios">ID пользователя</div>
-                        <div class="info-value-ios" id="userId">загрузка...</div>
-                    </div>
-                    <div class="info-item-ios">
-                        <div class="info-label-ios">Дата регистрации</div>
-                        <div class="info-value-ios" id="createdAt">загрузка...</div>
-                    </div>
-                    <div class="info-item-ios">
-                        <div class="info-label-ios">Статус аккаунта</div>
-                        <div class="info-value-ios" id="accountStatus">Активен</div>
-                    </div>
-                    <div class="info-item-ios">
-                        <div class="info-label-ios">Роль</div>
-                        <div class="info-value-ios" id="role">Пользователь</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="loadingProfile" class="loading">
-                <div>Загрузка профиля...</div>
-            </div>
+      </div>
+      <div class="profile-details">
+        <div class="details-title">Информация о профиле</div>
+        <div class="detail-item">
+          <span class="detail-label">ID пользователя</span>
+          <span class="detail-value">загрузка...</span>
         </div>
+      </div>
+      <div class="posts">
+        <div class="posts-title">Мои посты</div>
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          Загрузка постов...
+        </div>
+      </div>`;
+    
+    // Загружаем данные пользователя
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    
+    if (!userDoc.exists) {
+      // Если документ не существует, создаем его
+      await db.collection("users").doc(currentUser.uid).set({
+        username: "user" + currentUser.uid.slice(-6),
+        email: currentUser.email || "не указан",
+        createdAt: new Date(),
+        isAdmin: false,
+        lastLogin: new Date()
+      });
+      
+      userData = {
+        username: "user" + currentUser.uid.slice(-6),
+        email: currentUser.email || "не указан",
+        createdAt: new Date(),
+        isAdmin: false,
+        lastLogin: new Date()
+      };
+    } else {
+      userData = userDoc.data();
+      
+      // Обновляем время последнего входа
+      await db.collection("users").doc(currentUser.uid).update({
+        lastLogin: new Date()
+      });
+    }
+    
+    // Получаем количество постов пользователя
+    const postsSnap = await db.collection("posts")
+      .where("userId", "==", currentUser.uid)
+      .get();
+    const postsCount = postsSnap.size;
+    
+    // Вычисляем дни с нами
+    const createdAt = userData.createdAt?.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+    const daysWithUs = Math.floor((new Date() - createdAt) / (1000 * 60 * 60 * 24));
+    
+    // Форматируем последний вход
+    let lastLoginFormatted = "-";
+    if (userData.lastLogin) {
+      const lastLoginDate = userData.lastLogin?.toDate ? userData.lastLogin.toDate() : new Date(userData.lastLogin);
+      const now = new Date();
+      const diffHours = Math.floor((now - lastLoginDate) / (1000 * 60 * 60));
+      
+      if (diffHours < 1) {
+        lastLoginFormatted = "только что";
+      } else if (diffHours < 24) {
+        lastLoginFormatted = `${diffHours} ч назад`;
+      } else {
+        const diffDays = Math.floor(diffHours / 24);
+        lastLoginFormatted = `${diffDays} д назад`;
+      }
+    }
+    
+    // Обновляем профиль
+    container.innerHTML = `
+      <div class="profile-header">
+        <div class="profile-avatar">${userData.username?.[0]?.toUpperCase() || "U"}</div>
+        <div class="profile-name">@${userData.username || "user"}</div>
+        <div class="profile-email">${userData.email || "не указан"}</div>
+        <div class="profile-info">Виден только вам и администраторам</div>
+        <div class="profile-stats">
+          <div class="stat">
+            <div class="stat-value">${postsCount}</div>
+            <div class="stat-label">Постов</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${daysWithUs}</div>
+            <div class="stat-label">Дней с нами</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${lastLoginFormatted}</div>
+            <div class="stat-label">Последний вход</div>
+          </div>
+        </div>
+      </div>
+      <div class="profile-details">
+        <div class="details-title">Информация о профиле</div>
+        <div class="detail-item">
+          <span class="detail-label">ID пользователя</span>
+          <span class="detail-value">${currentUser.uid}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Дата регистрации</span>
+          <span class="detail-value">${createdAt.toLocaleDateString("ru-RU")}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Роль</span>
+          <span class="detail-value">${userData.isAdmin ? "👑 Администратор" : "👤 Пользователь"}</span>
+        </div>
+      </div>`;
+    
+    // Загружаем посты пользователя
+    await loadUserPosts();
+    
+  } catch(error) {
+    console.error("Ошибка при загрузке профиля:", error);
+    
+    container.innerHTML = `
+      <div class="error">
+        <div class="error-title">Ошибка загрузки профиля</div>
+        <div class="error-text">${error.message}</div>
+        <button style="margin-top:20px;background:var(--accent);color:white;border:none;padding:12px 24px;border-radius:12px;font-weight:600;cursor:pointer;" onclick="loadProfile()">
+          Попробовать снова
+        </button>
+      </div>`;
+  }
+}
 
-        <div id="message" class="message"></div>
-    </div>
-
-    <script>
-        // ===== FIREBASE КОНФИГ =====
-        const firebaseConfig = {
-            apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-            authDomain: "czhmass.firebaseapp.com",
-            projectId: "czhmass",
-            storageBucket: "czhmass.firebasestorage.app",
-            messagingSenderId: "1064257019843",
-            appId: "1:1064257019843:web:65488b45be2f86838ca776"
-        };
-
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        let db, auth;
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase инициализирован');
-        }
-
-        db = firebase.firestore();
-        auth = firebase.auth();
-
-        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type;
-            messageDiv.style.display = 'block';
-            setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
-        }
-
-        function formatDate(timestamp) {
-            if (!timestamp) return 'Неизвестно';
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                return date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-            } catch (e) {
-                return 'Неизвестно';
-            }
-        }
-
-        function calculateDays(timestamp) {
-            if (!timestamp) return 0;
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                const now = new Date();
-                const diff = now - date;
-                return Math.floor(diff / (1000 * 60 * 60 * 24));
-            } catch (e) {
-                return 0;
-            }
-        }
-
-        function formatLastLogin(timestamp) {
-            if (!timestamp) return 'Сегодня';
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                const now = new Date();
-                const diff = now - date;
-
-                if (diff < 60000) return 'Только что';
-                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин назад`;
-                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`;
-                if (diff < 172800000) return 'Вчера';
-
-                return `${Math.floor(diff / 86400000)} дн. назад`;
-            } catch (e) {
-                return 'Недавно';
-            }
-        }
-
-        function getAvatarLetter(username) {
-            return username ? username.charAt(0).toUpperCase() : 'U';
-        }
-
-        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ В ОСТРОВКЕ =====
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            document.getElementById('currentTime').textContent = timeString;
-        }
-
-        setInterval(updateTime, 1000);
-        updateTime();
-
-        // ===== АДАПТИВНЫЙ ИНТЕРФЕЙС ДЛЯ МОБИЛЬНЫХ =====
-        function updateMobileUI() {
-            const backBtn = document.querySelector('.btn-back');
-            const settingsBtn = document.querySelector('.btn-settings');
-            
-            if (window.innerWidth <= 768) {
-                // Мобильная версия - показываем только иконки
-                backBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-                settingsBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'none', 'important');
-            } else {
-                // Десктоп версия - показываем текст
-                backBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-                settingsBtn.querySelector('span:not(.btn-icon)')?.style.setProperty('display', 'inline', 'important');
-            }
-        }
-
-        window.addEventListener('resize', updateMobileUI);
-
-        // ===== ЗАГРУЗКА ПРОФИЛЯ =====
-        async function loadProfile() {
-            const user = auth.currentUser;
-
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            try {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-
-                if (!userDoc.exists) {
-                    showMessage('❌ Профиль не найден', 'error');
-                    return;
-                }
-
-                const userData = userDoc.data();
-
-                // Обновляем аватар
-                const avatarDiv = document.getElementById('avatar');
-                avatarDiv.textContent = getAvatarLetter(userData.username);
-
-                // Обновляем основную информацию
-                document.getElementById('username').textContent = userData.username || 'Без имени';
-                document.getElementById('email').textContent = user.email;
-                document.getElementById('userId').textContent = user.uid.substring(0, 8) + '...';
-                document.getElementById('createdAt').textContent = formatDate(userData.createdAt);
-                document.getElementById('postsCount').textContent = userData.postsCount || 0;
-                document.getElementById('accountAge').textContent = calculateDays(userData.createdAt);
-                document.getElementById('lastLogin').textContent = formatLastLogin(userData.lastLogin);
-
-                // Админ-бейдж
-                if (userData.isAdmin) {
-                    document.getElementById('adminBadge').style.display = 'inline-flex';
-                    document.getElementById('role').textContent = 'Администратор';
-                }
-
-                // Скрываем загрузку
-                document.getElementById('loadingProfile').style.display = 'none';
-
-                console.log('✅ Профиль загружен:', userData.username);
-
-            } catch (error) {
-                console.error('❌ Ошибка загрузки профиля:', error);
-                showMessage('Ошибка загрузки профиля: ' + error.message, 'error');
-            }
-        }
-
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                console.log('👤 Пользователь авторизован:', user.uid);
-                updateMobileUI(); // Настраиваем интерфейс под размер экрана
-                loadProfile();
-            } else {
-                window.location.href = 'index.html';
-            }
+// Функция для получения постов пользователя (без сложного запроса)
+async function getUserPosts(uid) {
+  try {
+    // Получаем все посты и фильтруем на клиенте
+    const allPostsSnap = await db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .limit(50) // Ограничиваем для производительности
+      .get();
+    
+    // Фильтруем по userId
+    const userPosts = [];
+    allPostsSnap.forEach(doc => {
+      const post = doc.data();
+      if (post.userId === uid) {
+        userPosts.push({
+          id: doc.id,
+          ...post
         });
-
-        // Запуск при загрузке страницы
-        window.addEventListener('load', () => {
-            console.log('🚀 Страница профиля загружена');
-            updateTime();
+      }
+    });
+    
+    return userPosts;
+  } catch(error) {
+    console.error("Ошибка при получении постов пользователя:", error);
+    
+    // Альтернативный способ: простой запрос без сортировки
+    if (error.code === 'failed-precondition') {
+      const simpleSnap = await db.collection("posts")
+        .where("userId", "==", uid)
+        .get();
+      
+      const userPosts = [];
+      simpleSnap.forEach(doc => {
+        userPosts.push({
+          id: doc.id,
+          ...doc.data()
         });
-    </script>
+      });
+      
+      // Сортируем на клиенте
+      userPosts.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      
+      return userPosts.slice(0, 20); // Ограничиваем количество
+    }
+    
+    throw error;
+  }
+}
+
+async function loadUserPosts() {
+  const container = document.getElementById("container");
+  
+  try {
+    // Получаем посты пользователя
+    const userPosts = await getUserPosts(currentUser.uid);
+    
+    // Если постов нет
+    if (userPosts.length === 0) {
+      container.innerHTML += `
+        <div class="posts">
+          <div class="posts-title">Мои посты</div>
+          <div style="text-align:center;color:var(--sub);padding:40px 0;">
+            У вас пока нет постов
+          </div>
+        </div>`;
+      return;
+    }
+    
+    // Форматируем посты
+    let postsHTML = `
+      <div class="posts">
+        <div class="posts-title">Мои посты</div>`;
+    
+    userPosts.forEach(post => {
+      // Форматируем время
+      let timeAgo = "только что";
+      try {
+        if (post.createdAt) {
+          const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+          const now = new Date();
+          const diff = now - postDate;
+          const minutes = Math.floor(diff / (1000 * 60));
+          const hours = Math.floor(minutes / 60);
+          const days = Math.floor(hours / 24);
+          
+          if (days > 7) {
+            timeAgo = postDate.toLocaleDateString("ru-RU");
+          } else if (days > 0) {
+            timeAgo = `${days} д назад`;
+          } else if (hours > 0) {
+            timeAgo = `${hours} ч назад`;
+          } else if (minutes > 0) {
+            timeAgo = `${minutes} мин назад`;
+          }
+        }
+      } catch (dateError) {
+        console.log("Ошибка форматирования даты:", dateError);
+      }
+      
+      postsHTML += `
+        <div class="post">
+          <div class="post-text">${post.text}</div>
+          <div class="post-time">${timeAgo}</div>
+        </div>`;
+    });
+    
+    postsHTML += `</div>`;
+    container.innerHTML += postsHTML;
+    
+  } catch(error) {
+    console.error("Ошибка при загрузке постов:", error);
+    
+    container.innerHTML += `
+      <div class="posts">
+        <div class="posts-title">Мои посты</div>
+        <div style="text-align:center;color:var(--danger);padding:40px 0;">
+          ${error.message.includes("index") ? 
+            "Не удалось загрузить посты (требуется индекс в Firebase)" : 
+            "Ошибка при загрузке постов"}
+        </div>
+      </div>`;
+  }
+}
+
+function goHome() {
+  location.href = "feed.html";
+}
+
+function logout() {
+  if(confirm("Выйти из аккаунта?")){
+    auth.signOut().then(()=>{
+      location.href="index.html";
+    });
+  }
+}
+
+setInterval(()=>{
+  const timeElement = document.getElementById("time");
+  if(timeElement){
+    timeElement.textContent = new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  }
+},1000);
+</script>
+
 </body>
 </html>

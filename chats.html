@@ -1344,7 +1344,7 @@ async function toggleBlockUser() {
   }
 }
 
-// ==================== СООБЩЕНИЯ (ИСПРАВЛЕННАЯ ЛОГИКА ДАТ) ====================
+// ==================== СООБЩЕНИЯ (ИСПРАВЛЕННАЯ ЛОГИКА РАЗДЕЛИТЕЛЕЙ) ====================
 
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
@@ -1430,64 +1430,19 @@ function setupChatMessagesListener() {
   
   chatMessagesListener = db.collection('chats').doc(currentChatId)
     .collection('messages')
-    .orderBy('timestamp', 'asc')
+    .orderBy('timestamp', 'desc')
+    .limit(1)
     .onSnapshot((snapshot) => {
-      const chatMessages = document.getElementById('chatMessages');
-      const noMessages = chatMessages.querySelector('.no-messages');
-      
-      // Если нет сообщений и появилось первое
-      if (noMessages && !snapshot.empty) {
-        loadChatMessages(); // Перезагружаем все сообщения с правильной группировкой по датам
-        return;
-      }
-      
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const msg = change.doc.data();
           const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
-          const currentDate = formatMessageDate(msgDate);
           
-          // Проверяем, нужен ли разделитель даты
-          const lastElement = chatMessages.lastElementChild;
-          let needsDateDivider = true;
-          
-          if (lastElement && lastElement.classList.contains('message-date-divider')) {
-            if (lastElement.textContent === currentDate) {
-              needsDateDivider = false;
-            }
-          }
-          
-          // Добавляем разделитель даты если нужно
-          if (needsDateDivider) {
-            const dateDivider = document.createElement('div');
-            dateDivider.className = 'message-date-divider';
-            dateDivider.textContent = currentDate;
-            chatMessages.appendChild(dateDivider);
-          }
-          
-          // Добавляем сообщение
-          const isOutgoing = msg.senderId === currentUser.uid;
-          const messageTime = formatMessageTime(msgDate);
-          
-          const messageDiv = document.createElement('div');
-          messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
-          messageDiv.innerHTML = `
-            <div class="message-text">${msg.text}</div>
-            <div class="message-time">
-              ${messageTime}
-              ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
-            </div>
-          `;
-          
-          chatMessages.appendChild(messageDiv);
-          
-          // Прокручиваем вниз
-          setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-          }, 100);
+          // Получаем все сообщения для правильной группировки
+          addNewMessageToUI(msg, msgDate);
           
           // Помечаем как прочитанное если это входящее
-          if (!isOutgoing) {
+          if (msg.senderId !== currentUser.uid) {
             markMessageAsRead(change.doc.id);
           }
         }
@@ -1495,6 +1450,74 @@ function setupChatMessagesListener() {
     }, (error) => {
       console.error('Ошибка слушателя сообщений:', error);
     });
+}
+
+function addNewMessageToUI(msg, msgDate) {
+  const chatMessages = document.getElementById('chatMessages');
+  const noMessages = chatMessages.querySelector('.no-messages');
+  const loader = chatMessages.querySelector('.loader');
+  
+  // Убираем загрузчик или сообщение "нет сообщений"
+  if (noMessages) noMessages.remove();
+  if (loader) loader.remove();
+  
+  const currentDate = formatMessageDate(msgDate);
+  
+  // Проверяем последний элемент в чате
+  const allElements = chatMessages.children;
+  let lastMessageDateDivider = null;
+  let hasMessagesForToday = false;
+  
+  // Ищем последний разделитель даты и проверяем есть ли уже сообщения за сегодня
+  for (let i = allElements.length - 1; i >= 0; i--) {
+    const element = allElements[i];
+    if (element.classList.contains('message-date-divider')) {
+      lastMessageDateDivider = element;
+      break;
+    } else if (element.classList.contains('message')) {
+      // Уже есть сообщения
+      hasMessagesForToday = true;
+    }
+  }
+  
+  // Проверяем, нужен ли новый разделитель даты
+  let needsDateDivider = false;
+  if (!lastMessageDateDivider) {
+    // Если нет ни одного разделителя - нужен
+    needsDateDivider = true;
+  } else if (lastMessageDateDivider.textContent !== currentDate) {
+    // Если дата изменилась - нужен новый разделитель
+    needsDateDivider = true;
+  }
+  
+  // Добавляем разделитель даты если нужно
+  if (needsDateDivider) {
+    const dateDivider = document.createElement('div');
+    dateDivider.className = 'message-date-divider';
+    dateDivider.textContent = currentDate;
+    chatMessages.appendChild(dateDivider);
+  }
+  
+  // Добавляем сообщение
+  const isOutgoing = msg.senderId === currentUser.uid;
+  const messageTime = formatMessageTime(msgDate);
+  
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
+  messageDiv.innerHTML = `
+    <div class="message-text">${msg.text}</div>
+    <div class="message-time">
+      ${messageTime}
+      ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
+    </div>
+  `;
+  
+  chatMessages.appendChild(messageDiv);
+  
+  // Прокручиваем вниз
+  setTimeout(() => {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }, 100);
 }
 
 async function sendMessage() {

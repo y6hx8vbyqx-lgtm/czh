@@ -533,9 +533,9 @@ body{
 <script>
 // Инициализация Firebase
 firebase.initializeApp({
-  apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain:"czhmass.firebaseapp.com",
-  projectId:"czhmass"
+  apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
+  authDomain: "czhmass.firebaseapp.com",
+  projectId: "czhmass"
 });
 const db = firebase.firestore();
 const auth = firebase.auth();
@@ -550,7 +550,8 @@ let currentChatId = null;
 let chatMessagesListener = null;
 let usersCache = new Map();
 
-// Форматирование времени
+// ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
+
 function formatTimeAgo(date) {
   if (!date) return "только что";
   
@@ -577,7 +578,6 @@ function formatTimeAgo(date) {
   }
 }
 
-// Форматирование времени сообщения
 function formatMessageTime(date) {
   if (!date) return "";
   
@@ -587,7 +587,6 @@ function formatMessageTime(date) {
   });
 }
 
-// Форматирование даты сообщения
 function formatMessageDate(date) {
   if (!date) return "";
   
@@ -611,7 +610,8 @@ function formatMessageDate(date) {
   }
 }
 
-// Загрузка данных пользователя
+// ==================== ЗАГРУЗКА ДАННЫХ ====================
+
 async function loadUserData() {
   try {
     const snap = await db.collection("users").doc(currentUser.uid).get();
@@ -628,15 +628,12 @@ async function loadUserData() {
     
     if (userData.isAdmin === true) {
       document.getElementById("adminBtn").style.display = "block";
-    } else {
-      document.getElementById("adminBtn").style.display = "none";
     }
-  } catch(error) {
+  } catch (error) {
     console.error("Ошибка загрузки данных:", error);
   }
 }
 
-// Загрузка заблокированных пользователей
 async function loadBlockedUsers() {
   try {
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
@@ -644,12 +641,11 @@ async function loadBlockedUsers() {
       const data = userDoc.data();
       blockedUsers = new Set(data.blockedUsers || []);
     }
-  } catch(error) {
+  } catch (error) {
     console.error("Ошибка загрузки заблокированных пользователей:", error);
   }
 }
 
-// Загрузка списка админов
 async function loadAdminUsers() {
   try {
     const adminSnap = await db.collection("users")
@@ -660,12 +656,11 @@ async function loadAdminUsers() {
     adminSnap.forEach(doc => {
       adminUsers.add(doc.id);
     });
-  } catch(error) {
+  } catch (error) {
     console.error("Ошибка загрузки админов:", error);
   }
 }
 
-// Получение информации о пользователе
 async function getUserInfo(userId) {
   if (usersCache.has(userId)) {
     return usersCache.get(userId);
@@ -689,7 +684,7 @@ async function getUserInfo(userId) {
     
     usersCache.set(userId, userInfo);
     return userInfo;
-  } catch(error) {
+  } catch (error) {
     console.error("Ошибка получения информации о пользователе:", error);
     return {
       username: "user" + userId.slice(-6),
@@ -698,13 +693,14 @@ async function getUserInfo(userId) {
   }
 }
 
-// Загрузка списка чатов (БЕЗ ИНДЕКСА - простая версия)
+// ==================== СПИСОК ЧАТОВ ====================
+
 async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
   
   try {
-    // Получаем ВСЕ чаты и фильтруем на клиенте
-    const chatsSnap = await db.collection('chats').limit(100).get();
+    // Получаем все чаты
+    const chatsSnap = await db.collection('chats').get();
     
     if (chatsSnap.empty) {
       chatsList.innerHTML = `
@@ -730,20 +726,14 @@ async function loadChatsList() {
         const otherUserId = chat.participants.find(id => id !== currentUser.uid);
         
         if (otherUserId && !blockedUsers.has(otherUserId)) {
-          // Проверяем, не заблокировал ли нас пользователь
           const otherUserInfo = await getUserInfo(otherUserId);
-          const otherUserDoc = await db.collection("users").doc(otherUserId).get();
-          const otherUserData = otherUserDoc.exists ? otherUserDoc.data() : {};
-          const theyBlockedMe = (otherUserData.blockedUsers || []).includes(currentUser.uid);
           
-          if (!theyBlockedMe) {
-            userChats.push({
-              id: doc.id,
-              ...chat,
-              otherUserId: otherUserId,
-              otherUserInfo: otherUserInfo
-            });
-          }
+          userChats.push({
+            id: doc.id,
+            ...chat,
+            otherUserId: otherUserId,
+            otherUserInfo: otherUserInfo
+          });
         }
       }
     }
@@ -752,7 +742,7 @@ async function loadChatsList() {
     userChats.sort((a, b) => {
       const timeA = a.lastMessageTime?.toDate ? a.lastMessageTime.toDate() : new Date(a.lastMessageTime || 0);
       const timeB = b.lastMessageTime?.toDate ? b.lastMessageTime.toDate() : new Date(b.lastMessageTime || 0);
-      return timeB - timeA; // Новые сверху
+      return timeB - timeA;
     });
     
     if (userChats.length === 0) {
@@ -778,13 +768,11 @@ async function loadChatsList() {
       const lastMessageTime = chat.lastMessageTime?.toDate ? chat.lastMessageTime.toDate() : new Date();
       const timeAgo = formatTimeAgo(lastMessageTime);
       
-      // Обрезаем длинное сообщение
       let preview = chat.lastMessage || 'Нет сообщений';
       if (preview.length > 50) {
         preview = preview.substring(0, 47) + '...';
       }
       
-      // Определяем кто отправил последнее сообщение
       const senderPrefix = chat.lastSender === currentUser.uid ? 'Вы: ' : '';
       
       chatsHTML += `
@@ -805,7 +793,7 @@ async function loadChatsList() {
     
     chatsList.innerHTML = chatsHTML;
     
-  } catch(error) {
+  } catch (error) {
     console.error('Ошибка загрузки чатов:', error);
     chatsList.innerHTML = `
       <div class="no-chats" style="color:var(--danger)">
@@ -814,13 +802,14 @@ async function loadChatsList() {
   }
 }
 
-// Открытие чата
+// ==================== ОКНО ЧАТА ====================
+
 async function openChat(userId, username) {
   currentChatUserId = userId;
   currentChatUsername = username;
   
-  // Находим ID чата (без индекса)
-  const chatsSnap = await db.collection('chats').limit(100).get();
+  // Находим ID чата
+  const chatsSnap = await db.collection('chats').get();
   
   let foundChatId = null;
   chatsSnap.forEach(doc => {
@@ -859,7 +848,6 @@ async function openChat(userId, username) {
   }
 }
 
-// Закрытие чата
 function closeChat() {
   document.getElementById('chatOverlay').classList.remove('show');
   
@@ -875,7 +863,6 @@ function closeChat() {
   loadChatsList();
 }
 
-// Обновление кнопок блокировки
 function updateBlockButtons(isCurrentlyBlocked) {
   const blockBtn = document.getElementById('blockBtn');
   const unblockBtn = document.getElementById('unblockBtn');
@@ -897,7 +884,6 @@ function updateBlockButtons(isCurrentlyBlocked) {
   }
 }
 
-// Блокировка/разблокировка пользователя
 async function toggleBlockUser() {
   if (!currentChatUserId) return;
   
@@ -932,13 +918,14 @@ async function toggleBlockUser() {
       }, 1000);
     }
     
-  } catch(error) {
+  } catch (error) {
     console.error("Ошибка при блокировке пользователя:", error);
     showNotification("Ошибка: " + error.message);
   }
 }
 
-// Загрузка сообщений
+// ==================== СООБЩЕНИЯ ====================
+
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
   chatMessages.innerHTML = '<div class="loader"><div class="loader-spinner"></div><div>Загрузка сообщений...</div></div>';
@@ -954,8 +941,8 @@ async function loadChatMessages() {
   try {
     const messagesSnap = await db.collection('chats').doc(currentChatId)
       .collection('messages')
-      .orderBy('timestamp', 'desc')
-      .limit(50)
+      .orderBy('timestamp', 'asc')
+      .limit(100)
       .get();
     
     if (messagesSnap.empty) {
@@ -971,18 +958,11 @@ async function loadChatMessages() {
       messages.push({ id: doc.id, ...doc.data() });
     });
     
-    // Сортируем по времени (старые первыми)
-    messages.sort((a, b) => {
-      const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-      const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-      return timeA - timeB;
-    });
-    
     // Отображаем сообщения
     chatMessages.innerHTML = '';
     let lastDate = null;
     
-    messages.forEach((msg, index) => {
+    messages.forEach((msg) => {
       const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
       const currentDate = formatMessageDate(msgDate);
       
@@ -1015,7 +995,7 @@ async function loadChatMessages() {
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }, 100);
     
-  } catch(error) {
+  } catch (error) {
     console.error('Ошибка загрузки сообщений:', error);
     chatMessages.innerHTML = `
       <div class="no-messages" style="color:var(--danger)">
@@ -1024,7 +1004,6 @@ async function loadChatMessages() {
   }
 }
 
-// Настройка слушателя новых сообщений
 function setupChatMessagesListener() {
   if (chatMessagesListener || !currentChatId) return;
   
@@ -1048,7 +1027,6 @@ function setupChatMessagesListener() {
     });
 }
 
-// Добавление сообщения в UI
 function addMessageToUI(msg) {
   const chatMessages = document.getElementById('chatMessages');
   const noMessages = chatMessages.querySelector('.no-messages');
@@ -1092,7 +1070,6 @@ function addMessageToUI(msg) {
   }, 100);
 }
 
-// Отправка сообщения
 async function sendMessage() {
   if (!currentChatUserId) return;
   
@@ -1107,20 +1084,6 @@ async function sendMessage() {
   if (blockedUsers.has(currentChatUserId)) {
     showNotification('Нельзя отправить сообщение заблокированному пользователю');
     return;
-  }
-  
-  // Проверяем взаимную блокировку
-  try {
-    const otherUserDoc = await db.collection("users").doc(currentChatUserId).get();
-    const otherUserData = otherUserDoc.exists ? otherUserDoc.data() : {};
-    const theyBlockedMe = (otherUserData.blockedUsers || []).includes(currentUser.uid);
-    
-    if (theyBlockedMe) {
-      showNotification('Пользователь заблокировал вас');
-      return;
-    }
-  } catch(error) {
-    console.error('Ошибка проверки блокировки:', error);
   }
   
   const messageData = {
@@ -1174,13 +1137,12 @@ async function sendMessage() {
     // Обновляем список чатов
     loadChatsList();
     
-  } catch(error) {
+  } catch (error) {
     console.error('Ошибка отправки сообщения:', error);
     showNotification('Ошибка отправки: ' + error.message);
   }
 }
 
-// Пометить сообщение как прочитанное
 async function markMessageAsRead(messageId) {
   if (!currentChatId) return;
   
@@ -1199,12 +1161,11 @@ async function markMessageAsRead(messageId) {
       }
     });
     
-  } catch(error) {
+  } catch (error) {
     console.error('Ошибка пометки сообщения как прочитанного:', error);
   }
 }
 
-// Пометить весь чат как прочитанный
 async function markChatAsRead(chatId) {
   try {
     // Обновляем статус чата
@@ -1212,7 +1173,7 @@ async function markChatAsRead(chatId) {
       unreadFor: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
     });
     
-    // Помечаем все сообщения как прочитанные
+    // Помечаем все входящие сообщения как прочитанные
     const messagesSnap = await db.collection('chats').doc(chatId)
       .collection('messages')
       .where('senderId', '==', currentChatUserId)
@@ -1235,12 +1196,13 @@ async function markChatAsRead(chatId) {
       }
     });
     
-  } catch(error) {
+  } catch (error) {
     console.error('Ошибка пометки чата как прочитанного:', error);
   }
 }
 
-// Открытие профиля из чата
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+
 async function openProfileFromChat() {
   if (currentChatUserId && currentChatUsername) {
     const chatState = {
@@ -1254,7 +1216,6 @@ async function openProfileFromChat() {
   }
 }
 
-// Показать уведомление
 function showNotification(message, duration = 3000) {
   const notification = document.getElementById('notification');
   notification.textContent = message;
@@ -1265,7 +1226,6 @@ function showNotification(message, duration = 3000) {
   }, duration);
 }
 
-// Выход
 function logout() {
   if (confirm("Выйти из аккаунта?")) {
     auth.signOut().then(() => {
@@ -1274,13 +1234,13 @@ function logout() {
   }
 }
 
-// Авто-высота текстового поля
+// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
+
 document.getElementById('chatInput')?.addEventListener('input', function() {
   this.style.height = 'auto';
   this.style.height = (this.scrollHeight) + 'px';
 });
 
-// Отправка по Enter (Shift+Enter для новой строки)
 document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -1288,7 +1248,6 @@ document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
   }
 });
 
-// Проверка нужно ли открыть чат при загрузке
 async function checkOpenChatOnLoad() {
   const openChatData = sessionStorage.getItem('openChatWith');
   if (openChatData) {
@@ -1306,7 +1265,8 @@ async function checkOpenChatOnLoad() {
   }
 }
 
-// Авторизация
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -1314,6 +1274,8 @@ auth.onAuthStateChanged(async (user) => {
   }
   
   currentUser = user;
+  console.log('Пользователь авторизован:', user.uid);
+  
   await loadUserData();
   await loadAdminUsers();
   await loadBlockedUsers();

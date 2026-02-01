@@ -31,6 +31,8 @@ body{
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  height:100vh;
+  overflow:hidden;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
@@ -72,6 +74,8 @@ body{
   max-width:480px;
   margin:auto;
   padding:130px 14px 100px;
+  height:100vh;
+  overflow-y:auto;
 }
 
 /* Список чатов */
@@ -240,6 +244,8 @@ body{
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  position: relative;
 }
 .chat-header {
   background: var(--card);
@@ -250,6 +256,8 @@ body{
   border-bottom: 1px solid var(--border);
   position: relative;
   min-height: 72px;
+  flex-shrink: 0;
+  z-index: 10;
 }
 .chat-user-info {
   display: flex;
@@ -337,6 +345,8 @@ body{
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+  min-height: 0; /* Важно для flex */
 }
 .message {
   max-width: 75%;
@@ -409,6 +419,8 @@ body{
   gap: 10px;
   align-items: flex-end;
   position: relative;
+  flex-shrink: 0; /* Важно - не сжимается */
+  z-index: 10;
 }
 .chat-input {
   flex: 1;
@@ -462,6 +474,11 @@ body{
   color: var(--sub);
   padding: 60px 20px;
   font-size: 14px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
 }
 
 /* Загрузчик */
@@ -469,6 +486,11 @@ body{
   text-align: center;
   padding: 40px 0;
   color: var(--sub);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
 }
 .loader-spinner {
   display: inline-block;
@@ -580,6 +602,9 @@ body{
   }
   .chat-input-area {
     padding: 12px;
+  }
+  .chat-messages {
+    padding: 16px;
   }
 }
 
@@ -1222,7 +1247,6 @@ async function openChat(userId, username, chatId = null) {
   
   // Открываем окно чата
   document.getElementById('chatOverlay').classList.add('show');
-  document.getElementById('chatInput').focus();
   
   // Загружаем сообщения
   await loadChatMessages();
@@ -1234,6 +1258,14 @@ async function openChat(userId, username, chatId = null) {
   if (currentChatId) {
     await markChatAsRead(currentChatId);
   }
+  
+  // Фокусируемся на поле ввода с небольшой задержкой
+  setTimeout(() => {
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+      chatInput.focus();
+    }
+  }, 100);
 }
 
 function closeChat() {

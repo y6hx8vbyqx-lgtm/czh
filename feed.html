@@ -502,7 +502,9 @@ let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
 let currentProfileUserId = null;
-let viewedPosts = new Set(); // Для отслеживания просмотренных постов
+
+// Загружаем просмотренные посты из localStorage
+let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
@@ -633,7 +635,7 @@ function formatFullDateTime(date) {
 // Функция для увеличения просмотров поста
 async function incrementPostViews(postId) {
   // Проверяем, не просматривал ли пользователь уже этот пост
-  if (viewedPosts.has(postId)) return;
+  if (viewedPosts[postId]) return;
   
   try {
     // Увеличиваем счетчик просмотров
@@ -641,13 +643,20 @@ async function incrementPostViews(postId) {
       views: firebase.firestore.FieldValue.increment(1)
     });
     
-    // Добавляем пост в просмотренные
-    viewedPosts.add(postId);
+    // Сохраняем в localStorage, что пользователь просмотрел этот пост
+    viewedPosts[postId] = true;
+    localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
     
     // Обновляем кэш
     if (postsCache.has(postId)) {
       const post = postsCache.get(postId);
       post.views = (post.views || 0) + 1;
+      
+      // Обновляем отображение счетчика
+      const viewButton = document.querySelector(`#post-${postId} .action.viewed`);
+      if (viewButton) {
+        viewButton.innerHTML = `👁️ ${post.views}`;
+      }
     }
     
   } catch(error) {
@@ -665,13 +674,16 @@ function setupViewTracking() {
         // Находим ID поста
         const postId = entry.target.id.replace('post-', '');
         if (postId) {
-          incrementPostViews(postId);
+          // Задержка перед увеличением просмотров
+          setTimeout(() => {
+            incrementPostViews(postId);
+          }, 1000); // Ждем 1 секунду чтобы пользователь действительно посмотрел пост
         }
       }
     });
   }, {
-    threshold: 0.5, // Пост считается просмотренным, когда 50% видно
-    rootMargin: '0px 0px -50px 0px' // Игнорируем скролл внизу
+    threshold: 0.7, // Пост считается просмотренным, когда 70% видно
+    rootMargin: '0px 0px -100px 0px' // Игнорируем скролл внизу
   });
   
   posts.forEach(post => {
@@ -740,7 +752,7 @@ async function loadPosts(){
     });
     
     // Настраиваем отслеживание просмотров
-    setTimeout(setupViewTracking, 100);
+    setTimeout(setupViewTracking, 500);
     
     // Проверяем еще раз после загрузки
     setTimeout(checkPostToScroll, 100);
@@ -788,6 +800,12 @@ async function deletePost(postId, postUserId){
   try {
     await db.collection("posts").doc(postId).delete();
     showNotification("Пост удален!");
+    
+    // Удаляем из просмотренных
+    if (viewedPosts[postId]) {
+      delete viewedPosts[postId];
+      localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+    }
     
     // Перезагружаем основную ленту
     loadPosts();
@@ -1104,6 +1122,12 @@ async function deletePostFromProfile(postId, userId) {
   
   try {
     await db.collection("posts").doc(postId).delete();
+    
+    // Удаляем из просмотренных
+    if (viewedPosts[postId]) {
+      delete viewedPosts[postId];
+      localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+    }
     
     // Удаляем пост из DOM
     const postElement = document.getElementById(`profile-post-${postId}`);

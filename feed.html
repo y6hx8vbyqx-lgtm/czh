@@ -93,16 +93,13 @@ body{
   font-weight:600;
 }
 
-/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ - ИСПРАВЛЕННЫЙ СТИЛЬ */
+/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ */
 .search{
   background:var(--card);
   border-radius:22px;
   padding:16px;
   margin-bottom:14px;
-}
-.search-wrapper{
   position:relative;
-  width:100%;
 }
 .search-input{
   width:100%;
@@ -121,21 +118,17 @@ body{
 }
 .search-icon{
   position:absolute;
-  left:16px;
-  top:50%;
-  transform:translateY(-50%);
+  left:28px;
+  top:28px;
   color:var(--sub);
   font-size:18px;
   pointer-events:none;
-  z-index:2;
 }
 .search-results{
   margin-top:12px;
   max-height:200px;
   overflow-y:auto;
   display:none;
-  border-radius:14px;
-  background:#1c1c1e;
 }
 .search-results.show{
   display:block;
@@ -146,6 +139,8 @@ body{
   gap:12px;
   padding:12px;
   border-radius:14px;
+  background:#1c1c1e;
+  margin-bottom:8px;
   cursor:pointer;
   transition:background 0.2s;
 }
@@ -175,37 +170,6 @@ body{
   color:var(--sub);
   padding:20px 0;
   font-size:14px;
-}
-
-/* РАЗДЕЛИТЕЛЬ ПОСТОВ ПО ДНЯМ */
-.day-divider{
-  text-align:center;
-  margin:20px 0 14px;
-  position:relative;
-}
-.day-divider::before,
-.day-divider::after{
-  content:'';
-  position:absolute;
-  top:50%;
-  width:40%;
-  height:1px;
-  background:var(--border);
-}
-.day-divider::before{
-  left:0;
-}
-.day-divider::after{
-  right:0;
-}
-.day-divider span{
-  display:inline-block;
-  padding:6px 16px;
-  background:var(--card);
-  border-radius:12px;
-  color:var(--sub);
-  font-size:13px;
-  font-weight:600;
 }
 
 .post{
@@ -547,12 +511,10 @@ body{
     <button onclick="createPost()">Опубликовать</button>
   </div>
 
-  <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ - ИСПРАВЛЕННЫЙ HTML -->
+  <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
   <div class="search">
-    <div class="search-wrapper">
-      <div class="search-icon">🔍</div>
-      <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
-    </div>
+    <div class="search-icon">🔍</div>
+    <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
     <div class="search-results" id="searchResults"></div>
   </div>
 
@@ -578,6 +540,7 @@ body{
   </div>
 </div>
 
+<!-- JavaScript код (остался без изменений) -->
 <script>
 // Конфигурация Firebase
 const firebaseConfig = {
@@ -597,7 +560,6 @@ const db = firebase.firestore();
 let currentUser = null;
 let unsubscribePosts = null;
 let unsubscribeUser = null;
-let lastDayDivider = null;
 
 // Обновление времени в Dynamic Island
 function updateTime() {
@@ -651,6 +613,7 @@ function loadUserData() {
     .onSnapshot((doc) => {
       if (doc.exists) {
         const userData = doc.data();
+        // Можно обновить UI если нужно
         console.log("Данные пользователя обновлены:", userData);
       }
     }, (error) => {
@@ -661,380 +624,646 @@ function loadUserData() {
 // Подписка на посты
 function subscribeToPosts() {
   unsubscribePosts = db.collection('posts')
-    .orderBy('timestamp', 'desc')
-    .onSnapshot((snapshot) => {
-      const feed = document.getElementById('feed');
-      feed.innerHTML = '';
-      lastDayDivider = null;
+posts')
+    .    .orderBy('timestamporderBy('timestamp', '', 'desc')
+desc')
+    .    .onSnapshotonSnapshot((snapshot)((snapshot) => {
+ => {
+      const feed =      const feed = document.getElementById('feed document.getElementById('feed');
+     ');
+      feed.innerHTML feed.innerHTML = '';
+ = '';
       
-      const posts = [];
-      snapshot.forEach((doc) => {
-        const post = doc.data();
-        post.id = doc.id;
-        posts.push(post);
+      snapshot.forEach      
+      snapshot.forEach((doc) =>((doc) => {
+        {
+        const post = doc const post = doc.data.data();
+        post();
+        post.id = doc.id.id = doc.id;
+       ;
+        create createPostElement(post);
+PostElement(post);
+      });
       });
       
-      renderPostsWithDividers(posts);
+           
+      // А // Анимация появлениянимация появления
+     
+      const posts = document const posts = document.querySelectorAll('.post.querySelectorAll('.post');
+     ');
+      posts.forEach posts.forEach((post((post, index) =>, index) => {
+        {
+        post post.style.animationDelay.style.animationDelay = (index * = (index * 0 0.05.05) +) + 's 's';
+       ';
+        post.classList.add(' post.classList.add('fadefade');
+     ');
+      });
+    }, ( });
     }, (error) => {
-      console.error("Ошибка подписки на посты:", error);
-      showNotification('Ошибка загрузки ленты');
+error) => {
+      console      console.error(".error("ОшибОшибка подпискика подписки на по на посты:", error);
+сты:", error);
+      showNotification('      showNotification('ОшибОшибка загрузкика загрузки ленты ленты');
+   ');
     });
 }
 
-// Рендер постов с разделителями по дням
-function renderPostsWithDividers(posts) {
-  const feed = document.getElementById('feed');
-  
-  posts.forEach((post, index) => {
-    const postDate = post.timestamp?.toDate();
-    const postDay = postDate ? formatPostDate(postDate) : null;
-    
-    // Добавляем разделитель дня, если это новый день
-    if (postDay && postDay !== lastDayDivider) {
-      const divider = document.createElement('div');
-      divider.className = 'day-divider';
-      divider.innerHTML = `<span>${getDayLabel(postDate)}</span>`;
-      feed.appendChild(divider);
-      lastDayDivider = postDay;
-    }
-    
-    createPostElement(post, index);
-  });
+ });
 }
 
-// Создание элемента поста
-function createPostElement(post, index) {
-  const feed = document.getElementById('feed');
+// С// Создание элемента поста
+оздание элемента поста
+function createPostElementfunction createPostElement(post)(post) {
+  const feed {
+  const feed = document.getElementById(' = document.getElementById('feed');
+feed');
   
-  const postElement = document.createElement('div');
+  const postElement =  
+  const postElement = document.createElement document.createElement('div('div');
+  postElement');
   postElement.className = 'post';
-  postElement.dataset.id = post.id;
+.className = 'post';
+  post  postElement.dataset.idElement.dataset.id = post = post.id;
+.id;
   
-  // Форматирование времени
-  const time = post.timestamp?.toDate();
-  const timeStr = time ? formatTime(time) : 'только что';
+  // Фор  
+  // Форматированиематирование времени
+  const time = времени
+  const time = post.t post.timestamp?.imestamp?.toDatetoDate();
+ ();
+  const timeStr = const timeStr = time ? time ? format formatTime(time) :Time(time) : 'т 'только чтоолько что';
   
-  // Аватар из первой буквы ника
-  const avatarLetter = post.username ? post.username.charAt(0).toUpperCase() : 'А';
+';
   
-  postElement.innerHTML = `
-    <div class="post-header">
-      <div class="avatar">${avatarLetter}</div>
-      <div class="post-user-info">
-        <div class="post-user" onclick="viewProfile('${post.userId}', '${post.username}')">
-          ${post.username || 'Аноним'}
-        </div>
-        <div class="post-time">${timeStr}</div>
-      </div>
-      ${post.userId === currentUser?.uid ? 
-        `<button class="trash" onclick="deletePost('${post.id}')">🗑️</button>` : ''}
+  //  // Ава Аватар изтар из первой первой буквы буквы ника
+  const ника
+  const avatarLetter avatarLetter = post = post.username ?.username ? post.username post.username.charAt(.charAt(0).toUpperCase0).toUpperCase() :() : 'А';
+  
+ 'А';
+  
+  post  postElement.innerHTMLElement.innerHTML = `
+ = `
+       <div class <div class="post-header">
+="post-header">
+      <div class      <div class="avatar="avatar">${avatarLetter}</div">${avatarLetter}</div>
+      <div>
+      <div class=" class="post-userpost-user-info">
+-info">
+        <div class        <div class="post="post-user" onclick="-user" onclick="viewProfile('${post.userviewProfile('${post.userId}', '${Id}', '${post.usernamepost.username}')">
+         }')">
+          ${post ${post.username || 'Аноним.username || 'Аноним'}
+       '}
+        </div </div>
+       >
+        <div <div class="post-time class="post-time">${">${timeStr}</divtimeStr}</div>
+     >
+      </div </div>
+     >
+      ${post.userId === current ${post.userId === currentUser?.User?.uid ?uid ? 
+        
+        `<button `<button class class="trash" onclick="trash" onclick="delete="deletePost('${postPost('${post.id}')">.id}')">🗑️</🗑️</button>` : ''button>`}
     </div>
-    <div class="post-text">${escapeHtml(post.text)}</div>
-    <div class="post-actions">
-      <button class="action ${post.likes?.includes(currentUser?.uid) ? 'liked' : ''}" 
-              onclick="likePost('${post.id}')">
-        ❤️ <span>${post.likes?.length || 0}</span>
-      </button>
-      <button class="action ${post.views?.includes(currentUser?.uid) ? 'viewed' : ''}" 
-              onclick="viewPost('${post.id}')">
-        👁️ <span>${post.views?.length || 0}</span>
-      </button>
+    : ''}
     </div>
-  `;
+    <div <div class=" class="post-text">${escapepost-text">${Html(postescapeHtml(post.text)}</div>
+   .text)}</div>
+    <div <div class="post- class="post-actions">
+actions">
+      <button class      <button class="action ${post="action ${post.likes.likes?.includes(currentUser?.includes(currentUser?.uid) ??.uid) ? 'lik 'liked' : ''ed'}" 
+              onclick=" : ''}" 
+              onclicklikePost('${="likePost('post.id}')">
+${post.id}')">
+        ❤️        ❤️ <span>${ <span>${post.lpost.likes?.ikes?.length || 0}</spanlength || 0}</span>
+     >
+      </button>
+      < </button>
+      <button class="button class="action ${post.views?.includes(currentaction ${post.views?.includes(currentUser?.uid) ? 'User?.uid)viewed' : ? 'viewed' : ''}" ''}" 
+              onclick=" 
+              onclick="viewPost('${viewPost('${post.idpost.id}')">
+       }')">
+        👁 👁️ <span>${post️ <span>${post.views?.length.views?.length || 0}</span>
+ || 0}</span>
+      </      </button>
+button>
+    </    </div>
+div>
+  `  `;
   
-  // Анимация появления
-  postElement.style.animationDelay = (index * 0.05) + 's';
-  postElement.classList.add('fade');
+  feed.appendChild(post;
   
-  feed.appendChild(postElement);
+  feedElement);
 }
 
-// Получение метки для дня
-function getDayLabel(date) {
-  const now = new Date();
-  const postDate = new Date(date);
-  
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  const postDay = new Date(postDate.getFullYear(), postDate.getMonth(), postDate.getDate());
-  
-  if (postDay.getTime() === today.getTime()) {
-    return 'Сегодня';
-  } else if (postDay.getTime() === yesterday.getTime()) {
-    return 'Вчера';
-  } else {
-    // Для более старых постов
-    const diffDays = Math.floor((today - postDay) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 7) {
-      const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-      return days[postDate.getDay()];
-    } else if (diffDays < 30) {
-      const weekNumber = Math.floor(diffDays / 7);
-      return `${weekNumber} ${weekNumber === 1 ? 'неделя' : weekNumber < 5 ? 'недели' : 'недель'} назад`;
-    } else {
-      return postDate.toLocaleDateString('ru-RU', { 
-        day: 'numeric', 
-        month: 'long',
-        year: postDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-      });
-    }
-  }
+//.appendChild(postElement);
 }
 
-// Форматирование даты для сравнения дней
-function formatPostDate(date) {
-  return date.toLocaleDateString('ru-RU');
-}
-
-// Создание поста
-async function createPost() {
-  const text = document.getElementById('postText').value.trim();
-  if (!text) {
-    showNotification('Введите текст поста');
+// Соз Создание поста
+дание поста
+async functionasync function createPost createPost() {
+() {
+  const text = document.getElementById  const text = document.getElementById('post('postText').value.trimText').value.trim();
+ ();
+  if (!text) if (! {
+    showNotificationtext) {
+    showNotification('Введите текст поста('Введите текст поста');
+   ');
     return;
   }
+ return;
+  }
   
   try {
-    const userDoc = await db.collection('users').doc(currentUser.uid).get();
-    const username = userDoc.exists ? userDoc.data().username : null;
+  
+  try {
+    //    // Получа Получаем username пользоваем username пользователя
+теля
+    const userDoc    const = await db.col userDoc = await db.collection('lection('users').doc(currentusers').doc(currentUser.User.uid).uid).get();
+get();
+    const username =    const username = userDoc userDoc.exists ?.exists ? userDoc userDoc.data().username.data().username : null;
+ : null;
     
-    const post = {
-      text: text,
-      userId: currentUser.uid,
-      username: username,
+       
+    const const post = post = {
+      {
+      text: text: text,
+      userId text,
+      userId: current: currentUser.uid,
+User.uid,
+      username      username: username: username,
+     ,
       likes: [],
-      views: [],
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      likes: [],
+      views: views: [],
+      timestamp: [],
+      timestamp: firebase firebase.firestore.firestore.FieldValue.serverTimestamp.FieldValue.serverTimestamp()
+   ()
     };
     
-    await db.collection('posts').add(post);
-    document.getElementById('postText').value = '';
-    showNotification('Пост опубликован');
-  } catch (error) {
-    console.error("Ошибка создания поста:", error);
-    showNotification('Ошибка публикации');
+ };
+    
+    await    await db.collection(' db.collection('posts').add(post);
+   posts').add(post document.getElementById);
+    document.getElementById('post('postText').value =Text').value = '';
+    showNotification '';
+    showNotification('По('Пост опублист опубликованкован');
+  } catch (error');
+  } catch) {
+    console (error) {
+    console.error(".error("ОшибОшибка создания поста:", errorка создания поста:", error);
+   );
+    showNotification showNotification('Ошибка('Ошибка публика публикации');
+ции');
   }
 }
 
-// Лайк поста
-async function likePost(postId) {
-  if (!currentUser) return;
+// Лай  }
+}
+
+// Лайк пок поста
+async functionста
+async function likePost(postId likePost(postId) {
+) {
+  if (!  ifcurrentUser) (!currentUser) return;
+  
+  return;
   
   try {
-    const postRef = db.collection('posts').doc(postId);
-    const postDoc = await postRef.get();
+ try {
+    const postRef    const = db.collection postRef = db.collection('posts('posts').doc').doc(postId(postId);
+    const post);
+    const postDoc = await postDoc = await postRef.getRef.get();
     
-    if (!postDoc.exists) return;
+    if();
     
-    const post = postDoc.data();
-    const likes = post.likes || [];
-    const hasLiked = likes.includes(currentUser.uid);
+    if (!post (!postDoc.existsDoc.exists) return;
     
-    if (hasLiked) {
-      await postRef.update({
-        likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      });
+) return;
+    
+    const    const post = postDoc post = postDoc.data();
+.data();
+    const    const likes = likes = post.l post.likes ||ikes || [];
+    const has [];
+    const hasLikedLiked = likes = likes.includes(current.includes(currentUser.uid);
+User.uid);
+    
+    if (    
+    if (hasLiked)hasLiked) {
+      // У {
+      // Удаляем лдаляем лайкайк
+     
+      await post await postRef.update({
+       Ref.update({
+        likes: firebase likes: firebase.firestore.FieldValue.firestore.FieldValue.arrayRemove(currentUser.uid.arrayRemove(currentUser.uid)
+)
+           });
+    } else });
     } else {
-      await postRef.update({
-        likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      {
+      // Добавляем лай // Добавляем лайк
+к
+      await postRef      await postRef.update({
+.update({
+        likes: firebase.fire        likes: firebase.firestore.Fieldstore.FieldValue.arrayUnion(currentValue.arrayUser.Union(currentUser.uid)
       });
     }
-  } catch (error) {
-    console.error("Ошибка лайка поста:", error);
+uid)
+      });
+    }
+  } catch (  } catch (error)error) {
+    console.error {
+    console.error("Ошибка("Ошибка лай лайка поста:", error);
+ка поста:", error);
+  }
   }
 }
+
+// Прос}
 
 // Просмотр поста
-async function viewPost(postId) {
-  if (!currentUser) return;
+мотр поста
+async functionasync function viewPost(postId viewPost(postId) {
+) {
+  if (!currentUser)  if (!current return;
+  
+ User) return;
   
   try {
-    const postRef = db.collection('posts').doc(postId);
-    const postDoc = await postRef.get();
+    const postRef try {
+    const postRef = db = db.collection('posts.collection('posts').doc').doc(postId);
+    const post(postId);
+    const postDoc =Doc = await postRef.get();
     
-    if (!postDoc.exists) return;
+ await postRef.get    if (!post();
     
-    const post = postDoc.data();
-    const views = post.views || [];
+    if (!postDoc.existsDoc.exists) return;
     
-    if (!views.includes(currentUser.uid)) {
-      await postRef.update({
-        views: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+) return;
+    
+    const    const post = postDoc post = postDoc.data();
+.data();
+    const views =    const views = post. post.views || [];
+    
+   views || [];
+    
+ if (!views.includes    if (!views.includes(currentUser.(currentUser.uid))uid)) {
+      await post {
+      await postRef.updateRef.update({
+        views:({
+        firebase views: firebase.firestore.FieldValue.arrayUnion.firestore.FieldValue(currentUser.uid)
+     .arrayUnion(currentUser.uid)
       });
+    });
     }
   } catch (error) {
-    console.error("Ошибка просмотра поста:", error);
+ }
+  } catch (error) {
+    console    console.error(".error("ОшибОшибка просмотра постака просмотра поста:", error);
+ :", error);
   }
 }
 
-// Удаление поста
+// У }
+}
+
+// Удаление постадаление поста
+async function deletePost(post
 async function deletePost(postId) {
-  if (!confirm('Удалить этот пост?')) return;
+  if (!Id) {
+  if (!confirm('confirm('УУдалить этот пост?'далить этот пост?')) return)) return;
   
   try {
-    await db.collection('posts').doc(postId).delete();
-    showNotification('Пост удален');
-  } catch (error) {
-    console.error("Ошибка удаления поста:", error);
+   ;
+  
+  try {
+    await db.collection await db.collection('posts('posts').doc(postId').doc(postId).delete).delete();
+    showNotification();
+    showNotification('По('Пост удален');
+ст удален');
+  }  } catch ( catch (error)error) {
+    console.error("О {
+    console.error("Ошибкашибка удаления поста удаления поста:", error:", error);
+    showNotification('О);
     showNotification('Ошибка удаления');
+ шибка удаления');
   }
 }
 
-// Просмотр профиля
-function viewProfile(userId, username) {
-  window.location.href = `profile.html?uid=${userId}&username=${encodeURIComponent(username)}`;
+// Просмотр }
 }
 
-// Настройка слушателя поиска
-function setupSearchListener() {
+// П профиля
+functionросмотр профиля
+function viewProfile viewProfile(userId, username(userId, username) {
+) {
+  //  // Реди Редиректрект на стра на страницу профиницу профиля
+  windowля
+  window.location.href =.location.href = `profile `profile.html?uid.html?uid=${userId=${userId}&}&username=${encodeURIusername=${encodeURIComponent(username)}`;
+}
+
+//Component(username)}`;
+}
+
+// Настройка слушателя Настройка слушателя поиска поиска
+function setupSearch
+function setupSearchListener()Listener() {
+  const searchInput = {
   const searchInput = document.getElementById('searchInput');
-  const searchResults = document.getElementById('searchResults');
+ document.getElementById('searchInput');
+  const  const searchResults searchResults = document.getElementById(' = document.getElementById('searchResultssearchResults');
+  
+  let');
   
   let searchTimeout;
   
-  searchInput.addEventListener('input', (e) => {
+ searchTimeout;
+  
+  searchInput.addEventListener('input  searchInput.addEventListener('input', (', (e) => {
+e) => {
     clearTimeout(searchTimeout);
-    const query = e.target.value.trim();
+    clearTimeout(searchTimeout);
+    const query    const query = e = e.target.value.target.value.trim();
     
-    if (query.length < 2) {
-      searchResults.classList.remove('show');
+   .trim();
+    
+    if (query.length if (query.length <  < 2) {
+      searchResults2) {
+      searchResults.classList.remove.classList.remove('show('show');
+      searchResults');
       searchResults.innerHTML = '';
+     .innerHTML = '';
       return;
     }
+ return;
+    }
     
-    searchTimeout = setTimeout(async () => {
+       
+    searchTimeout = setTimeout searchTimeout = setTimeout(async () => {
+     (async () => {
       try {
-        const usersSnapshot = await db.collection('users')
-          .where('username', '>=', query)
-          .where('username', '<=', query + '\uf8ff')
-          .limit(10)
+        const users try {
+        const usersSnapshot = await dbSnapshot = await db.collection.collection('users('users')
+          .where')
+          .where('username', '('username', '>=', query)
+>=', query)
+          .         where('username', '<= .where('username', '<=', query + '\uf8', query + '\ff')
+          .uf8ff')
+          .limit(limit(10)
+          .10)
           .get();
+        
+        searchResultsget();
         
         searchResults.innerHTML = '';
         
-        if (usersSnapshot.empty) {
-          searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
-          searchResults.classList.add('show');
+.innerHTML = '';
+        
+        if        if (usersSnapshot.empty (usersSnapshot.empty) {
+          searchResults.innerHTML) {
+          search = '<div classResults.innerHTML = '<div class="no-results="no-results">П">Пользователиользователи не найдены</ не найдены</div>';
+div>';
+          searchResults          searchResults.classList.add('show.classList.add('show');
+         ');
           return;
         }
+ return;
+        }
         
-        usersSnapshot.forEach((doc) => {
+        usersSnapshot        
+        usersSnapshot.forEach((.forEach((doc) => {
+doc)          const user = doc.data => {
           const user = doc.data();
-          if (user.username && doc.id !== currentUser.uid) {
-            const resultElement = document.createElement('div');
-            resultElement.className = 'search-result';
-            resultElement.innerHTML = `
-              <div class="search-avatar">${user.username.charAt(0).toUpperCase()}</div>
-              <div class="search-username">${user.username}</div>
+          if (();
+          if (user.username && docuser.username && doc.id !== currentUser.id !==.uid) {
+            const currentUser.uid) {
+            const resultElement resultElement = document = document.createElement('.createElement('div');
+            resultdiv');
+            resultElement.className =Element.className = 'search-result';
+            result 'search-result';
+            resultElement.innerHTMLElement.innerHTML = `
+ = `
+                           <div class="search-avatar <div class="search-avatar">${">${user.username.charAt(0).user.username.charAt(0).toUpperCase()}</toUpperCase()}</div>
+div>
+                           <div class="search <div class="search-username">${user.username-username">${user.username}</div>
+           }</div>
             `;
-            resultElement.addEventListener('click', () => {
-              viewProfile(doc.id, user.username);
+            result `;
+            resultElement.addEventListener('click', ()Element.addEventListener('click', () => {
+              view => {
+              viewProfile(dProfile(doc.id, useroc.id, user.username);
             });
-            searchResults.appendChild(resultElement);
+.username);
+            });
+            searchResults.appendChild(resultElement            searchResults.appendChild(resultElement);
+         );
           }
         });
         
-        searchResults.classList.add('show');
-      } catch (error) {
-        console.error("Ошибка поиска:", error);
+        searchResults.classList }
+        });
+        
+        searchResults.classList.add('.addshow');
+      } catch (('show');
+      } catch (error)error) {
+        console.error("Ошибка {
+        console.error("Ошибка поиска поиска:", error:", error);
+      }
+    }, );
       }
     }, 300);
+300);
   });
   
-  // Закрытие результатов при клике вне поиска
-  document.addEventListener('click', (e) => {
-    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-      searchResults.classList.remove('show');
+   });
+  
+  // Закры // Закрытие результатовтие результатов при клике вне при клике вне пои поиска
+  document.addEventListener('ска
+  document.addEventListener('click', (eclick', (e) => {
+) => {
+    if (!    if (!searchsearchInput.containsInput.contains(e.target) &&(e.target) && !search !searchResults.contains(e.target)) {
+Results.contains(e.target)) {
+      searchResults.classList.remove('      searchResults.classList.remove('show');
     }
   });
 }
 
-// Вспомогательные функции
-function formatTime(date) {
-  const now = new Date();
-  const diff = now - date;
-  const diffMinutes = Math.floor(diff / 60000);
-  const diffHours = Math.floor(diff / 3600000);
-  const diffDays = Math.floor(diff / 86400000);
-  
-  if (diffMinutes < 1) return 'только что';
-  if (diffMinutes < 60) return `${diffMinutes} мин назад`;
-  if (diffHours < 24) return `${diffHours} ч назад`;
-  if (diffDays < 7) return `${diffDays} д назад`;
-  return date.toLocaleDateString('ru-RU');
+//show');
+    }
+  });
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
+// Всп Вспомогательные функцииомогательные функции
+function
+function formatTime formatTime(date) {
+(date) {
+  const now =  const now = new Date new Date();
+ ();
+  const diff = now const diff = now - date - date;
+ ;
+  const diffMinutes = Math.floor(diff const diffMinutes = Math.floor(diff / 60000 / 60000);
+ );
+  const diff const diffHours = Math.floorHours = Math.floor(diff / 3600000);
+  const(diff / 3600000);
+  const diffDays = Math diffDays = Math.floor(d.floor(diff / 86400000iff / 86400000);
+  
+  if);
+  
+  if (diff (diffMinutes < 1) returnMinutes < 1) return 'только что';
+  if ( 'только что';
+  if (diffMinutesdiffMinutes < 60) return < 60) `${diffMinutes} мин return `${diffMinutes} мин назад назад`;
+  if (diffHours`;
+  if (diffHours < 24) return `${ < 24) return `${diffHours} чdiffHours} ч назад`;
+  if (diff назад`;
+  if (diffDays < 7) returnDays < 7) return `${diffDays} `${diffDays} д назад`;
+  return date д назад`;
+ .toLocaleDateString return date.toLocaleDateString('ru('ru-RU');
+}
+
+-RU');
+}
+
+function escapeHtml(textfunction escapeHtml(text) {
+) {
+  const div =  const div = document.createElement document.createElement('div('div');
+  div.textContent =');
   div.textContent = text;
+  return div.innerHTML text;
   return div.innerHTML;
 }
 
-function showNotification(message) {
-  const notification = document.getElementById('notification');
-  notification.textContent = message;
-  notification.classList.add('show');
-  
-  setTimeout(() => {
-    notification.classList.remove('show');
-  }, 3000);
+;
 }
 
-// Функции для модального окна смены имени
-function openChangeNameModal() {
-  document.getElementById('changeNameModal').classList.add('show');
+function showNotification(messagefunction showNotification(message) {
+  const notification =) {
+  const notification = document.getElementById('notification document.getElementById('notification');
+ ');
+  notification.textContent = message;
+ notification.textContent = message;
+  notification.classList.add  notification.classList.add('show');
+  
+('show');
+  
+  setTimeout  setTimeout(() => {
+   (() => {
+    notification.classList.remove('show');
+ notification.classList.remove('show');
+  }, 300  }, 3000);
 }
+
+//0);
+}
+
+// Функции Функции для м для модальногоодального окна смен окна смены имениы имени
+function openChangeNameModal
+function openChangeNameModal() {
+() {
+  document.getElementById('  document.getElementById('changeNamechangeNameModal').classList.add('Modal').classList.add('show');
+show');
+}
+
+function closeChange}
 
 function closeChangeNameModal() {
-  document.getElementById('changeNameModal').classList.remove('show');
+  document.getElementById('NameModal() {
+  documentchangeNameModal').classList.getElementById('changeNameModal').classList.remove('.remove('show');
 }
 
-async function changeUsername() {
-  const newUsername = document.getElementById('newUsernameInput').value.trim();
+asyncshow');
+}
+
+async function change function changeUsername() {
+Username() {
+  const newUsername =  const new document.getElementById('newUsernameInputUsername = document.getElementById('new').value.trim();
+UsernameInput').value.trim();
   
-  if (!newUsername) {
-    showNotification('Введите новое имя');
+   
+  if (!newUsername) if (!newUsername) {
+    showNotification {
+   ('Введите новое имя showNotification('Введите новое имя');
+   ');
     return;
   }
   
-  if (newUsername.length > 20) {
-    showNotification('Имя не должно превышать 20 символов');
+  return;
+  }
+  
+  if (newUsername if (newUsername.length > 20.length > 20) {
+) {
+    showNotification('    showNotification('Имя не должно превышатьИмя не должно превышать 20 символов 20 символов');
+   ');
     return;
   }
   
   try {
-    const usernameSnapshot = await db.collection('users')
-      .where('username', '==', newUsername)
+    // return;
+  }
+  
+  try {
+    // Провер Проверка уникальности имени
+ка уникальности    const username имени
+    constSnapshot = await db.collection usernameSnapshot = await db.collection('users')
+      .where('users')
+      .where('username', '('username', '==', newUsername)
+     ==', newUsername)
       .get();
     
-    if (!usernameSnapshot.empty) {
-      showNotification('Это имя уже занято');
+ .get();
+    
+    if    if (!usernameSnapshot.empty (!usernameSnapshot.empty) {
+      showNotification('Это имя) {
+      showNotification(' уже занято');
+     Это имя уже занято');
       return;
+    return;
     }
     
-    await db.collection('users').doc(currentUser.uid).update({
-      username: newUsername
+ }
+    
+    // Обновление имени
+       // Обновление имени
+    await db.collection await db.collection('users('users').doc(currentUser').doc(currentUser.uid).update({
+     .uid).update({
+      username: newUsername username:
     });
     
-    closeChangeNameModal();
-    showNotification('Имя успешно изменено');
-    document.getElementById('newUsernameInput').value = '';
+    newUsername
+    });
+    
+ close    closeChangeNameModal();
+    showNotification('Имя успешноChangeNameModal();
+    showNotification('Имя успешно изменено изменено');
+    document.getElementById');
+    document.getElementById('newUsernameInput('newUsernameInput').value').value = '';
+  } catch (error) = '';
   } catch (error) {
-    console.error("Ошибка смены имени:", error);
-    showNotification('Ошибка смены имени');
+    {
+    console.error("О console.error("Ошибка сменшибка смены имени:", errorы имени:", error);
+    showNotification);
+    showNotification('О('Ошибка сменшибка смены имени');
+ ы имени');
   }
 }
 
-// Выход
+ }
+}
+
+// Выход// Выход
 function logout() {
-  if (unsubscribePosts) unsubscribePosts();
+ 
+function logout() {
+  if (unsubscribePosts) unsubscribePosts if (unsubscribePosts) unsubscribePosts();
+  if (();
   if (unsubscribeUser) unsubscribeUser();
-  auth.signOut();
+ unsubscribeUser) unsubscribeUser();
+  auth.sign auth.signOut();
+}
+Out();
 }
 </script>
 
+</script>
+
 </body>
+</</body>
 </html>
+html>

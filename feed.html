@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>czhmass</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
 <style>
-/* --- твои стили, НЕ МЕНЯЛ --- */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.9);
@@ -22,7 +22,9 @@
 }
 *{box-sizing:border-box}
 body{
-  margin:0;background:var(--bg);color:var(--text);
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
 }
 .fade-in{animation:fade .35s ease}
@@ -43,14 +45,13 @@ body{
   display:flex;justify-content:space-between;align-items:center;
   z-index:999;
 }
-
 .logo{
   font-weight:700;
   background:var(--accent);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
-
+.nav-btns{display:flex;gap:8px}
 .nav-btn{
   background:#1c1c1e;border:none;color:#fff;
   padding:8px 12px;border-radius:12px;font-size:16px;
@@ -65,13 +66,11 @@ body{
   background:var(--card);border-radius:22px;
   padding:16px;margin-bottom:16px;
 }
-
 .create textarea{
   width:100%;min-height:90px;
   background:#1c1c1e;border:1px solid var(--border);
   border-radius:16px;padding:12px;color:#fff;
 }
-
 .create button{
   width:100%;margin-top:12px;
   padding:14px;border:none;border-radius:16px;
@@ -84,11 +83,9 @@ body{
   padding:16px;
   margin-bottom:14px;
 }
-
 .post-header{
   display:flex;align-items:center;gap:10px;
 }
-
 .avatar{
   width:42px;height:42px;border-radius:14px;
   background:var(--accent);
@@ -96,33 +93,32 @@ body{
   font-weight:700;
   cursor:pointer;
 }
-
 .post-user{
   font-weight:600;
   cursor:pointer;
 }
-
 .post-time{color:var(--sub);font-size:13px}
 .post-text{margin:10px 0 6px}
-
 .post-actions{
-  display:flex;gap:18px;
+  display:flex;align-items:center;gap:18px;
 }
-
 .action{
-  background:none;border:none;color:var(--sub);font-size:18px;
+  background:none;border:none;
+  color:var(--sub);font-size:18px;
 }
-
-.action.liked{color:#ff2d55}
+.action.liked{color:#ff2d55;animation:pop .2s}
+@keyframes pop{50%{transform:scale(1.2)}}
 
 .trash{
-  margin-left:auto;background:none;border:none;
+  margin-left:auto;
+  background:none;border:none;
   color:var(--danger);font-size:18px;
 }
 
-/* --- SHEETS --- */
+/* COMMENTS */
 .sheet{
-  position:fixed;inset:0;background:#000;
+  position:fixed;inset:0;
+  background:#000;
   transform:translateY(100%);
   transition:.35s ease;
   display:flex;flex-direction:column;
@@ -133,7 +129,26 @@ body{
   padding:16px;border-bottom:1px solid var(--border);
   display:flex;justify-content:space-between;
 }
-.sheet-body{flex:1;overflow:auto;padding:16px}
+.sheet-body{
+  flex:1;overflow:auto;padding:16px;
+}
+.comment{
+  background:var(--card);
+  border-radius:20px;padding:14px;margin-bottom:12px;
+}
+.comment-head{
+  display:flex;align-items:center;gap:10px;
+}
+.comment-text{margin-top:6px}
+.sheet-footer{
+  padding:12px;border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+.sheet-footer input{
+  flex:1;background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;padding:10px;color:#fff;
+}
 </style>
 </head>
 
@@ -143,20 +158,35 @@ body{
 
 <div class="navbar">
   <div class="logo">czhmass</div>
-  <div>
+  <div class="nav-btns">
+    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
+    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>
 
 <div class="container">
   <div class="create">
-    <textarea id="postText" placeholder="Что у вас нового?"></textarea>
-    <button onclick="createPost()">Опубликовать</button>
+    <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
+    <button onclick="createPost()">📝 Опубликовать</button>
   </div>
   <div id="feed"></div>
 </div>
 
-<!-- ПРОФИЛЬ -->
+<!-- COMMENTS SHEET -->
+<div class="sheet" id="commentsSheet">
+  <div class="sheet-header">
+    <strong>Комментарии</strong>
+    <button class="action" onclick="closeComments()">✕</button>
+  </div>
+  <div class="sheet-body" id="commentsBody"></div>
+  <div class="sheet-footer">
+    <input id="commentInput" placeholder="Комментарий">
+    <button class="action" onclick="addComment()">📤</button>
+  </div>
+</div>
+
+<!-- PROFILE SHEET (НОВОЕ, НИЧЕГО НЕ УБИРАЕТ) -->
 <div class="sheet" id="profileSheet">
   <div class="sheet-header">
     <strong id="profileName"></strong>
@@ -176,12 +206,15 @@ const db=firebase.firestore();
 const auth=firebase.auth();
 
 let currentUser,userData;
+let postsCache=new Map();
+let currentPostId=null;
 
 auth.onAuthStateChanged(async u=>{
-  if(!u) return;
+  if(!u)return location.href="index.html";
   currentUser=u;
   const snap=await db.collection("users").doc(u.uid).get();
   userData=snap.data()||{};
+  if(userData.isAdmin) adminBtn.style.display="block";
   loadPosts();
 });
 
@@ -190,6 +223,9 @@ async function loadPosts(){
   const snap=await db.collection("posts").orderBy("createdAt","desc").get();
   snap.forEach(doc=>{
     const p=doc.data();
+    postsCache.set(doc.id,p);
+    const liked=p.likedBy?.includes(currentUser.uid);
+
     feed.innerHTML+=`
     <div class="post fade-in">
       <div class="post-header">
@@ -204,20 +240,35 @@ async function loadPosts(){
             ${new Date(p.createdAt.seconds*1000).toLocaleString()}
           </div>
         </div>
+        ${(p.userId===currentUser.uid||userData.isAdmin)?
+          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
       </div>
+
       <div class="post-text">${p.text}</div>
+
+      <div class="post-actions">
+        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
+          ${liked?"❤️":"🤍"} ${p.likes||0}
+        </button>
+        <button class="action" onclick="openComments('${doc.id}')">
+          💬 ${p.commentsCount||0}
+        </button>
+      </div>
     </div>`;
   });
 }
 
-async function openProfile(uid,username){
-  profileName.textContent="@"+username;
+/* ---------- ПРОФИЛИ ---------- */
+
+async function openProfile(uid, username){
+  profileName.textContent = "@"+username;
   profilePosts.innerHTML="";
   profileSheet.classList.add("show");
 
-  const snap=await db.collection("posts")
+  const snap = await db.collection("posts")
     .where("userId","==",uid)
-    .orderBy("createdAt","desc").get();
+    .orderBy("createdAt","desc")
+    .get();
 
   snap.forEach(d=>{
     const p=d.data();
@@ -232,20 +283,96 @@ function closeProfile(){
   profileSheet.classList.remove("show");
 }
 
+/* ---------- ОСТАЛЬНОЕ (НЕ ТРОГАЛ) ---------- */
+
+async function toggleLike(id){
+  const p=postsCache.get(id);
+  const liked=p.likedBy?.includes(currentUser.uid);
+  await db.collection("posts").doc(id).update({
+    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
+    likedBy:liked
+      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+  });
+  loadPosts();
+}
+
 async function createPost(){
-  if(!postText.value.trim()) return;
+  if(!postText.value.trim())return;
   await db.collection("posts").add({
     text:postText.value,
     userId:currentUser.uid,
     username:userData.username,
-    createdAt:new Date()
+    createdAt:new Date(),
+    likes:0,
+    likedBy:[],
+    commentsCount:0
   });
   postText.value="";
   loadPosts();
 }
 
+async function deletePost(id){
+  if(!confirm("Удалить пост?"))return;
+  await db.collection("posts").doc(id).delete();
+  loadPosts();
+}
+
+function openComments(id){
+  currentPostId=id;
+  commentsSheet.classList.add("show");
+  loadComments();
+}
+
+function closeComments(){
+  commentsSheet.classList.remove("show");
+}
+
+async function loadComments(){
+  commentsBody.innerHTML="";
+  const snap=await db.collection("posts").doc(currentPostId)
+    .collection("comments").orderBy("createdAt").get();
+  snap.forEach(d=>{
+    const c=d.data();
+    commentsBody.innerHTML+=`
+    <div class="comment fade-in">
+      <div class="comment-head">
+        <div class="avatar">${c.username?.[0]||"A"}</div>
+        <strong>@${c.username||"anon"}</strong>
+        ${(c.userId===currentUser.uid||userData.isAdmin)?
+          `<button class="trash" onclick="deleteComment('${d.id}')">🗑</button>`:""}
+      </div>
+      <div class="comment-text">${c.text}</div>
+    </div>`;
+  });
+}
+
+async function addComment(){
+  if(!commentInput.value)return;
+  await db.collection("posts").doc(currentPostId)
+    .collection("comments").add({
+      text:commentInput.value,
+      userId:currentUser.uid,
+      username:userData.username,
+      createdAt:new Date()
+    });
+  await db.collection("posts").doc(currentPostId)
+    .update({
+      commentsCount:firebase.firestore.FieldValue.increment(1)
+    });
+  commentInput.value="";
+  loadComments();
+  loadPosts();
+}
+
+async function deleteComment(id){
+  await db.collection("posts").doc(currentPostId)
+    .collection("comments").doc(id).delete();
+  loadComments();
+}
+
 function logout(){
-  auth.signOut();
+  auth.signOut().then(()=>location.href="index.html");
 }
 
 setInterval(()=>{

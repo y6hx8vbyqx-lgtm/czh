@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
 <style>
-/* ===== ORIGINAL DESIGN — НЕ МЕНЯЛ ===== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -134,7 +133,6 @@ body{
   color:var(--danger);font-size:18px;
 }
 
-/* SHEETS */
 .sheet{
   position:fixed;
   inset:0;
@@ -173,7 +171,7 @@ body{
   color:#fff;
 }
 
-/* PROFILE */
+/* PROFILE SHEET */
 .profile-header{
   display:flex;
   align-items:center;
@@ -208,8 +206,12 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
-    <button class="nav-btn" onclick="openMyProfile()">👤</button>
-    <button class="nav-btn" id="adminBtn" style="display:none">👑</button>
+    <!-- ВАЖНО: кнопка профиля ведёт на profile.html -->
+    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
+
+    <!-- ВАЖНО: кнопка админа ведёт на admin.html -->
+    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
+
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>
@@ -238,7 +240,7 @@ body{
   </div>
 </div>
 
-<!-- PROFILE -->
+<!-- PROFILE (только для кликов по нику) -->
 <div class="sheet" id="profileSheet">
   <div class="sheet-header">
     <strong>Профиль</strong>
@@ -271,7 +273,6 @@ let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
 
-/* AUTH */
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
@@ -281,7 +282,6 @@ auth.onAuthStateChanged(async u=>{
   loadPosts();
 });
 
-/* POSTS */
 async function loadPosts(){
   feed.innerHTML="";
   const snap=await db.collection("posts").orderBy("createdAt","desc").get();
@@ -333,7 +333,6 @@ async function deletePost(id){
   loadPosts();
 }
 
-/* LIKES */
 async function toggleLike(id){
   const p=postsCache.get(id);
   const liked=p.likedBy?.includes(currentUser.uid);
@@ -346,7 +345,6 @@ async function toggleLike(id){
   loadPosts();
 }
 
-/* COMMENTS */
 function openComments(id){
   currentPostId=id;
   commentsSheet.classList.add("show");
@@ -391,7 +389,6 @@ async function addComment(){
   loadPosts();
 }
 
-/* PROFILE */
 async function openProfile(uid,name){
   profileSheet.classList.add("show");
   profileName.textContent="@"+name;
@@ -410,19 +407,14 @@ async function openProfile(uid,name){
   });
   profilePostsCount.textContent=count;
 }
-function openMyProfile(){
-  openProfile(currentUser.uid,userData.username||"anon");
-}
 function closeProfile(){
   profileSheet.classList.remove("show");
 }
 
-/* LOGOUT */
 function logout(){
   auth.signOut().then(()=>location.href="index.html");
 }
 
-/* TIME */
 setInterval(()=>{
   time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 },1000);

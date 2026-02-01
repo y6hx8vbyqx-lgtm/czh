@@ -21,7 +21,6 @@
   --danger:#ff453a;
   --success:#30d158;
   --views:#8e8e93;
-  --old-posts:#ff9500;
 }
 *{box-sizing:border-box}
 body{
@@ -107,11 +106,11 @@ body{
   background:#1c1c1e;
   border:1px solid var(--border);
   border-radius:16px;
-  padding:14px 16px 14px 46px;
+  padding:14px 16px 14px 44px;
   color:#fff;
   font-size:16px;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  line-height:normal;
+  border:1px solid var(--border);
 }
 .search-input:focus{
   outline:none;
@@ -119,21 +118,21 @@ body{
 }
 .search-icon{
   position:absolute;
-  left:30px;
+  left:28px;
   top:50%;
   transform:translateY(-50%);
   color:var(--sub);
   font-size:18px;
-  width:18px;
-  height:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  pointer-events:none; /* Важно! */
 }
 .search-results{
   margin-top:12px;
   max-height:200px;
   overflow-y:auto;
+  display:none; /* Скрываем по умолчанию */
+}
+.search-results.show{
+  display:block; /* Показываем при наличии результатов */
 }
 .search-result{
   display:flex;
@@ -162,73 +161,16 @@ body{
   justify-content:center;
   font-weight:700;
   font-size:16px;
-  flex-shrink:0;
 }
 .search-username{
   font-weight:600;
   font-size:15px;
-  line-height:1.2;
 }
 .no-results{
   text-align:center;
   color:var(--sub);
   padding:20px 0;
   font-size:14px;
-  line-height:1.4;
-}
-
-/* РАЗДЕЛИТЕЛИ ПОСТОВ */
-.day-divider{
-  margin:20px 0;
-  text-align:center;
-  position:relative;
-}
-.day-divider::before{
-  content:"";
-  position:absolute;
-  left:0;
-  right:0;
-  top:50%;
-  height:1px;
-  background:var(--border);
-}
-.day-divider-text{
-  background:var(--card);
-  padding:8px 16px;
-  border-radius:12px;
-  color:var(--sub);
-  font-size:13px;
-  font-weight:600;
-  display:inline-block;
-  position:relative;
-  z-index:1;
-}
-
-.old-posts-section{
-  margin-top:20px;
-  margin-bottom:30px;
-}
-.old-posts-toggle{
-  width:100%;
-  background:var(--old-posts);
-  color:white;
-  border:none;
-  padding:16px;
-  border-radius:18px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  transition:opacity 0.2s;
-}
-.old-posts-toggle:hover{
-  opacity:0.9;
-}
-.old-posts-toggle .icon{
-  font-size:18px;
 }
 
 .post{
@@ -237,7 +179,7 @@ body{
   padding:16px;
   margin-bottom:14px;
   position:relative;
-  transition:box-shadow 0.3s ease, transform 0.2s ease;
+  transition:box-shadow 0.3s ease;
 }
 .post.highlighted{
   box-shadow:0 0 0 2px var(--accent), 0 0 20px rgba(102,126,234,0.3);
@@ -257,21 +199,16 @@ body{
   align-items:center;
   justify-content:center;
   font-weight:700;
-  flex-shrink:0;
 }
 .post-user-info{
   display:flex;
   flex-direction:column;
   flex-grow:1;
-  min-width:0;
 }
 .post-user{
   font-weight:600;
   cursor:pointer;
   transition:opacity 0.2s;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
 .post-user:hover{
   opacity:0.7;
@@ -290,7 +227,6 @@ body{
   display:flex;
   gap:16px;
   margin-top:12px;
-  align-items:center;
 }
 .action{
   background:none;
@@ -301,28 +237,19 @@ body{
   transition:transform 0.2s;
   display:flex;
   align-items:center;
-  gap:6px;
-  padding:0;
+  gap:4px;
 }
 .action:hover{
   transform:scale(1.1);
 }
-.liked{
-  color:#ff2d55;
-  animation:heartBeat 0.3s ease;
-}
-@keyframes heartBeat{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.2)}
-  100%{transform:scale(1)}
-}
+.liked{color:#ff2d55}
 .viewed{color:var(--views)}
 .trash{
   margin-left:auto;
   background:none;border:none;
   color:var(--danger);font-size:18px;
   cursor:pointer;
-  flex-shrink:0;
+  padding:0;
 }
 
 .sheet{
@@ -380,13 +307,11 @@ body{
   justify-content:center;
   font-size:28px;
   font-weight:700;
-  flex-shrink:0;
 }
 .profile-info{
   display:flex;
   flex-direction:column;
   gap:6px;
-  min-width:0;
 }
 .profile-name{
   font-size:18px;
@@ -404,7 +329,6 @@ body{
   padding:4px 8px;
   border-radius:8px;
   transition:background 0.2s;
-  flex-shrink:0;
 }
 .change-name-btn:hover{
   background:rgba(255,255,255,0.1);
@@ -412,12 +336,10 @@ body{
 .profile-stats{
   display:flex;
   gap:16px;
-  flex-wrap:wrap;
 }
 .profile-stat{
   display:flex;
   flex-direction:column;
-  flex-shrink:0;
 }
 .profile-stat-value{
   font-size:16px;
@@ -509,6 +431,12 @@ body{
   color:var(--sub);
   font-size:20px;
   cursor:pointer;
+  padding:0;
+  width:24px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 .modal-input{
   width:100%;
@@ -547,11 +475,19 @@ body{
   color:white;
 }
 
-/* SHEET ДЛЯ СТАРЫХ ПОСТОВ */
-.old-posts-sheet .sheet-body{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
+/* Кнопка удаления комментария */
+.comment-delete-btn{
+  background:none;
+  border:none;
+  color:var(--danger);
+  cursor:pointer;
+  font-size:14px;
+  padding:4px 8px;
+  border-radius:6px;
+  margin-left:auto;
+}
+.comment-delete-btn:hover{
+  background:rgba(255,69,58,0.1);
 }
 </style>
 </head>
@@ -563,12 +499,8 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
-    <!-- ВАЖНО: кнопка профиля ведёт на profile.html -->
     <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
-
-    <!-- ВАЖНО: кнопка админа ведёт на admin.html -->
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>
@@ -665,17 +597,6 @@ body{
   </div>
 </div>
 
-<!-- SHEET ДЛЯ СТАРЫХ ПОСТОВ -->
-<div class="sheet old-posts-sheet" id="oldPostsSheet">
-  <div class="sheet-header">
-    <strong>Старые посты</strong>
-    <button class="action" onclick="closeOldPosts()">✕</button>
-  </div>
-  <div class="sheet-body" id="oldPostsBody">
-    <!-- Старые посты будут загружены сюда -->
-  </div>
-</div>
-
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
@@ -690,7 +611,6 @@ let postsCache=new Map();
 let currentPostId=null;
 let currentProfileUserId = null;
 let searchTimeout = null;
-let showOldPosts = false;
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -701,70 +621,57 @@ auth.onAuthStateChanged(async u=>{
   await loadUserData();
   loadPosts();
   
-  // Проверяем, нужно ли прокрутить к определенному посту
   setTimeout(checkPostToScroll, 1000);
 });
 
-// Загружаем данные пользователя
 async function loadUserData() {
-  const snap = await db.collection("users").doc(currentUser.uid).get();
-  if (!snap.exists) {
-    // Если документ не существует, создаем его
-    userData = {
-      username: "user" + currentUser.uid.slice(-6),
-      email: currentUser.email || "не указан",
-      createdAt: new Date(),
-      isAdmin: false,
+  try {
+    const snap = await db.collection("users").doc(currentUser.uid).get();
+    if (!snap.exists) {
+      userData = {
+        username: "user" + currentUser.uid.slice(-6),
+        email: currentUser.email || "не указан",
+        createdAt: new Date(),
+        isAdmin: false,
+        lastLogin: new Date()
+      };
+      await db.collection("users").doc(currentUser.uid).set(userData);
+    } else {
+      userData = snap.data();
+    }
+    
+    await db.collection("users").doc(currentUser.uid).update({
       lastLogin: new Date()
-    };
-    await db.collection("users").doc(currentUser.uid).set(userData);
-  } else {
-    userData = snap.data();
-  }
-  
-  // Обновляем время последнего входа
-  await db.collection("users").doc(currentUser.uid).update({
-    lastLogin: new Date()
-  });
-  
-  if(userData.isAdmin) {
-    document.getElementById("adminBtn").style.display = "block";
+    });
+    
+    if(userData.isAdmin) {
+      document.getElementById("adminBtn").style.display = "block";
+    }
+  } catch(error) {
+    console.error("Ошибка загрузки данных:", error);
   }
 }
 
-// Проверяем, нужно ли прокрутить к посту из профиля
 function checkPostToScroll() {
   const postIdToScroll = localStorage.getItem('scrollToPostId');
   if (postIdToScroll) {
-    console.log("Ищем пост для прокрутки:", postIdToScroll);
-    
-    // Даем время на загрузку всех постов
     setTimeout(() => {
       const postElement = document.getElementById(`post-${postIdToScroll}`);
       if (postElement) {
-        console.log("Пост найден, прокручиваем...");
         postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         postElement.classList.add('highlighted');
-        
-        // Показываем уведомление
         showNotification('Найден пост из вашего профиля!');
-        
-        // Убираем подсветку через 5 секунд
         setTimeout(() => {
           postElement.classList.remove('highlighted');
         }, 5000);
       } else {
-        console.log("Пост не найден в DOM");
         showNotification('Пост не найден в ленте');
       }
-      
-      // Очищаем после использования
       localStorage.removeItem('scrollToPostId');
     }, 500);
   }
 }
 
-// Функция для показа уведомления
 function showNotification(message, duration = 3000) {
   const notification = document.getElementById('notification');
   notification.textContent = message;
@@ -775,7 +682,6 @@ function showNotification(message, duration = 3000) {
   }, duration);
 }
 
-// Функция для форматирования времени (сколько времени прошло)
 function formatTimeAgo(date) {
   if (!date) return "только что";
   
@@ -787,7 +693,14 @@ function formatTimeAgo(date) {
   const days = Math.floor(hours / 24);
   
   if (days > 7) {
-    return "больше недели";
+    return date.toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }) + ", " + date.toLocaleTimeString("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   } else if (days > 0) {
     return `${days} д назад`;
   } else if (hours > 0) {
@@ -799,7 +712,6 @@ function formatTimeAgo(date) {
   }
 }
 
-// Функция для полного форматирования даты и времени
 function formatFullDateTime(date) {
   if (!date) return "";
   
@@ -813,35 +725,21 @@ function formatFullDateTime(date) {
   });
 }
 
-// Получить возраст поста в днях
-function getPostAgeInDays(date) {
-  if (!date) return 0;
-  const now = new Date();
-  const diff = now - date;
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-// Функция для увеличения просмотров поста
 async function incrementPostViews(postId) {
-  // Проверяем, не просматривал ли пользователь уже этот пост
   if (viewedPosts[postId]) return;
   
   try {
-    // Увеличиваем счетчик просмотров
     await db.collection("posts").doc(postId).update({
       views: firebase.firestore.FieldValue.increment(1)
     });
     
-    // Сохраняем в localStorage, что пользователь просмотрел этот пост
     viewedPosts[postId] = true;
     localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
     
-    // Обновляем кэш
     if (postsCache.has(postId)) {
       const post = postsCache.get(postId);
       post.views = (post.views || 0) + 1;
       
-      // Обновляем отображение счетчика
       const viewButton = document.querySelector(`#post-${postId} .action.viewed`);
       if (viewButton) {
         viewButton.innerHTML = `👁️ ${post.views}`;
@@ -853,17 +751,14 @@ async function incrementPostViews(postId) {
   }
 }
 
-// Проверка видимости поста для подсчета просмотров
 function setupViewTracking() {
   const posts = document.querySelectorAll('.post');
   
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        // Находим ID поста
         const postId = entry.target.id.replace('post-', '');
         if (postId) {
-          // Задержка перед увеличением просмотров
           setTimeout(() => {
             incrementPostViews(postId);
           }, 1000);
@@ -880,20 +775,19 @@ function setupViewTracking() {
   });
 }
 
-// Поиск пользователей
 async function searchUsers(searchTerm) {
   const searchResults = document.getElementById('searchResults');
   
-  if (!searchTerm.trim()) {
+  if (!searchTerm.trim() || searchTerm.length < 2) {
     searchResults.innerHTML = '';
+    searchResults.classList.remove('show');
     return;
   }
   
   try {
-    // Показываем загрузку
     searchResults.innerHTML = '<div class="no-results">Поиск...</div>';
+    searchResults.classList.add('show');
     
-    // Ищем пользователей по нику
     const usersSnap = await db.collection("users")
       .where("username", ">=", searchTerm.toLowerCase())
       .where("username", "<=", searchTerm.toLowerCase() + '\uf8ff')
@@ -912,7 +806,6 @@ async function searchUsers(searchTerm) {
       const user = doc.data();
       const userId = doc.id;
       
-      // Пропускаем текущего пользователя
       if (userId === currentUserId) return;
       
       resultsHTML += `
@@ -935,129 +828,26 @@ async function searchUsers(searchTerm) {
   }
 }
 
-// Открыть профиль найденного пользователя
 async function openSearchedProfile(userId, username) {
-  // Очищаем поиск
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '';
+  document.getElementById('searchResults').classList.remove('show');
   
-  // Открываем профиль
   currentProfileUserId = userId;
   profileSheet.classList.add("show");
   
-  // header
-  document.getElementById("profileName").textContent="@"+username;
-  document.getElementById("profileAvatar").textContent=username?.[0]||"A";
+  document.getElementById("profileName").textContent = "@"+username;
+  document.getElementById("profileAvatar").textContent = username?.[0]||"A";
   
-  // Скрываем кнопку смены имени (это не наш профиль)
   const changeNameBtn = document.getElementById("changeNameBtn");
   changeNameBtn.style.display = "none";
   
-  // Сначала показываем загрузку
   document.getElementById("profilePosts").innerHTML = `
     <div style="text-align:center;color:var(--sub);padding:40px 0;">
       Загрузка профиля...
     </div>`;
   
-  // Затем загружаем посты и статистику
   await refreshProfilePosts(userId);
-}
-
-// Загрузить старые посты (больше недели)
-async function loadOldPosts() {
-  const oldPostsBody = document.getElementById('oldPostsBody');
-  oldPostsBody.innerHTML = '<div style="text-align:center;color:var(--sub);padding:40px 0;">Загрузка старых постов...</div>';
-  
-  try {
-    // Вычисляем дату неделю назад
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    
-    const snap = await db.collection("posts")
-      .where("createdAt", "<", weekAgo)
-      .orderBy("createdAt", "desc")
-      .limit(50)
-      .get();
-    
-    if (snap.empty) {
-      oldPostsBody.innerHTML = '<div style="text-align:center;color:var(--sub);padding:40px 0;">Нет старых постов</div>';
-      return;
-    }
-    
-    let oldPostsHTML = '';
-    let lastMonth = null;
-    
-    snap.forEach(doc=>{
-      const p=doc.data();
-      const liked=p.likedBy?.includes(currentUser.uid);
-      
-      // Группируем по месяцам
-      let postDate = null;
-      let monthYear = "";
-      try {
-        if (p.createdAt) {
-          postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-          monthYear = postDate.toLocaleDateString("ru-RU", { month: 'long', year: 'numeric' });
-        }
-      } catch (dateError) {
-        console.log("Ошибка форматирования даты:", dateError);
-      }
-      
-      // Добавляем разделитель месяца
-      if (monthYear && monthYear !== lastMonth) {
-        oldPostsHTML += `<div class="day-divider"><div class="day-divider-text">${monthYear}</div></div>`;
-        lastMonth = monthYear;
-      }
-      
-      // Форматируем время
-      let timeAgo = formatTimeAgo(postDate);
-      let fullDateTime = formatFullDateTime(postDate);
-      
-      oldPostsHTML+=`
-      <div class="post fade">
-        <div class="post-header">
-          <div class="avatar">${p.username?.[0]||"A"}</div>
-          <div class="post-user-info">
-            <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
-              @${p.username}
-            </div>
-            <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
-          </div>
-          ${(p.userId===currentUser.uid||userData.isAdmin)?
-            `<button class="trash" onclick="deletePost('${doc.id}', '${p.userId}')">🗑</button>`:""}
-        </div>
-        <div class="post-text">${p.text}</div>
-        <div class="post-actions">
-          <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-            ${liked?"❤️":"🤍"} <span class="like-count">${p.likes||0}</span>
-          </button>
-          <button class="action" onclick="openComments('${doc.id}')">
-            💬 ${p.commentsCount||0}
-          </button>
-          <button class="action viewed" title="Просмотры">
-            👁️ ${p.views||0}
-          </button>
-        </div>
-      </div>`;
-    });
-    
-    oldPostsBody.innerHTML = oldPostsHTML;
-    
-  } catch(error) {
-    console.error("Ошибка при загрузке старых постов:", error);
-    oldPostsBody.innerHTML = `<div style="text-align:center;color:var(--danger);padding:40px 0;">Ошибка при загрузке: ${error.message}</div>`;
-  }
-}
-
-// Открыть старые посты
-function openOldPosts() {
-  document.getElementById('oldPostsSheet').classList.add('show');
-  loadOldPosts();
-}
-
-// Закрыть старые посты
-function closeOldPosts() {
-  document.getElementById('oldPostsSheet').classList.remove('show');
 }
 
 async function loadPosts(){
@@ -1065,54 +855,34 @@ async function loadPosts(){
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
   
   try {
-    const snap = await db.collection("posts").orderBy("createdAt","desc").limit(50).get();
+    const snap = await db.collection("posts").orderBy("createdAt","desc").get();
     
     if (snap.empty) {
       feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Пока нет постов. Будьте первым!</div>";
       return;
     }
     
-    let feedHTML = "";
-    let lastDay = null;
-    let hasOldPosts = false;
+    feed.innerHTML = "";
     
     snap.forEach(doc=>{
       const p=doc.data();
-      postsCache.set(doc.id,p);
-      const liked=p.likedBy?.includes(currentUser.uid);
+      postsCache.set(doc.id, p);
+      const liked = p.likedBy?.includes(currentUser.uid);
       
-      // Определяем возраст поста
-      let postDate = null;
-      let postAgeInDays = 0;
+      let timeAgo = "только что";
+      let fullDateTime = "";
       try {
         if (p.createdAt) {
-          postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-          postAgeInDays = getPostAgeInDays(postDate);
+          const postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+          timeAgo = formatTimeAgo(postDate);
+          fullDateTime = formatFullDateTime(postDate);
         }
       } catch (dateError) {
         console.log("Ошибка форматирования даты:", dateError);
       }
       
-      // Проверяем, есть ли посты старше недели
-      if (postAgeInDays > 7) {
-        hasOldPosts = true;
-        return; // Пропускаем старые посты в основной ленте
-      }
-      
-      // Добавляем разделитель для постов старше дня
-      if (postAgeInDays >= 1) {
-        const dayText = "Больше 1 дня";
-        if (dayText !== lastDay) {
-          feedHTML += `<div class="day-divider"><div class="day-divider-text">${dayText}</div></div>`;
-          lastDay = dayText;
-        }
-      }
-      
-      // Форматируем время
-      let timeAgo = formatTimeAgo(postDate);
-      let fullDateTime = formatFullDateTime(postDate);
-      
-      feedHTML+=`
+      // Правильно формируем HTML для поста
+      feed.innerHTML += `
       <div class="post fade" id="post-${doc.id}">
         <div class="post-header">
           <div class="avatar">${p.username?.[0]||"A"}</div>
@@ -1122,13 +892,13 @@ async function loadPosts(){
             </div>
             <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
           </div>
-          ${(p.userId===currentUser.uid||userData.isAdmin)?
+          ${(p.userId===currentUser.uid||userData?.isAdmin)?
             `<button class="trash" onclick="deletePost('${doc.id}', '${p.userId}')">🗑</button>`:""}
         </div>
         <div class="post-text">${p.text}</div>
         <div class="post-actions">
           <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-            ${liked?"❤️":"🤍"} <span class="like-count">${p.likes||0}</span>
+            ${liked?"❤️":"🤍"} <span id="likes-${doc.id}">${p.likes||0}</span>
           </button>
           <button class="action" onclick="openComments('${doc.id}')">
             💬 ${p.commentsCount||0}
@@ -1140,23 +910,7 @@ async function loadPosts(){
       </div>`;
     });
     
-    // Добавляем кнопку для старых постов
-    if (hasOldPosts) {
-      feedHTML += `
-        <div class="old-posts-section">
-          <button class="old-posts-toggle" onclick="openOldPosts()">
-            <span class="icon">📜</span>
-            <span>Показать старые посты</span>
-          </button>
-        </div>`;
-    }
-    
-    feed.innerHTML = feedHTML;
-    
-    // Настраиваем отслеживание просмотров
     setTimeout(setupViewTracking, 500);
-    
-    // Проверяем еще раз после загрузки
     setTimeout(checkPostToScroll, 100);
     
   } catch(error) {
@@ -1203,16 +957,13 @@ async function deletePost(postId, postUserId){
     await db.collection("posts").doc(postId).delete();
     showNotification("Пост удален!");
     
-    // Удаляем из просмотренных
     if (viewedPosts[postId]) {
       delete viewedPosts[postId];
       localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
     }
     
-    // Перезагружаем основную ленту
     loadPosts();
     
-    // Если профиль открыт и это пост того же пользователя, обновляем профиль
     if (currentProfileUserId === postUserId) {
       await refreshProfilePosts(postUserId);
     }
@@ -1224,45 +975,34 @@ async function deletePost(postId, postUserId){
 }
 
 async function toggleLike(id){
-  const p=postsCache.get(id);
-  const liked=p.likedBy?.includes(currentUser.uid);
+  const p = postsCache.get(id);
+  if (!p) return;
+  
+  const liked = p.likedBy?.includes(currentUser.uid);
   
   try {
     await db.collection("posts").doc(id).update({
-      likes: firebase.firestore.FieldValue.increment(liked?-1:1),
+      likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1),
       likedBy: liked
         ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
         : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
     });
     
-    // Обновляем локальный кэш
-    if (postsCache.has(id)) {
-      const post = postsCache.get(id);
-      post.likes = (post.likes || 0) + (liked ? -1 : 1);
-      post.likedBy = liked 
-        ? post.likedBy.filter(uid => uid !== currentUser.uid)
-        : [...(post.likedBy || []), currentUser.uid];
+    // Обновляем кэш
+    p.likes = (p.likes || 0) + (liked ? -1 : 1);
+    if (liked) {
+      p.likedBy = p.likedBy?.filter(uid => uid !== currentUser.uid) || [];
+    } else {
+      if (!p.likedBy) p.likedBy = [];
+      p.likedBy.push(currentUser.uid);
     }
     
-    // Находим кнопку лайка и обновляем ее
+    // Обновляем отображение
     const likeButton = document.querySelector(`#post-${id} .action`);
-    if (likeButton) {
-      const likeCountSpan = likeButton.querySelector('.like-count');
-      const newLikes = (p.likes || 0) + (liked ? -1 : 1);
-      
-      // Обновляем счетчик
-      if (likeCountSpan) {
-        likeCountSpan.textContent = newLikes;
-      }
-      
-      // Обновляем иконку и класс
-      if (liked) {
-        likeButton.classList.remove('liked');
-        likeButton.innerHTML = `🤍 <span class="like-count">${newLikes}</span>`;
-      } else {
-        likeButton.classList.add('liked');
-        likeButton.innerHTML = `❤️ <span class="like-count">${newLikes}</span>`;
-      }
+    const likesSpan = document.getElementById(`likes-${id}`);
+    if (likeButton && likesSpan) {
+      likeButton.classList.toggle('liked', !liked);
+      likeButton.innerHTML = `${!liked?"❤️":"🤍"} <span id="likes-${id}">${p.likes}</span>`;
     }
     
     showNotification(liked ? "Лайк убран" : "Посту понравилось!");
@@ -1274,10 +1014,11 @@ async function toggleLike(id){
 }
 
 function openComments(id){
-  currentPostId=id;
+  currentPostId = id;
   commentsSheet.classList.add("show");
   loadComments();
 }
+
 function closeComments(){
   commentsSheet.classList.remove("show");
 }
@@ -1300,7 +1041,6 @@ async function loadComments(){
     snap.forEach(d=>{
       const c=d.data();
       
-      // Форматируем время для комментария
       let timeAgo = "только что";
       try {
         if (c.createdAt) {
@@ -1311,7 +1051,9 @@ async function loadComments(){
         console.log("Ошибка форматирования даты комментария:", dateError);
       }
       
-      commentsBody.innerHTML+=`
+      const canDelete = c.userId === currentUser.uid || userData?.isAdmin;
+      
+      commentsBody.innerHTML += `
         <div class="post fade">
           <div class="post-header">
             <div class="avatar">${c.username?.[0]||"A"}</div>
@@ -1319,6 +1061,7 @@ async function loadComments(){
               <strong>@${c.username}</strong>
               <div class="post-time">${timeAgo}</div>
             </div>
+            ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment('${d.id}')">🗑</button>` : ''}
           </div>
           <div class="post-text">${c.text}</div>
         </div>`;
@@ -1327,6 +1070,28 @@ async function loadComments(){
   } catch(error) {
     console.error("Ошибка при загрузке комментариев:", error);
     commentsBody.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка загрузки: ${error.message}</div>`;
+  }
+}
+
+async function deleteComment(commentId) {
+  if(!confirm("Удалить комментарий?")) return;
+  
+  try {
+    await db.collection("posts").doc(currentPostId)
+      .collection("comments").doc(commentId).delete();
+    
+    await db.collection("posts").doc(currentPostId)
+      .update({
+        commentsCount: firebase.firestore.FieldValue.increment(-1)
+      });
+    
+    showNotification("Комментарий удален!");
+    loadComments();
+    loadPosts();
+    
+  } catch(error) {
+    console.error("Ошибка при удалении комментария:", error);
+    showNotification("Ошибка: " + error.message);
   }
 }
 
@@ -1364,28 +1129,360 @@ async function addComment(){
   }
 }
 
-// Остальные функции остались без изменений...
-// Функции getUserPostsCount, getUserLikesCount, getUserViewsCount, getUserPosts, 
-// refreshProfilePosts, deletePostFromProfile, updateUsernameInAllPosts,
-// openChangeNameModal, closeChangeNameModal, changeUsername,
-// openProfile, closeProfile, logout
+async function getUserPostsCount(uid) {
+  const snap = await db.collection("posts")
+    .where("userId", "==", uid)
+    .get();
+  return snap.size;
+}
+
+async function getUserLikesCount(uid) {
+  try {
+    const snap = await db.collection("posts")
+      .where("userId", "==", uid)
+      .get();
+    
+    let totalLikes = 0;
+    snap.forEach(doc => {
+      const post = doc.data();
+      totalLikes += (post.likes || 0);
+    });
+    
+    return totalLikes;
+  } catch(error) {
+    console.error("Ошибка при получении лайков пользователя:", error);
+    return 0;
+  }
+}
+
+async function getUserViewsCount(uid) {
+  try {
+    const snap = await db.collection("posts")
+      .where("userId", "==", uid)
+      .get();
+    
+    let totalViews = 0;
+    snap.forEach(doc => {
+      const post = doc.data();
+      totalViews += (post.views || 0);
+    });
+    
+    return totalViews;
+  } catch(error) {
+    console.error("Ошибка при получении просмотров пользователя:", error);
+    return 0;
+  }
+}
+
+async function getUserPosts(uid) {
+  try {
+    const allPostsSnap = await db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .limit(100)
+      .get();
+    
+    const userPosts = [];
+    allPostsSnap.forEach(doc => {
+      const post = doc.data();
+      if (post.userId === uid) {
+        userPosts.push({
+          id: doc.id,
+          ...post
+        });
+      }
+    });
+    
+    return userPosts;
+  } catch(error) {
+    console.error("Ошибка при получении постов пользователя:", error);
+    
+    if (error.code === 'failed-precondition') {
+      const simpleSnap = await db.collection("posts")
+        .where("userId", "==", uid)
+        .get();
+      
+      const userPosts = [];
+      simpleSnap.forEach(doc => {
+        userPosts.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      userPosts.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      
+      return userPosts.slice(0, 50);
+    }
+    
+    throw error;
+  }
+}
+
+async function refreshProfilePosts(uid) {
+  const profilePosts = document.getElementById("profilePosts");
+  const profilePostsCount = document.getElementById("profilePostsCount");
+  const profileLikesCount = document.getElementById("profileLikesCount");
+  const profileViewsCount = document.getElementById("profileViewsCount");
+  
+  if (!profilePosts) return;
+  
+  try {
+    const postsCount = await getUserPostsCount(uid);
+    profilePostsCount.textContent = postsCount;
+    
+    const likesCount = await getUserLikesCount(uid);
+    profileLikesCount.textContent = likesCount;
+    
+    const viewsCount = await getUserViewsCount(uid);
+    profileViewsCount.textContent = viewsCount;
+    
+    profilePosts.innerHTML = "";
+    
+    if (postsCount === 0) {
+      profilePosts.innerHTML = `
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          У пользователя пока нет постов
+        </div>`;
+      return;
+    }
+    
+    const userPosts = await getUserPosts(uid);
+    
+    userPosts.forEach(post => {
+      const canDelete = post.userId === currentUser.uid || userData?.isAdmin;
+      
+      let timeAgo = "только что";
+      let fullDateTime = "";
+      
+      try {
+        if (post.createdAt) {
+          const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+          timeAgo = formatTimeAgo(postDate);
+          fullDateTime = formatFullDateTime(postDate);
+        }
+      } catch (dateError) {
+        console.log("Ошибка форматирования даты:", dateError);
+      }
+      
+      profilePosts.innerHTML += `
+        <div class="post fade" id="profile-post-${post.id}">
+          <div class="post-text">${post.text}</div>
+          <div class="post-time" title="${fullDateTime}">
+            <span>${timeAgo}</span>
+            <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
+            <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
+            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
+          </div>
+          ${canDelete ? 
+            `<button class="trash" style="position:absolute;top:16px;right:16px;" 
+                     onclick="deletePostFromProfile('${post.id}', '${uid}')">🗑</button>` : 
+            ""}
+        </div>`;
+    });
+    
+  } catch(error) {
+    console.error("Ошибка при загрузке постов профиля:", error);
+    profilePosts.innerHTML = `
+      <div style="text-align:center;color:var(--danger);padding:40px 0;">
+        ${error.message.includes("index") ? 
+          "Пожалуйста, создайте индекс в Firebase Console" : 
+          "Ошибка при загрузке постов"}
+      </div>`;
+  }
+}
+
+async function deletePostFromProfile(postId, userId) {
+  if(!confirm("Удалить этот пост из профиля?")) return;
+  
+  try {
+    await db.collection("posts").doc(postId).delete();
+    
+    if (viewedPosts[postId]) {
+      delete viewedPosts[postId];
+      localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+    }
+    
+    const postElement = document.getElementById(`profile-post-${postId}`);
+    if (postElement) {
+      postElement.remove();
+    }
+    
+    const postsCount = await getUserPostsCount(userId);
+    const likesCount = await getUserLikesCount(userId);
+    const viewsCount = await getUserViewsCount(userId);
+    
+    document.getElementById("profilePostsCount").textContent = postsCount;
+    document.getElementById("profileLikesCount").textContent = likesCount;
+    document.getElementById("profileViewsCount").textContent = viewsCount;
+    
+    loadPosts();
+    showNotification("Пост удален из профиля!");
+    
+  } catch(error) {
+    console.error("Ошибка при удалении поста:", error);
+    showNotification("Не удалось удалить пост: " + error.message);
+  }
+}
+
+async function updateUsernameInAllPosts(userId, newUsername) {
+  try {
+    const postsSnap = await db.collection("posts")
+      .where("userId", "==", userId)
+      .get();
+    
+    const batch = db.batch();
+    postsSnap.forEach(doc => {
+      batch.update(doc.ref, { username: newUsername });
+    });
+    
+    const allPostsSnap = await db.collection("posts").get();
+    allPostsSnap.forEach(postDoc => {
+      const commentsRef = postDoc.ref.collection("comments")
+        .where("userId", "==", userId);
+      
+      commentsRef.get().then(commentsSnap => {
+        commentsSnap.forEach(commentDoc => {
+          batch.update(commentDoc.ref, { username: newUsername });
+        });
+      });
+    });
+    
+    await batch.commit();
+    return true;
+  } catch(error) {
+    console.error("Ошибка при обновлении имени в постах:", error);
+    return false;
+  }
+}
+
+function openChangeNameModal() {
+  const modal = document.getElementById('changeNameModal');
+  const input = document.getElementById('newUsernameInput');
+  
+  const currentName = userData?.username || '';
+  input.value = currentName.replace('@', '');
+  
+  modal.classList.add('show');
+  input.focus();
+}
+
+function closeChangeNameModal() {
+  document.getElementById('changeNameModal').classList.remove('show');
+}
+
+async function changeUsername() {
+  const input = document.getElementById('newUsernameInput');
+  const newUsername = input.value.trim();
+  
+  if (!newUsername) {
+    showNotification("Введите новое имя!");
+    return;
+  }
+  
+  if (newUsername.length < 3) {
+    showNotification("Имя должно быть не менее 3 символов!");
+    return;
+  }
+  
+  if (newUsername.length > 20) {
+    showNotification("Имя должно быть не более 20 символов!");
+    return;
+  }
+  
+  if (!/^[a-zA-Zа-яА-Я0-9_]+$/.test(newUsername)) {
+    showNotification("Имя может содержать только буквы, цифры и подчеркивание!");
+    return;
+  }
+  
+  try {
+    await db.collection("users").doc(currentUser.uid).update({
+      username: newUsername
+    });
+    
+    userData.username = newUsername;
+    
+    const updateSuccess = await updateUsernameInAllPosts(currentUser.uid, newUsername);
+    
+    if (updateSuccess) {
+      showNotification("Имя успешно изменено! Обновляю данные...");
+      
+      if (currentProfileUserId === currentUser.uid) {
+        document.getElementById("profileName").textContent = "@" + newUsername;
+        document.getElementById("profileAvatar").textContent = newUsername[0]?.toUpperCase() || "U";
+      }
+      
+      closeChangeNameModal();
+      
+      setTimeout(() => {
+        loadPosts();
+      }, 1000);
+      
+    } else {
+      showNotification("Имя изменено, но возникла ошибка при обновлении старых постов");
+    }
+    
+  } catch(error) {
+    console.error("Ошибка при смене имени:", error);
+    showNotification("Ошибка при смене имени: " + error.message);
+  }
+}
+
+async function openProfile(uid, name){
+  if (!uid || !name) return;
+  
+  currentProfileUserId = uid;
+  profileSheet.classList.add("show");
+  
+  document.getElementById("profileName").textContent = "@"+name;
+  document.getElementById("profileAvatar").textContent = name?.[0]||"A";
+  
+  const changeNameBtn = document.getElementById("changeNameBtn");
+  if (uid === currentUser.uid) {
+    changeNameBtn.style.display = "inline-block";
+  } else {
+    changeNameBtn.style.display = "none";
+  }
+  
+  document.getElementById("profilePosts").innerHTML = `
+    <div style="text-align:center;color:var(--sub);padding:40px 0;">
+      Загрузка постов...
+    </div>`;
+  
+  await refreshProfilePosts(uid);
+}
+
+function closeProfile(){
+  currentProfileUserId = null;
+  profileSheet.classList.remove("show");
+}
+
+function logout(){
+  if(confirm("Выйти из аккаунта?")){
+    auth.signOut().then(()=>{
+      location.href="index.html";
+    });
+  }
+}
 
 // Поиск при вводе текста
 document.getElementById("searchInput").addEventListener("input", function(e) {
   const searchTerm = e.target.value.trim();
   
-  // Очищаем предыдущий таймаут
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
   
-  // Устанавливаем новый таймаут для поиска
   if (searchTerm.length >= 2) {
     searchTimeout = setTimeout(() => {
       searchUsers(searchTerm);
     }, 300);
   } else {
     document.getElementById("searchResults").innerHTML = '';
+    document.getElementById("searchResults").classList.remove('show');
   }
 });
 

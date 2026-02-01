@@ -1,424 +1,513 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>czhmass</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фид</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f5f5f5;
+            --text: #000000;
+            --sub: #666666;
+            --border: #e0e0e0;
+            --accent: #007aff;
+            --sheet-bg: rgba(0,0,0,0.5);
+        }
 
-<style>
-:root{
-  --bg:#000;
-  --card:rgba(28,28,30,.95);
-  --border:#1f1f1f;
-  --text:#fff;
-  --sub:#9a9a9a;
-  --accent:linear-gradient(135deg,#667eea,#764ba2);
-  --danger:#ff453a;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
-}
-.fade{animation:fade .3s ease}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #000000;
+                --surface: #1c1c1e;
+                --text: #ffffff;
+                --sub: #8e8e93;
+                --border: #38383a;
+                --accent: #0a84ff;
+            }
+        }
 
-.dynamic-island{
-  position:fixed;top:12px;left:50%;transform:translateX(-50%);
-  width:120px;height:34px;border-radius:20px;
-  background:#111;display:flex;align-items:center;justify-content:center;
-  font-weight:600;z-index:1000;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
-.navbar{
-  position:fixed;top:60px;left:50%;transform:translateX(-50%);
-  width:92%;max-width:430px;
-  background:var(--card);
-  border-radius:18px;
-  padding:10px 14px;
-  display:flex;justify-content:space-between;align-items:center;
-  z-index:999;
-}
-.logo{
-  font-weight:700;
-  background:var(--accent);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.nav-btns{display:flex;gap:8px}
-.nav-btn{
-  background:#1c1c1e;border:none;color:#fff;
-  padding:8px 12px;border-radius:12px;font-size:16px;
-}
+        body {
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
-.container{
-  max-width:480px;
-  margin:auto;
-  padding:130px 14px 80px;
-}
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
 
-.create{
-  background:var(--card);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:14px;
-}
-.create textarea{
-  width:100%;
-  min-height:80px;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
-  color:#fff;
-}
-.create button{
-  width:100%;
-  margin-top:10px;
-  padding:14px;
-  border:none;
-  border-radius:16px;
-  background:var(--accent);
-  color:#fff;
-  font-weight:600;
-}
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+        }
 
-.post{
-  background:var(--card);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:14px;
-}
-.post-header{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.avatar{
-  width:40px;
-  height:40px;
-  border-radius:14px;
-  background:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-}
-.post-user{
-  font-weight:600;
-  cursor:pointer;
-}
-.post-text{margin:10px 0}
-.post-actions{
-  display:flex;
-  gap:16px;
-}
-.action{
-  background:none;
-  border:none;
-  color:var(--sub);
-  font-size:18px;
-}
-.liked{color:#ff2d55}
-.trash{
-  margin-left:auto;
-  background:none;border:none;
-  color:var(--danger);font-size:18px;
-}
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
 
-.sheet{
-  position:fixed;
-  inset:0;
-  background:#000;
-  transform:translateY(100%);
-  transition:.35s ease;
-  z-index:2000;
-  display:flex;
-  flex-direction:column;
-}
-.sheet.show{transform:translateY(0)}
-.sheet-header{
-  padding:14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border-bottom:1px solid var(--border);
-}
-.sheet-body{
-  flex:1;
-  overflow:auto;
-  padding:14px;
-}
-.sheet-footer{
-  padding:12px;
-  border-top:1px solid var(--border);
-  display:flex;
-  gap:8px;
-}
-.sheet-footer input{
-  flex:1;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px;
-  color:#fff;
-}
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
 
-/* PROFILE SHEET */
-.profile-header{
-  display:flex;
-  align-items:center;
-  gap:16px;
-  margin-bottom:20px;
-}
-.profile-avatar{
-  width:72px;height:72px;
-  border-radius:22px;
-  background:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:28px;
-  font-weight:700;
-}
-.profile-name{
-  font-size:18px;
-  font-weight:700;
-}
-.profile-stats{
-  color:var(--sub);
-  font-size:14px;
-}
-</style>
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* POST INPUT */
+        .post-input {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 16px;
+            margin-bottom: 30px;
+        }
+
+        .post-textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 16px;
+            resize: none;
+            min-height: 60px;
+            outline: none;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        /* POSTS */
+        .posts {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .post {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 16px;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .post-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .post-username {
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .post-username:hover {
+            opacity: 0.7;
+        }
+
+        .post-time {
+            color: var(--sub);
+            font-size: 14px;
+        }
+
+        .post-text {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* SHEET */
+        .sheet {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--sheet-bg);
+            display: flex;
+            align-items: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .sheet.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sheet-content {
+            background: var(--bg);
+            width: 100%;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .sheet.show .sheet-content {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* LOADER */
+        .loader {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            color: var(--sub);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--sub);
+        }
+
+        /* PROFILE */
+        .profile-header{
+          display:flex;
+          align-items:center;
+          gap:16px;
+          margin-bottom:20px;
+        }
+
+        .profile-avatar{
+          width:72px;
+          height:72px;
+          border-radius:22px;
+          background:var(--accent);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:28px;
+          font-weight:700;
+        }
+
+        .profile-info{
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+        }
+
+        .profile-name{
+          font-size:18px;
+          font-weight:700;
+        }
+
+        .profile-stats{
+          color:var(--sub);
+          font-size:14px;
+        }
+    </style>
 </head>
-
 <body>
-
-<div class="dynamic-island" id="time"></div>
-
-<div class="navbar">
-  <div class="logo">czhmass</div>
-  <div class="nav-btns">
-    <!-- ВАЖНО: кнопка профиля ведёт на profile.html -->
-    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
-
-    <!-- ВАЖНО: кнопка админа ведёт на admin.html -->
-    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-
-    <button class="nav-btn" onclick="logout()">🚪</button>
-  </div>
-</div>
-
-<div class="container">
-
-  <div class="create">
-    <textarea id="postText" placeholder="Что у вас нового?"></textarea>
-    <button onclick="createPost()">Опубликовать</button>
-  </div>
-
-  <div id="feed"></div>
-
-</div>
-
-<!-- COMMENTS -->
-<div class="sheet" id="commentsSheet">
-  <div class="sheet-header">
-    <strong>Комментарии</strong>
-    <button class="action" onclick="closeComments()">✕</button>
-  </div>
-  <div class="sheet-body" id="commentsBody"></div>
-  <div class="sheet-footer">
-    <input id="commentInput" placeholder="Комментарий">
-    <button class="action" onclick="addComment()">📤</button>
-  </div>
-</div>
-
-<!-- PROFILE (только для кликов по нику) -->
-<div class="sheet" id="profileSheet">
-  <div class="sheet-header">
-    <strong>Профиль</strong>
-    <button class="action" onclick="closeProfile()">✕</button>
-  </div>
-  <div class="sheet-body">
-    <div class="profile-header">
-      <div class="profile-avatar" id="profileAvatar">A</div>
-      <div>
-        <div class="profile-name" id="profileName">@anon</div>
-        <div class="profile-stats">
-          <span id="profilePostsCount">0</span> постов
+    <div class="header">
+        <div class="title">Фид</div>
+        <div class="actions">
+            <button class="btn" onclick="logout()">Выйти</button>
         </div>
-      </div>
     </div>
-    <div id="profilePosts"></div>
-  </div>
-</div>
 
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain:"czhmass.firebaseapp.com",
-  projectId:"czhmass"
-});
-const db=firebase.firestore();
-const auth=firebase.auth();
-
-let currentUser,userData;
-let postsCache=new Map();
-let currentPostId=null;
-
-auth.onAuthStateChanged(async u=>{
-  if(!u)return location.href="index.html";
-  currentUser=u;
-  const snap=await db.collection("users").doc(u.uid).get();
-  userData=snap.data()||{};
-  if(userData.isAdmin) adminBtn.style.display="block";
-  loadPosts();
-});
-
-async function loadPosts(){
-  feed.innerHTML="";
-  const snap=await db.collection("posts").orderBy("createdAt","desc").get();
-  snap.forEach(doc=>{
-    const p=doc.data();
-    postsCache.set(doc.id,p);
-    const liked=p.likedBy?.includes(currentUser.uid);
-    feed.innerHTML+=`
-    <div class="post fade">
-      <div class="post-header">
-        <div class="avatar">${p.username?.[0]||"A"}</div>
-        <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
-          @${p.username}
+    <div class="post-input">
+        <textarea class="post-textarea" id="postText" placeholder="Что у вас нового?"></textarea>
+        <div class="post-actions">
+            <button class="btn" onclick="sendPost()">Отправить</button>
         </div>
-        ${(p.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
-      </div>
-      <div class="post-text">${p.text}</div>
-      <div class="post-actions">
-        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-          ${liked?"❤️":"🤍"} ${p.likes||0}
-        </button>
-        <button class="action" onclick="openComments('${doc.id}')">
-          💬 ${p.commentsCount||0}
-        </button>
-      </div>
-    </div>`;
-  });
-}
+    </div>
 
-async function createPost(){
-  if(!postText.value.trim())return;
-  await db.collection("posts").add({
-    text:postText.value,
-    userId:currentUser.uid,
-    username:userData.username||"anon",
-    createdAt:new Date(),
-    likes:0,
-    likedBy:[],
-    commentsCount:0
-  });
-  postText.value="";
-  loadPosts();
-}
+    <div class="posts" id="posts"></div>
 
-async function deletePost(id){
-  if(!confirm("Удалить пост?"))return;
-  await db.collection("posts").doc(id).delete();
-  loadPosts();
-}
-
-async function toggleLike(id){
-  const p=postsCache.get(id);
-  const liked=p.likedBy?.includes(currentUser.uid);
-  await db.collection("posts").doc(id).update({
-    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
-    likedBy:liked
-      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-  });
-  loadPosts();
-}
-
-function openComments(id){
-  currentPostId=id;
-  commentsSheet.classList.add("show");
-  loadComments();
-}
-function closeComments(){
-  commentsSheet.classList.remove("show");
-}
-
-async function loadComments(){
-  commentsBody.innerHTML="";
-  const snap=await db.collection("posts").doc(currentPostId)
-    .collection("comments").orderBy("createdAt").get();
-  snap.forEach(d=>{
-    const c=d.data();
-    commentsBody.innerHTML+=`
-      <div class="post fade">
-        <div class="post-header">
-          <div class="avatar">${c.username?.[0]||"A"}</div>
-          <strong>@${c.username}</strong>
+    <!-- СНИМОК ПОСТА -->
+    <div class="sheet" id="snapshotSheet">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <strong>Просмотр</strong>
+                <button class="action" onclick="closeSnapshot()">✕</button>
+            </div>
+            <div class="sheet-body" id="snapshotBody">
+                <!-- динамически заполняется -->
+            </div>
         </div>
-        <div class="post-text">${c.text}</div>
-      </div>`;
-  });
-}
+    </div>
 
-async function addComment(){
-  if(!commentInput.value.trim())return;
-  await db.collection("posts").doc(currentPostId)
-    .collection("comments").add({
-      text:commentInput.value,
-      userId:currentUser.uid,
-      username:userData.username||"anon",
-      createdAt:new Date()
-    });
-  await db.collection("posts").doc(currentPostId)
-    .update({
-      commentsCount:firebase.firestore.FieldValue.increment(1)
-    });
-  commentInput.value="";
-  loadComments();
-  loadPosts();
-}
+    <!-- ПРОФИЛЬ -->
+    <div class="sheet" id="profileSheet">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <strong>Профиль</strong>
+                <button class="action" onclick="closeProfile()">✕</button>
+            </div>
 
-async function openProfile(uid,name){
-  profileSheet.classList.add("show");
-  profileName.textContent="@"+name;
-  profileAvatar.textContent=name?.[0]||"A";
-  profilePosts.innerHTML="";
-  let count=0;
-  const snap=await db.collection("posts")
-    .where("userId","==",uid)
-    .orderBy("createdAt","desc").get();
-  snap.forEach(d=>{
-    count++;
-    profilePosts.innerHTML+=`
-      <div class="post fade">
-        <div class="post-text">${d.data().text}</div>
-      </div>`;
-  });
-  profilePostsCount.textContent=count;
-}
-function closeProfile(){
-  profileSheet.classList.remove("show");
-}
+            <div class="sheet-body">
 
-function logout(){
-  auth.signOut().then(()=>location.href="index.html");
-}
+                <!-- HEADER PROFILE -->
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">A</div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="profileName">@anon</div>
+                        <div class="profile-stats">
+                            <span id="profilePostsCount">0</span> постов
+                        </div>
+                    </div>
+                </div>
 
-setInterval(()=>{
-  time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-},1000);
-</script>
+                <!-- ПОСТЫ -->
+                <div id="profilePosts"></div>
 
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDINaXN-l4T_ob0G3g8-B4QxX4jeYbsmHY",
+            authDomain: "feed-3f2d7.firebaseapp.com",
+            projectId: "feed-3f2d7",
+            storageBucket: "feed-3f2d7.firebasestorage.app",
+            messagingSenderId: "186229575699",
+            appId: "1:186229575699:web:4d5d1fe8f8c7e81881f645"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM elements
+        const postsDiv = document.getElementById("posts");
+        const postText = document.getElementById("postText");
+        const profileSheet = document.getElementById("profileSheet");
+        const profileName = document.getElementById("profileName");
+        const profilePosts = document.getElementById("profilePosts");
+        const profileAvatar = document.getElementById("profileAvatar");
+        const profilePostsCount = document.getElementById("profilePostsCount");
+
+        // Auth state observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                loadPosts();
+            } else {
+                // Sign in anonymously
+                auth.signInAnonymously().catch(console.error);
+            }
+        });
+
+        // Load posts
+        async function loadPosts() {
+            const snap = await db.collection("posts")
+                .orderBy("createdAt", "desc")
+                .get();
+
+            postsDiv.innerHTML = "";
+
+            snap.forEach(doc => {
+                const post = doc.data();
+                const postDiv = document.createElement("div");
+                postDiv.className = "post fade-in";
+                postDiv.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="post-avatar">${post.username?.[0]?.toUpperCase() || "A"}</div>
+                            <div class="post-username" onclick="openProfile('${post.userId}', '${post.username}')">
+                                @${post.username}
+                            </div>
+                        </div>
+                        <div class="post-time">${formatTime(post.createdAt?.toDate())}</div>
+                    </div>
+                    <div class="post-text">${post.text}</div>
+                `;
+                postsDiv.appendChild(postDiv);
+            });
+        }
+
+        // Send post
+        async function sendPost() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const text = postText.value.trim();
+            if (!text) return;
+
+            const username = user.isAnonymous ? "anon" + user.uid.slice(-4) : user.displayName || "user";
+
+            await db.collection("posts").add({
+                text: text,
+                userId: user.uid,
+                username: username,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            postText.value = "";
+            loadPosts();
+        }
+
+        // Получить количество постов пользователя
+        async function getUserPostsCount(uid){
+            const snap = await db.collection("posts")
+                .where("userId", "==", uid)
+                .get();
+            return snap.size;
+        }
+
+        // Open profile
+        async function openProfile(uid, username){
+            profileSheet.classList.add("show");
+
+            // header
+            profileName.textContent = "@"+username;
+            profileAvatar.textContent = username?.[0]?.toUpperCase() || "A";
+            profilePosts.innerHTML = "";
+
+            // Счётчик постов (отдельно, надёжно)
+            profilePostsCount.textContent = await getUserPostsCount(uid);
+
+            // Посты в профиле
+            const snap = await db.collection("posts")
+                .where("userId","==",uid)
+                .orderBy("createdAt","desc")
+                .get();
+
+            snap.forEach(d=>{
+                profilePosts.innerHTML+=`
+                    <div class="post fade">
+                        <div class="post-text">${d.data().text}</div>
+                    </div>`;
+            });
+        }
+
+        // Close profile
+        function closeProfile() {
+            profileSheet.classList.remove("show");
+        }
+
+        // Snapshot sheet functions
+        function openSnapshot(postId) {
+            // Здесь можно добавить логику для открытия снимка поста
+            console.log("Open snapshot:", postId);
+        }
+
+        function closeSnapshot() {
+            document.getElementById("snapshotSheet").classList.remove("show");
+        }
+
+        // Format time
+        function formatTime(date) {
+            if (!date) return "только что";
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return "только что";
+            if (minutes < 60) return `${minutes} мин назад`;
+            
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} ч назад`;
+            
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} д назад`;
+            
+            return date.toLocaleDateString("ru-RU");
+        }
+
+        // Logout
+        function logout() {
+            if (confirm("Выйти из аккаунта?")) {
+                auth.signOut();
+                location.reload();
+            }
+        }
+
+        // Enter to send
+        postText.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendPost();
+            }
+        });
+    </script>
 </body>
 </html>

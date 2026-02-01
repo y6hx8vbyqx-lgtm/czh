@@ -1105,31 +1105,30 @@ async function loadPosts(){
     let query = db.collection("posts").orderBy("createdAt","desc");
     
     if (currentFeed === 'subscriptions' && subscriptions.size > 0) {
-      // Загружаем посты только от подписок
-      const subscribedUsers = Array.from(subscriptions);
+      // Загружаем посты только от подписок - исправленный запрос
       feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов от подписок...</div>";
       
+      // Используем более простой запрос без составного индекса
+      const allPostsSnap = await db.collection("posts")
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get();
+      
       const allPosts = [];
-      
-      // Получаем посты от каждого подписанного пользователя
-      for (const userId of subscribedUsers) {
-        const userPostsSnap = await db.collection("posts")
-          .where("userId", "==", userId)
-          .orderBy("createdAt", "desc")
-          .limit(20)
-          .get();
-        
-        userPostsSnap.forEach(doc => {
-          allPosts.push({ id: doc.id, ...doc.data() });
-        });
-      }
-      
-      // Сортируем по дате
-      allPosts.sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-        return dateB - dateA;
+      allPostsSnap.forEach(doc => {
+        const postData = doc.data();
+        if (subscriptions.has(postData.userId)) {
+          allPosts.push({ id: doc.id, ...postData });
+        }
       });
+      
+      if (allPosts.length === 0) {
+        feed.innerHTML = `
+          <div style='text-align:center;color:var(--sub);padding:40px 0;'>
+            Нет новых постов от ваших подписок
+          </div>`;
+        return;
+      }
       
       displayPosts(allPosts, feed);
       return;
@@ -1162,7 +1161,21 @@ async function loadPosts(){
     
   } catch(error) {
     console.error("Ошибка при загрузке постов:", error);
-    feed.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка при загрузке постов: ${error.message}</div>`;
+    
+    // Более дружелюбное сообщение об ошибке
+    if (error.code === 'failed-precondition') {
+      feed.innerHTML = `
+        <div style='text-align:center;color:var(--danger);padding:40px 0;'>
+          Необходимо создать индекс в Firebase Console.<br><br>
+          <a href="https://console.firebase.google.com/v1/r/project/czhmass/firestore/indexes?create_composite=CkVwcm9qZWN0cy9jemhtYXNzL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9wb3N0cy9pbmRleGVzL18QARoKCgZ1c2VySWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC" 
+             target="_blank" 
+             style="color:#667eea;text-decoration:underline">
+            Создать индекс
+          </a>
+        </div>`;
+    } else {
+      feed.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка при загрузке постов: ${error.message}</div>`;
+    }
   }
 }
 

@@ -11,7 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
 <style>
-/* === ТВОЙ ДИЗАЙН, НЕ МЕНЯЛ === */
+/* ===== ORIGINAL DESIGN — НЕ МЕНЯЛ ===== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -44,20 +44,19 @@ body{
   background:var(--card);
   border-radius:18px;
   padding:10px 14px;
-  display:flex;justify-content:space-between;
+  display:flex;justify-content:space-between;align-items:center;
   z-index:999;
 }
-
 .logo{
   font-weight:700;
   background:var(--accent);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
-
+.nav-btns{display:flex;gap:8px}
 .nav-btn{
   background:#1c1c1e;border:none;color:#fff;
-  padding:8px 12px;border-radius:12px;
+  padding:8px 12px;border-radius:12px;font-size:16px;
 }
 
 .container{
@@ -129,7 +128,13 @@ body{
   font-size:18px;
 }
 .liked{color:#ff2d55}
+.trash{
+  margin-left:auto;
+  background:none;border:none;
+  color:var(--danger);font-size:18px;
+}
 
+/* SHEETS */
 .sheet{
   position:fixed;
   inset:0;
@@ -153,6 +158,20 @@ body{
   overflow:auto;
   padding:14px;
 }
+.sheet-footer{
+  padding:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:8px;
+}
+.sheet-footer input{
+  flex:1;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px;
+  color:#fff;
+}
 
 /* PROFILE */
 .profile-header{
@@ -171,8 +190,14 @@ body{
   font-size:28px;
   font-weight:700;
 }
-.profile-name{font-size:18px;font-weight:700}
-.profile-stats{color:var(--sub)}
+.profile-name{
+  font-size:18px;
+  font-weight:700;
+}
+.profile-stats{
+  color:var(--sub);
+  font-size:14px;
+}
 </style>
 </head>
 
@@ -182,7 +207,11 @@ body{
 
 <div class="navbar">
   <div class="logo">czhmass</div>
-  <button class="nav-btn" onclick="logout()">🚪</button>
+  <div class="nav-btns">
+    <button class="nav-btn" onclick="openMyProfile()">👤</button>
+    <button class="nav-btn" id="adminBtn" style="display:none">👑</button>
+    <button class="nav-btn" onclick="logout()">🚪</button>
+  </div>
 </div>
 
 <div class="container">
@@ -203,6 +232,10 @@ body{
     <button class="action" onclick="closeComments()">✕</button>
   </div>
   <div class="sheet-body" id="commentsBody"></div>
+  <div class="sheet-footer">
+    <input id="commentInput" placeholder="Комментарий">
+    <button class="action" onclick="addComment()">📤</button>
+  </div>
 </div>
 
 <!-- PROFILE -->
@@ -216,7 +249,9 @@ body{
       <div class="profile-avatar" id="profileAvatar">A</div>
       <div>
         <div class="profile-name" id="profileName">@anon</div>
-        <div class="profile-stats"><span id="profileCount">0</span> постов</div>
+        <div class="profile-stats">
+          <span id="profilePostsCount">0</span> постов
+        </div>
       </div>
     </div>
     <div id="profilePosts"></div>
@@ -232,21 +267,28 @@ firebase.initializeApp({
 const db=firebase.firestore();
 const auth=firebase.auth();
 
-let currentUser;
+let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
 
+/* AUTH */
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
+  const snap=await db.collection("users").doc(u.uid).get();
+  userData=snap.data()||{};
+  if(userData.isAdmin) adminBtn.style.display="block";
   loadPosts();
 });
 
+/* POSTS */
 async function loadPosts(){
   feed.innerHTML="";
   const snap=await db.collection("posts").orderBy("createdAt","desc").get();
   snap.forEach(doc=>{
-    const p=doc.data();postsCache.set(doc.id,p);
+    const p=doc.data();
+    postsCache.set(doc.id,p);
+    const liked=p.likedBy?.includes(currentUser.uid);
     feed.innerHTML+=`
     <div class="post fade">
       <div class="post-header">
@@ -254,9 +296,14 @@ async function loadPosts(){
         <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
           @${p.username}
         </div>
+        ${(p.userId===currentUser.uid||userData.isAdmin)?
+          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
       </div>
       <div class="post-text">${p.text}</div>
       <div class="post-actions">
+        <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
+          ${liked?"❤️":"🤍"} ${p.likes||0}
+        </button>
         <button class="action" onclick="openComments('${doc.id}')">
           💬 ${p.commentsCount||0}
         </button>
@@ -270,11 +317,32 @@ async function createPost(){
   await db.collection("posts").add({
     text:postText.value,
     userId:currentUser.uid,
-    username:currentUser.displayName||"anon",
+    username:userData.username||"anon",
     createdAt:new Date(),
+    likes:0,
+    likedBy:[],
     commentsCount:0
   });
   postText.value="";
+  loadPosts();
+}
+
+async function deletePost(id){
+  if(!confirm("Удалить пост?"))return;
+  await db.collection("posts").doc(id).delete();
+  loadPosts();
+}
+
+/* LIKES */
+async function toggleLike(id){
+  const p=postsCache.get(id);
+  const liked=p.likedBy?.includes(currentUser.uid);
+  await db.collection("posts").doc(id).update({
+    likes:firebase.firestore.FieldValue.increment(liked?-1:1),
+    likedBy:liked
+      ?firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      :firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+  });
   loadPosts();
 }
 
@@ -282,9 +350,45 @@ async function createPost(){
 function openComments(id){
   currentPostId=id;
   commentsSheet.classList.add("show");
+  loadComments();
 }
 function closeComments(){
   commentsSheet.classList.remove("show");
+}
+
+async function loadComments(){
+  commentsBody.innerHTML="";
+  const snap=await db.collection("posts").doc(currentPostId)
+    .collection("comments").orderBy("createdAt").get();
+  snap.forEach(d=>{
+    const c=d.data();
+    commentsBody.innerHTML+=`
+      <div class="post fade">
+        <div class="post-header">
+          <div class="avatar">${c.username?.[0]||"A"}</div>
+          <strong>@${c.username}</strong>
+        </div>
+        <div class="post-text">${c.text}</div>
+      </div>`;
+  });
+}
+
+async function addComment(){
+  if(!commentInput.value.trim())return;
+  await db.collection("posts").doc(currentPostId)
+    .collection("comments").add({
+      text:commentInput.value,
+      userId:currentUser.uid,
+      username:userData.username||"anon",
+      createdAt:new Date()
+    });
+  await db.collection("posts").doc(currentPostId)
+    .update({
+      commentsCount:firebase.firestore.FieldValue.increment(1)
+    });
+  commentInput.value="";
+  loadComments();
+  loadPosts();
 }
 
 /* PROFILE */
@@ -293,27 +397,32 @@ async function openProfile(uid,name){
   profileName.textContent="@"+name;
   profileAvatar.textContent=name?.[0]||"A";
   profilePosts.innerHTML="";
+  let count=0;
   const snap=await db.collection("posts")
     .where("userId","==",uid)
     .orderBy("createdAt","desc").get();
-  let c=0;
   snap.forEach(d=>{
-    c++;
+    count++;
     profilePosts.innerHTML+=`
       <div class="post fade">
         <div class="post-text">${d.data().text}</div>
       </div>`;
   });
-  profileCount.textContent=c;
+  profilePostsCount.textContent=count;
+}
+function openMyProfile(){
+  openProfile(currentUser.uid,userData.username||"anon");
 }
 function closeProfile(){
   profileSheet.classList.remove("show");
 }
 
+/* LOGOUT */
 function logout(){
   auth.signOut().then(()=>location.href="index.html");
 }
 
+/* TIME */
 setInterval(()=>{
   time.textContent=new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 },1000);

@@ -124,6 +124,7 @@ body{
   padding:12px;
   color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  resize:vertical;
 }
 .create button{
   width:100%;
@@ -134,6 +135,18 @@ body{
   background:var(--accent);
   color:#fff;
   font-weight:600;
+}
+.word-counter{
+  text-align:right;
+  font-size:12px;
+  color:var(--sub);
+  margin-top:4px;
+}
+.word-counter.warning{
+  color:#ff9500;
+}
+.word-counter.error{
+  color:#ff453a;
 }
 
 /* ПОИСК ПОЛЬЗОВАТЕЛЕЙ */
@@ -365,7 +378,7 @@ body{
 /* PROFILE SHEET */
 .profile-header{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   gap:16px;
   margin-bottom:20px;
 }
@@ -378,11 +391,13 @@ body{
   justify-content:center;
   font-size:28px;
   font-weight:700;
+  flex-shrink:0;
 }
 .profile-info{
   display:flex;
   flex-direction:column;
   gap:6px;
+  flex:1;
 }
 .profile-name{
   font-size:18px;
@@ -390,6 +405,7 @@ body{
   display:flex;
   align-items:center;
   gap:8px;
+  flex-wrap:wrap;
 }
 .change-name-btn{
   background:none;
@@ -407,6 +423,7 @@ body{
 .profile-stats{
   display:flex;
   gap:16px;
+  flex-wrap:wrap;
 }
 .profile-stat{
   display:flex;
@@ -434,6 +451,54 @@ body{
   color:var(--views);
 }
 
+/* Описание профиля */
+.profile-bio{
+  background:var(--card);
+  border-radius:18px;
+  padding:16px;
+  margin-top:16px;
+  margin-bottom:20px;
+  position:relative;
+}
+.profile-bio-text{
+  line-height:1.4;
+  word-break:break-word;
+  white-space:pre-wrap;
+}
+.profile-bio-empty{
+  color:var(--sub);
+  font-style:italic;
+  font-size:14px;
+}
+.profile-bio-edit-btn{
+  position:absolute;
+  top:12px;
+  right:12px;
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:14px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
+  transition:background 0.2s;
+}
+.profile-bio-edit-btn:hover{
+  background:rgba(255,255,255,0.1);
+}
+.bio-word-counter{
+  text-align:right;
+  font-size:12px;
+  color:var(--sub);
+  margin-top:8px;
+}
+.bio-word-counter.warning{
+  color:#ff9500;
+}
+.bio-word-counter.error{
+  color:#ff453a;
+}
+
 /* Уведомление */
 .notification{
   position:fixed;
@@ -457,7 +522,7 @@ body{
   transform:translateX(-50%) translateY(0);
 }
 
-/* Модальное окно для смены имени */
+/* Модальные окна */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -521,6 +586,23 @@ body{
   font-family:inherit;
 }
 .modal-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.modal-textarea{
+  width:100%;
+  min-height:120px;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:8px;
+  font-family:inherit;
+  resize:vertical;
+}
+.modal-textarea:focus{
   outline:none;
   border-color:var(--accent);
 }
@@ -595,7 +677,8 @@ body{
 <div class="container">
 
   <div class="create">
-    <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..."></textarea>
+    <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..." maxlength="500"></textarea>
+    <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
     <button onclick="createPost()">Опубликовать</button>
   </div>
 
@@ -624,6 +707,22 @@ body{
     <div class="modal-buttons">
       <button class="modal-btn secondary" onclick="closeChangeNameModal()">Отмена</button>
       <button class="modal-btn primary" onclick="changeUsername()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для редактирования описания -->
+<div class="modal-overlay" id="editBioModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Редактировать описание</div>
+      <button class="modal-close" onclick="closeEditBioModal()">✕</button>
+    </div>
+    <textarea class="modal-textarea" id="bioText" placeholder="Расскажите о себе... (до 50 слов)" maxlength="500"></textarea>
+    <div class="bio-word-counter" id="bioWordCounter">Слов: 0/50</div>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeEditBioModal()">Отмена</button>
+      <button class="modal-btn primary" onclick="saveBio()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -688,6 +787,17 @@ body{
         </div>
       </div>
     </div>
+    
+    <!-- Блок описания профиля -->
+    <div class="profile-bio" id="profileBio">
+      <button class="profile-bio-edit-btn" id="editBioBtn" onclick="openEditBioModal()" style="display:none">✏️</button>
+      <div id="profileBioText" class="profile-bio-text"></div>
+      <div id="profileBioEmpty" class="profile-bio-empty" style="display:none">
+        Пользователь еще не добавил описание...
+      </div>
+      <div class="bio-word-counter" id="profileBioWordCounter" style="display:none"></div>
+    </div>
+    
     <div id="profilePosts"></div>
   </div>
 </div>
@@ -717,12 +827,48 @@ auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
   await loadUserData();
-  await loadAdminUsers(); // Загружаем список админов
+  await loadAdminUsers();
   await loadSubscriptions();
   loadPosts();
   
+  // Инициализируем счетчик слов для поста
+  updateWordCounter('postText', 'postWordCounter', 50);
+  
   setTimeout(checkPostToScroll, 1000);
 });
+
+// Функция для подсчета слов
+function countWords(text) {
+  if (!text || !text.trim()) return 0;
+  return text.trim().split(/\s+/).length;
+}
+
+// Функция для обновления счетчика слов
+function updateWordCounter(textareaId, counterId, maxWords) {
+  const textarea = document.getElementById(textareaId);
+  const counter = document.getElementById(counterId);
+  
+  if (!textarea || !counter) return;
+  
+  function updateCounter() {
+    const text = textarea.value;
+    const wordCount = countWords(text);
+    
+    counter.textContent = `Слов: ${wordCount}/${maxWords}`;
+    
+    // Изменяем цвет в зависимости от количества слов
+    counter.classList.remove('warning', 'error');
+    if (wordCount > maxWords * 0.8 && wordCount <= maxWords) {
+      counter.classList.add('warning');
+    } else if (wordCount > maxWords) {
+      counter.classList.add('error');
+    }
+  }
+  
+  // Обновляем при загрузке и при каждом вводе
+  updateCounter();
+  textarea.addEventListener('input', updateCounter);
+}
 
 async function loadAdminUsers() {
   try {
@@ -777,7 +923,8 @@ async function loadUserData() {
         createdAt: new Date(),
         isAdmin: false,
         lastLogin: new Date(),
-        subscribers: []
+        subscribers: [],
+        bio: ""
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -883,6 +1030,102 @@ async function updateProfileSubscribersCount(userId) {
     }
   } catch(error) {
     console.error("Ошибка получения количества подписчиков:", error);
+  }
+}
+
+async function loadUserBio(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      const bio = user.bio || "";
+      const bioText = document.getElementById('profileBioText');
+      const bioEmpty = document.getElementById('profileBioEmpty');
+      const wordCounter = document.getElementById('profileBioWordCounter');
+      
+      if (bio.trim()) {
+        bioText.textContent = bio;
+        bioText.style.display = 'block';
+        bioEmpty.style.display = 'none';
+        
+        // Показываем счетчик слов
+        const wordCount = countWords(bio);
+        wordCounter.textContent = `Слов: ${wordCount}/50`;
+        wordCounter.style.display = 'block';
+        
+        // Изменяем цвет в зависимости от количества слов
+        wordCounter.classList.remove('warning', 'error');
+        if (wordCount > 40 && wordCount <= 50) {
+          wordCounter.classList.add('warning');
+        } else if (wordCount > 50) {
+          wordCounter.classList.add('error');
+        }
+      } else {
+        bioText.style.display = 'none';
+        bioEmpty.style.display = 'block';
+        wordCounter.style.display = 'none';
+      }
+      
+      // Показываем кнопку редактирования только для своего профиля
+      const editBtn = document.getElementById('editBioBtn');
+      if (userId === currentUser.uid) {
+        editBtn.style.display = 'block';
+      } else {
+        editBtn.style.display = 'none';
+      }
+    }
+  } catch(error) {
+    console.error("Ошибка загрузки описания:", error);
+  }
+}
+
+function openEditBioModal() {
+  const modal = document.getElementById('editBioModal');
+  const bioTextarea = document.getElementById('bioText');
+  
+  // Загружаем текущее описание
+  bioTextarea.value = userData.bio || "";
+  
+  // Инициализируем счетчик слов
+  updateWordCounter('bioText', 'bioWordCounter', 50);
+  
+  modal.classList.add('show');
+  bioTextarea.focus();
+  bioTextarea.setSelectionRange(bioTextarea.value.length, bioTextarea.value.length);
+}
+
+function closeEditBioModal() {
+  document.getElementById('editBioModal').classList.remove('show');
+}
+
+async function saveBio() {
+  const bioTextarea = document.getElementById('bioText');
+  const newBio = bioTextarea.value.trim();
+  const wordCount = countWords(newBio);
+  
+  if (wordCount > 50) {
+    showNotification("Описание не может превышать 50 слов!");
+    return;
+  }
+  
+  try {
+    await db.collection("users").doc(currentUser.uid).update({
+      bio: newBio
+    });
+    
+    userData.bio = newBio;
+    
+    // Обновляем отображение описания
+    if (currentProfileUserId === currentUser.uid) {
+      await loadUserBio(currentUser.uid);
+    }
+    
+    showNotification("Описание обновлено!");
+    closeEditBioModal();
+    
+  } catch(error) {
+    console.error("Ошибка при сохранении описания:", error);
+    showNotification("Ошибка при сохранении описания: " + error.message);
   }
 }
 
@@ -1112,10 +1355,11 @@ async function openSearchedProfile(userId, username) {
   
   updateProfileSubscribeButton(userId);
   await updateProfileSubscribersCount(userId);
+  await loadUserBio(userId);
   
   document.getElementById("profilePosts").innerHTML = `
     <div style="text-align:center;color:var(--sub);padding:40px 0;">
-      Загрузка профиля...
+      Загрузка постов...
     </div>`;
   
   await refreshProfilePosts(userId);
@@ -1289,8 +1533,16 @@ function displayPosts(posts, feed) {
 
 async function createPost(){
   const postText = document.getElementById("postText");
-  if(!postText.value.trim()){
+  const text = postText.value.trim();
+  
+  if(!text){
     showNotification("Напишите что-нибудь перед отправкой!");
+    return;
+  }
+  
+  const wordCount = countWords(text);
+  if (wordCount > 50) {
+    showNotification("Пост не может превышать 50 слов!");
     return;
   }
   
@@ -1298,7 +1550,7 @@ async function createPost(){
     const username = userData.username || "anon" + currentUser.uid.slice(-4);
     
     await db.collection("posts").add({
-      text: postText.value,
+      text: text,
       userId: currentUser.uid,
       username: username,
       createdAt: new Date(),
@@ -1309,6 +1561,7 @@ async function createPost(){
     });
     
     postText.value = "";
+    updateWordCounter('postText', 'postWordCounter', 50); // Сбросить счетчик
     showNotification("Пост опубликован!");
     loadPosts();
     
@@ -1466,8 +1719,16 @@ async function deleteComment(commentId) {
 
 async function addComment(){
   const commentInput = document.getElementById("commentInput");
-  if(!commentInput.value.trim()){
+  const text = commentInput.value.trim();
+  
+  if(!text){
     showNotification("Напишите комментарий!");
+    return;
+  }
+  
+  const wordCount = countWords(text);
+  if (wordCount > 50) {
+    showNotification("Комментарий не может превышать 50 слов!");
     return;
   }
   
@@ -1476,7 +1737,7 @@ async function addComment(){
     
     await db.collection("posts").doc(currentPostId)
       .collection("comments").add({
-        text: commentInput.value,
+        text: text,
         userId: currentUser.uid,
         username: username,
         createdAt: new Date()
@@ -1818,6 +2079,7 @@ async function openProfile(uid, name){
   
   updateProfileSubscribeButton(uid);
   await updateProfileSubscribersCount(uid);
+  await loadUserBio(uid);
   
   document.getElementById("profilePosts").innerHTML = `
     <div style="text-align:center;color:var(--sub);padding:40px 0;">
@@ -1871,6 +2133,14 @@ document.getElementById("newUsernameInput").addEventListener("keypress", (e) => 
   if (e.key === "Enter") {
     e.preventDefault();
     changeUsername();
+  }
+});
+
+// Enter для сохранения описания
+document.getElementById("bioText").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.ctrlKey) {
+    e.preventDefault();
+    saveBio();
   }
 });
 

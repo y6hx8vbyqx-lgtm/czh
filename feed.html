@@ -93,6 +93,80 @@ body{
   font-weight:600;
 }
 
+/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ */
+.search{
+  background:var(--card);
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+  position:relative;
+}
+.search-input{
+  width:100%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px 16px 14px 44px;
+  color:#fff;
+  font-size:16px;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+.search-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.search-icon{
+  position:absolute;
+  left:28px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--sub);
+  font-size:18px;
+}
+.search-results{
+  margin-top:12px;
+  max-height:200px;
+  overflow-y:auto;
+}
+.search-result{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  background:#1c1c1e;
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+.search-result:hover{
+  background:rgba(255,255,255,0.1);
+}
+.search-result:last-child{
+  margin-bottom:0;
+}
+.search-avatar{
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  background:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:16px;
+}
+.search-username{
+  font-weight:600;
+  font-size:15px;
+}
+.no-results{
+  text-align:center;
+  color:var(--sub);
+  padding:20px 0;
+  font-size:14px;
+}
+
 .post{
   background:var(--card);
   border-radius:22px;
@@ -411,6 +485,13 @@ body{
     <button onclick="createPost()">Опубликовать</button>
   </div>
 
+  <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
+  <div class="search">
+    <div class="search-icon">🔍</div>
+    <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
   <div id="feed"></div>
 
 </div>
@@ -502,6 +583,7 @@ let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
 let currentProfileUserId = null;
+let searchTimeout = null;
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -689,6 +771,89 @@ function setupViewTracking() {
   posts.forEach(post => {
     observer.observe(post);
   });
+}
+
+// Поиск пользователей
+async function searchUsers(searchTerm) {
+  const searchResults = document.getElementById('searchResults');
+  
+  if (!searchTerm.trim()) {
+    searchResults.innerHTML = '';
+    return;
+  }
+  
+  try {
+    // Показываем загрузку
+    searchResults.innerHTML = '<div class="no-results">Поиск...</div>';
+    
+    // Ищем пользователей по нику
+    const usersSnap = await db.collection("users")
+      .where("username", ">=", searchTerm.toLowerCase())
+      .where("username", "<=", searchTerm.toLowerCase() + '\uf8ff')
+      .limit(10)
+      .get();
+    
+    if (usersSnap.empty) {
+      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
+      return;
+    }
+    
+    let resultsHTML = '';
+    const currentUserId = currentUser.uid;
+    
+    usersSnap.forEach(doc => {
+      const user = doc.data();
+      const userId = doc.id;
+      
+      // Пропускаем текущего пользователя
+      if (userId === currentUserId) return;
+      
+      resultsHTML += `
+        <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
+          <div class="search-avatar">${user.username?.[0]?.toUpperCase() || "U"}</div>
+          <div class="search-username">@${user.username}</div>
+        </div>
+      `;
+    });
+    
+    if (!resultsHTML) {
+      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
+    } else {
+      searchResults.innerHTML = resultsHTML;
+    }
+    
+  } catch(error) {
+    console.error("Ошибка при поиске пользователей:", error);
+    searchResults.innerHTML = '<div class="no-results">Ошибка при поиске</div>';
+  }
+}
+
+// Открыть профиль найденного пользователя
+async function openSearchedProfile(userId, username) {
+  // Очищаем поиск
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+  
+  // Открываем профиль
+  currentProfileUserId = userId;
+  profileSheet.classList.add("show");
+  
+  // header
+  document.getElementById("profileName").textContent="@"+username;
+  document.getElementById("profileAvatar").textContent=username?.[0]||"A";
+  
+  // Скрываем кнопку смены имени (это не наш профиль)
+  const changeNameBtn = document.getElementById("changeNameBtn");
+  changeNameBtn.style.display = "none";
+  
+  // Сначала показываем загрузку
+  document.getElementById("profilePosts").innerHTML = `
+    <div style="text-align:center;color:var(--sub);padding:40px 0;">
+      Загрузка профиля...
+    </div>`;
+  
+  // Затем загружаем посты и статистику
+  await refreshProfilePosts(userId);
 }
 
 async function loadPosts(){
@@ -1309,6 +1474,25 @@ function logout(){
     });
   }
 }
+
+// Поиск при вводе текста
+document.getElementById("searchInput").addEventListener("input", function(e) {
+  const searchTerm = e.target.value.trim();
+  
+  // Очищаем предыдущий таймаут
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // Устанавливаем новый таймаут для поиска
+  if (searchTerm.length >= 2) {
+    searchTimeout = setTimeout(() => {
+      searchUsers(searchTerm);
+    }, 300); // Задержка 300мс для уменьшения запросов
+  } else {
+    document.getElementById("searchResults").innerHTML = '';
+  }
+});
 
 // Enter для отправки поста
 document.getElementById("postText").addEventListener("keydown", (e) => {

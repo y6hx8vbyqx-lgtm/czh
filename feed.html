@@ -19,6 +19,8 @@
   --sub:#9a9a9a;
   --accent:linear-gradient(135deg,#667eea,#764ba2);
   --danger:#ff453a;
+  --success:#30d158;
+  --views:#8e8e93;
 }
 *{box-sizing:border-box}
 body{
@@ -158,6 +160,7 @@ body{
   transform:scale(1.1);
 }
 .liked{color:#ff2d55}
+.viewed{color:var(--views)}
 .trash{
   margin-left:auto;
   background:none;border:none;
@@ -229,6 +232,22 @@ body{
 .profile-name{
   font-size:18px;
   font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.change-name-btn{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:14px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
+  transition:background 0.2s;
+}
+.change-name-btn:hover{
+  background:rgba(255,255,255,0.1);
 }
 .profile-stats{
   display:flex;
@@ -256,6 +275,9 @@ body{
 .posts-stat{
   color:#5ac8fa;
 }
+.views-stat{
+  color:var(--views);
+}
 
 /* Уведомление */
 .notification{
@@ -278,6 +300,89 @@ body{
 .notification.show{
   opacity:1;
   transform:translateX(-50%) translateY(0);
+}
+
+/* Модальное окно для смены имени */
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:3000;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.3s;
+}
+.modal-overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.modal{
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  width:90%;
+  max-width:400px;
+  transform:translateY(20px);
+  transition:transform 0.3s;
+}
+.modal-overlay.show .modal{
+  transform:translateY(0);
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+.modal-title{
+  font-size:20px;
+  font-weight:700;
+}
+.modal-close{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:20px;
+  cursor:pointer;
+}
+.modal-input{
+  width:100%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:16px;
+  font-family:inherit;
+}
+.modal-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.modal-buttons{
+  display:flex;
+  gap:12px;
+}
+.modal-btn{
+  flex:1;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-weight:600;
+  cursor:pointer;
+  font-size:16px;
+}
+.modal-btn.primary{
+  background:var(--accent);
+  color:white;
+}
+.modal-btn.secondary{
+  background:rgba(255,255,255,0.1);
+  color:white;
 }
 </style>
 </head>
@@ -313,6 +418,21 @@ body{
 <!-- Уведомление -->
 <div class="notification" id="notification"></div>
 
+<!-- Модальное окно для смены имени -->
+<div class="modal-overlay" id="changeNameModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Сменить имя</div>
+      <button class="modal-close" onclick="closeChangeNameModal()">✕</button>
+    </div>
+    <input type="text" class="modal-input" id="newUsernameInput" placeholder="Новое имя (без @)" maxlength="20">
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeChangeNameModal()">Отмена</button>
+      <button class="modal-btn primary" onclick="changeUsername()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMENTS -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
@@ -336,7 +456,10 @@ body{
     <div class="profile-header">
       <div class="profile-avatar" id="profileAvatar">A</div>
       <div class="profile-info">
-        <div class="profile-name" id="profileName">@anon</div>
+        <div class="profile-name">
+          <span id="profileName">@anon</span>
+          <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
+        </div>
         <div class="profile-stats">
           <div class="profile-stat">
             <div class="profile-stat-value posts-stat">
@@ -351,6 +474,13 @@ body{
               <span id="profileLikesCount">0</span>
             </div>
             <div class="profile-stat-label">лайков</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value views-stat">
+              <span>👁️</span>
+              <span id="profileViewsCount">0</span>
+            </div>
+            <div class="profile-stat-label">просмотров</div>
           </div>
         </div>
       </div>
@@ -372,18 +502,44 @@ let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
 let currentProfileUserId = null;
+let viewedPosts = new Set(); // Для отслеживания просмотренных постов
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
-  const snap=await db.collection("users").doc(u.uid).get();
-  userData=snap.data()||{};
-  if(userData.isAdmin) adminBtn.style.display="block";
+  await loadUserData();
   loadPosts();
   
   // Проверяем, нужно ли прокрутить к определенному посту
   setTimeout(checkPostToScroll, 1000);
 });
+
+// Загружаем данные пользователя
+async function loadUserData() {
+  const snap = await db.collection("users").doc(currentUser.uid).get();
+  if (!snap.exists) {
+    // Если документ не существует, создаем его
+    userData = {
+      username: "user" + currentUser.uid.slice(-6),
+      email: currentUser.email || "не указан",
+      createdAt: new Date(),
+      isAdmin: false,
+      lastLogin: new Date()
+    };
+    await db.collection("users").doc(currentUser.uid).set(userData);
+  } else {
+    userData = snap.data();
+  }
+  
+  // Обновляем время последнего входа
+  await db.collection("users").doc(currentUser.uid).update({
+    lastLogin: new Date()
+  });
+  
+  if(userData.isAdmin) {
+    document.getElementById("adminBtn").style.display = "block";
+  }
+}
 
 // Проверяем, нужно ли прокрутить к посту из профиля
 function checkPostToScroll() {
@@ -474,6 +630,55 @@ function formatFullDateTime(date) {
   });
 }
 
+// Функция для увеличения просмотров поста
+async function incrementPostViews(postId) {
+  // Проверяем, не просматривал ли пользователь уже этот пост
+  if (viewedPosts.has(postId)) return;
+  
+  try {
+    // Увеличиваем счетчик просмотров
+    await db.collection("posts").doc(postId).update({
+      views: firebase.firestore.FieldValue.increment(1)
+    });
+    
+    // Добавляем пост в просмотренные
+    viewedPosts.add(postId);
+    
+    // Обновляем кэш
+    if (postsCache.has(postId)) {
+      const post = postsCache.get(postId);
+      post.views = (post.views || 0) + 1;
+    }
+    
+  } catch(error) {
+    console.error("Ошибка при увеличении просмотров:", error);
+  }
+}
+
+// Проверка видимости поста для подсчета просмотров
+function setupViewTracking() {
+  const posts = document.querySelectorAll('.post');
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Находим ID поста
+        const postId = entry.target.id.replace('post-', '');
+        if (postId) {
+          incrementPostViews(postId);
+        }
+      }
+    });
+  }, {
+    threshold: 0.5, // Пост считается просмотренным, когда 50% видно
+    rootMargin: '0px 0px -50px 0px' // Игнорируем скролл внизу
+  });
+  
+  posts.forEach(post => {
+    observer.observe(post);
+  });
+}
+
 async function loadPosts(){
   const feed = document.getElementById("feed");
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
@@ -527,9 +732,15 @@ async function loadPosts(){
           <button class="action" onclick="openComments('${doc.id}')">
             💬 ${p.commentsCount||0}
           </button>
+          <button class="action viewed" title="Просмотры">
+            👁️ ${p.views||0}
+          </button>
         </div>
       </div>`;
     });
+    
+    // Настраиваем отслеживание просмотров
+    setTimeout(setupViewTracking, 100);
     
     // Проверяем еще раз после загрузки
     setTimeout(checkPostToScroll, 100);
@@ -556,6 +767,7 @@ async function createPost(){
       username: username,
       createdAt: new Date(),
       likes: 0,
+      views: 0, // Начальное значение просмотров
       likedBy: [],
       commentsCount: 0
     });
@@ -731,6 +943,26 @@ async function getUserLikesCount(uid) {
   }
 }
 
+// Функция для получения общего количества просмотров пользователя
+async function getUserViewsCount(uid) {
+  try {
+    const snap = await db.collection("posts")
+      .where("userId", "==", uid)
+      .get();
+    
+    let totalViews = 0;
+    snap.forEach(doc => {
+      const post = doc.data();
+      totalViews += (post.views || 0);
+    });
+    
+    return totalViews;
+  } catch(error) {
+    console.error("Ошибка при получении просмотров пользователя:", error);
+    return 0;
+  }
+}
+
 // Функция для получения всех постов пользователя (без сложного запроса)
 async function getUserPosts(uid) {
   try {
@@ -789,6 +1021,7 @@ async function refreshProfilePosts(uid) {
   const profilePosts = document.getElementById("profilePosts");
   const profilePostsCount = document.getElementById("profilePostsCount");
   const profileLikesCount = document.getElementById("profileLikesCount");
+  const profileViewsCount = document.getElementById("profileViewsCount");
   
   if (!profilePosts) return;
   
@@ -800,6 +1033,10 @@ async function refreshProfilePosts(uid) {
     // Получаем количество лайков
     const likesCount = await getUserLikesCount(uid);
     profileLikesCount.textContent = likesCount;
+    
+    // Получаем количество просмотров
+    const viewsCount = await getUserViewsCount(uid);
+    profileViewsCount.textContent = viewsCount;
     
     // Очищаем контейнер
     profilePosts.innerHTML = "";
@@ -841,6 +1078,7 @@ async function refreshProfilePosts(uid) {
             <span>${timeAgo}</span>
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
+            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
           </div>
           ${canDelete ? 
             `<button class="trash" style="position:absolute;top:16px;right:16px;" 
@@ -876,9 +1114,11 @@ async function deletePostFromProfile(postId, userId) {
     // Обновляем счетчики через запрос к Firestore
     const postsCount = await getUserPostsCount(userId);
     const likesCount = await getUserLikesCount(userId);
+    const viewsCount = await getUserViewsCount(userId);
     
     document.getElementById("profilePostsCount").textContent = postsCount;
     document.getElementById("profileLikesCount").textContent = likesCount;
+    document.getElementById("profileViewsCount").textContent = viewsCount;
     
     // Обновляем основную ленту
     loadPosts();
@@ -890,6 +1130,123 @@ async function deletePostFromProfile(postId, userId) {
   }
 }
 
+// Обновляем имя пользователя во всех его постах
+async function updateUsernameInAllPosts(userId, newUsername) {
+  try {
+    // Находим все посты пользователя
+    const postsSnap = await db.collection("posts")
+      .where("userId", "==", userId)
+      .get();
+    
+    // Обновляем каждый пост
+    const batch = db.batch();
+    postsSnap.forEach(doc => {
+      batch.update(doc.ref, { username: newUsername });
+    });
+    
+    // Находим все комментарии пользователя
+    const allPostsSnap = await db.collection("posts").get();
+    allPostsSnap.forEach(postDoc => {
+      const commentsRef = postDoc.ref.collection("comments")
+        .where("userId", "==", userId);
+      
+      commentsRef.get().then(commentsSnap => {
+        commentsSnap.forEach(commentDoc => {
+          batch.update(commentDoc.ref, { username: newUsername });
+        });
+      });
+    });
+    
+    await batch.commit();
+    return true;
+  } catch(error) {
+    console.error("Ошибка при обновлении имени в постах:", error);
+    return false;
+  }
+}
+
+// Открыть модальное окно для смены имени
+function openChangeNameModal() {
+  const modal = document.getElementById('changeNameModal');
+  const input = document.getElementById('newUsernameInput');
+  
+  // Показываем текущее имя (без @)
+  const currentName = userData.username || '';
+  input.value = currentName.replace('@', '');
+  
+  modal.classList.add('show');
+  input.focus();
+}
+
+// Закрыть модальное окно
+function closeChangeNameModal() {
+  document.getElementById('changeNameModal').classList.remove('show');
+}
+
+// Сменить имя пользователя
+async function changeUsername() {
+  const input = document.getElementById('newUsernameInput');
+  const newUsername = input.value.trim();
+  
+  if (!newUsername) {
+    showNotification("Введите новое имя!");
+    return;
+  }
+  
+  if (newUsername.length < 3) {
+    showNotification("Имя должно быть не менее 3 символов!");
+    return;
+  }
+  
+  if (newUsername.length > 20) {
+    showNotification("Имя должно быть не более 20 символов!");
+    return;
+  }
+  
+  if (!/^[a-zA-Zа-яА-Я0-9_]+$/.test(newUsername)) {
+    showNotification("Имя может содержать только буквы, цифры и подчеркивание!");
+    return;
+  }
+  
+  try {
+    // Обновляем в Firestore
+    await db.collection("users").doc(currentUser.uid).update({
+      username: newUsername
+    });
+    
+    // Обновляем локальные данные
+    userData.username = newUsername;
+    
+    // Обновляем имя во всех постах и комментариях
+    const updateSuccess = await updateUsernameInAllPosts(currentUser.uid, newUsername);
+    
+    if (updateSuccess) {
+      showNotification("Имя успешно изменено! Обновляю данные...");
+      
+      // Обновляем текущий профиль, если он открыт
+      if (currentProfileUserId === currentUser.uid) {
+        document.getElementById("profileName").textContent = "@" + newUsername;
+        document.getElementById("profileAvatar").textContent = newUsername[0]?.toUpperCase() || "U";
+      }
+      
+      // Закрываем модальное окно
+      closeChangeNameModal();
+      
+      // Перезагружаем посты, чтобы увидеть изменения
+      setTimeout(() => {
+        loadPosts();
+      }, 1000);
+      
+    } else {
+      showNotification("Имя изменено, но возникла ошибка при обновлении старых постов");
+    }
+    
+  } catch(error) {
+    console.error("Ошибка при смене имени:", error);
+    showNotification("Ошибка при смене имени: " + error.message);
+  }
+}
+
 async function openProfile(uid, name){
   currentProfileUserId = uid;
   profileSheet.classList.add("show");
@@ -897,6 +1254,14 @@ async function openProfile(uid, name){
   // header
   document.getElementById("profileName").textContent="@"+name;
   document.getElementById("profileAvatar").textContent=name?.[0]||"A";
+  
+  // Показываем/скрываем кнопку смены имени (только для своего профиля)
+  const changeNameBtn = document.getElementById("changeNameBtn");
+  if (uid === currentUser.uid) {
+    changeNameBtn.style.display = "inline-block";
+  } else {
+    changeNameBtn.style.display = "none";
+  }
   
   // Сначала показываем загрузку
   document.getElementById("profilePosts").innerHTML = `
@@ -926,6 +1291,14 @@ document.getElementById("postText").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     createPost();
+  }
+});
+
+// Enter для смены имени
+document.getElementById("newUsernameInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    changeUsername();
   }
 });
 

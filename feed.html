@@ -433,8 +433,9 @@ async function refreshProfilePosts(uid) {
       .orderBy("createdAt", "desc")
       .get();
     
-    // Обновляем счетчик
-    profilePostsCountElement.textContent = snap.size;
+    // Обновляем счетчик - используем функцию getUserPostsCount для точности
+    const count = await getUserPostsCount(uid);
+    profilePostsCountElement.textContent = count;
     
     // Очищаем контейнер
     profilePostsContainer.innerHTML = "";
@@ -454,21 +455,32 @@ async function refreshProfilePosts(uid) {
       const canDelete = p.userId === currentUser.uid || userData.isAdmin;
       
       // Форматируем дату
-      const postDate = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-      const formattedDate = postDate.toLocaleDateString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric"
-      });
-      const formattedTime = postDate.toLocaleTimeString("ru-RU", {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+      let formattedDate = "";
+      let formattedTime = "";
+      
+      try {
+        if (p.createdAt) {
+          const postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+          formattedDate = postDate.toLocaleDateString("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          });
+          formattedTime = postDate.toLocaleTimeString("ru-RU", {
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        }
+      } catch (dateError) {
+        console.log("Ошибка форматирования даты:", dateError);
+        formattedDate = "Дата неизвестна";
+        formattedTime = "";
+      }
       
       profilePostsContainer.innerHTML += `
         <div class="post fade" id="profile-post-${doc.id}">
           <div class="post-text">${p.text}</div>
-          <div class="post-time">${formattedDate}, ${formattedTime}</div>
+          ${formattedDate ? `<div class="post-time">${formattedDate}, ${formattedTime}</div>` : ""}
           ${canDelete ? 
             `<button class="trash" style="position:absolute;top:16px;right:16px;" 
                      onclick="deletePostFromProfile('${doc.id}', '${uid}')">🗑</button>` : 
@@ -480,7 +492,7 @@ async function refreshProfilePosts(uid) {
     console.error("Ошибка при загрузке постов профиля:", error);
     profilePostsContainer.innerHTML = `
       <div style="text-align:center;color:var(--danger);padding:40px 0;">
-        Ошибка при загрузке постов
+        Ошибка при загрузке постов: ${error.message}
       </div>`;
   }
 }
@@ -498,17 +510,17 @@ async function deletePostFromProfile(postId, userId) {
       postElement.remove();
     }
     
-    // Обновляем счетчик
+    // Обновляем счетчик через запрос к Firestore
     const profilePostsCountElement = document.getElementById("profilePostsCount");
-    const currentCount = parseInt(profilePostsCountElement.textContent) || 0;
-    profilePostsCountElement.textContent = Math.max(0, currentCount - 1);
+    const count = await getUserPostsCount(userId);
+    profilePostsCountElement.textContent = count;
     
     // Обновляем основную ленту
     loadPosts();
     
   } catch(error) {
     console.error("Ошибка при удалении поста:", error);
-    alert("Не удалось удалить пост");
+    alert("Не удалось удалить пост: " + error.message);
   }
 }
 
@@ -519,7 +531,13 @@ async function openProfile(uid, name){
   profileName.textContent="@"+name;
   profileAvatar.textContent=name?.[0]||"A";
   
-  // Обновляем посты в профиле
+  // Сначала показываем загрузку
+  document.getElementById("profilePosts").innerHTML = `
+    <div style="text-align:center;color:var(--sub);padding:40px 0;">
+      Загрузка постов...
+    </div>`;
+  
+  // Затем загружаем посты
   await refreshProfilePosts(uid);
 }
 

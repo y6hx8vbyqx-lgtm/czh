@@ -60,10 +60,53 @@ body{
   padding:8px 12px;border-radius:12px;font-size:16px;
 }
 
+/* Таб бар (iOS стиль) */
+.tab-bar{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:92%;
+  max-width:430px;
+  height:60px;
+  background:var(--card);
+  border-radius:20px;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  z-index:998;
+  padding:0 20px;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+}
+.tab-btn{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:24px;
+  cursor:pointer;
+  padding:10px;
+  transition:all 0.3s;
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.tab-btn.active{
+  color:#fff;
+  transform:scale(1.1);
+}
+.tab-label{
+  font-size:12px;
+  margin-top:2px;
+  text-align:center;
+}
+
 .container{
   max-width:480px;
   margin:auto;
-  padding:130px 14px 80px;
+  padding:130px 14px 100px;
 }
 
 .create{
@@ -250,6 +293,27 @@ body{
   color:var(--danger);font-size:18px;
   cursor:pointer;
   padding:0;
+}
+
+/* Кнопка подписки */
+.subscribe-btn{
+  background:var(--accent);
+  border:none;
+  color:#fff;
+  padding:6px 12px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  white-space:nowrap;
+}
+.subscribe-btn:hover{
+  opacity:0.9;
+}
+.subscribe-btn.subscribed{
+  background:var(--sub);
+  color:var(--bg);
 }
 
 .sheet{
@@ -499,10 +563,27 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
+    <button class="nav-btn" id="subscriptionsBtn" style="display:none">📋</button>
     <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
+</div>
+
+<!-- Таб бар для переключения ленты -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchFeed('all')">
+    <div>
+      <div>📄</div>
+      <div class="tab-label">Все посты</div>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchFeed('subscriptions')">
+    <div>
+      <div>👥</div>
+      <div class="tab-label">Подписки</div>
+    </div>
+  </button>
 </div>
 
 <div class="container">
@@ -566,6 +647,7 @@ body{
       <div class="profile-info">
         <div class="profile-name">
           <span id="profileName">@anon</span>
+          <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
         </div>
         <div class="profile-stats">
@@ -590,6 +672,13 @@ body{
             </div>
             <div class="profile-stat-label">просмотров</div>
           </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" style="color:#5ac8fa">
+              <span>👥</span>
+              <span id="profileSubscribersCount">0</span>
+            </div>
+            <div class="profile-stat-label">подписчиков</div>
+          </div>
         </div>
       </div>
     </div>
@@ -611,6 +700,8 @@ let postsCache=new Map();
 let currentPostId=null;
 let currentProfileUserId = null;
 let searchTimeout = null;
+let currentFeed = 'all'; // 'all' или 'subscriptions'
+let subscriptions = new Set();
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -619,6 +710,7 @@ auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
   await loadUserData();
+  await loadSubscriptions();
   loadPosts();
   
   setTimeout(checkPostToScroll, 1000);
@@ -661,7 +753,8 @@ async function loadUserData() {
         email: currentUser.email || "не указан",
         createdAt: new Date(),
         isAdmin: false,
-        lastLogin: new Date()
+        lastLogin: new Date(),
+        subscribers: []
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -675,9 +768,121 @@ async function loadUserData() {
     if(userData.isAdmin) {
       document.getElementById("adminBtn").style.display = "block";
     }
+    
+    // Показываем кнопку подписок
+    document.getElementById("subscriptionsBtn").style.display = "block";
+    
   } catch(error) {
     console.error("Ошибка загрузки данных:", error);
   }
+}
+
+async function loadSubscriptions() {
+  try {
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      subscriptions = new Set(userData.subscriptions || []);
+    }
+  } catch(error) {
+    console.error("Ошибка загрузки подписок:", error);
+  }
+}
+
+async function toggleSubscribe(userId, username) {
+  try {
+    const isSubscribed = subscriptions.has(userId);
+    
+    if (isSubscribed) {
+      // Отписываемся
+      await db.collection("users").doc(currentUser.uid).update({
+        subscriptions: firebase.firestore.FieldValue.arrayRemove(userId)
+      });
+      
+      await db.collection("users").doc(userId).update({
+        subscribers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      });
+      
+      subscriptions.delete(userId);
+      showNotification(`Вы отписались от @${username}`);
+    } else {
+      // Подписываемся
+      await db.collection("users").doc(currentUser.uid).update({
+        subscriptions: firebase.firestore.FieldValue.arrayUnion(userId)
+      });
+      
+      await db.collection("users").doc(userId).update({
+        subscribers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      
+      subscriptions.add(userId);
+      showNotification(`Вы подписались на @${username}`);
+    }
+    
+    // Обновляем UI
+    if (currentProfileUserId === userId) {
+      updateProfileSubscribeButton(userId);
+      updateProfileSubscribersCount(userId);
+    }
+    
+    // Перезагружаем посты, если мы в ленте подписок
+    if (currentFeed === 'subscriptions') {
+      loadPosts();
+    }
+    
+    return !isSubscribed;
+  } catch(error) {
+    console.error("Ошибка при подписке:", error);
+    showNotification("Ошибка при изменении подписки: " + error.message);
+    return false;
+  }
+}
+
+function updateProfileSubscribeButton(userId) {
+  const button = document.getElementById('profileSubscribeBtn');
+  if (!button) return;
+  
+  if (userId === currentUser.uid) {
+    button.style.display = 'none';
+  } else {
+    button.style.display = 'inline-block';
+    const isSubscribed = subscriptions.has(userId);
+    button.textContent = isSubscribed ? 'В подписках' : 'Подписаться';
+    button.className = isSubscribed ? 'subscribe-btn subscribed' : 'subscribe-btn';
+    button.onclick = () => toggleSubscribe(userId, document.getElementById('profileName').textContent.replace('@', ''));
+  }
+}
+
+async function updateProfileSubscribersCount(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      const count = (user.subscribers || []).length;
+      document.getElementById('profileSubscribersCount').textContent = count;
+    }
+  } catch(error) {
+    console.error("Ошибка получения количества подписчиков:", error);
+  }
+}
+
+function switchFeed(feedType) {
+  currentFeed = feedType;
+  
+  // Обновляем активную кнопку
+  const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
+  const subsTab = document.querySelector('.tab-bar .tab-btn:nth-child(2)');
+  
+  if (feedType === 'all') {
+    allTab.classList.add('active');
+    subsTab.classList.remove('active');
+  } else {
+    allTab.classList.remove('active');
+    subsTab.classList.add('active');
+  }
+  
+  // Загружаем посты
+  loadPosts();
 }
 
 function checkPostToScroll() {
@@ -836,10 +1041,17 @@ async function searchUsers(searchTerm) {
       
       if (userId === currentUserId) return;
       
+      const isSubscribed = subscriptions.has(userId);
+      
       resultsHTML += `
         <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
           <div class="search-avatar">${user.username?.[0]?.toUpperCase() || "U"}</div>
           <div class="search-username">@${user.username}</div>
+          <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
+                  onclick="event.stopPropagation(); toggleSubscribe('${userId}', '${user.username}')"
+                  style="margin-left:auto">
+            ${isSubscribed ? 'В подписках' : 'Подписаться'}
+          </button>
         </div>
       `;
     });
@@ -868,7 +1080,14 @@ async function openSearchedProfile(userId, username) {
   document.getElementById("profileAvatar").textContent = username?.[0]||"A";
   
   const changeNameBtn = document.getElementById("changeNameBtn");
-  changeNameBtn.style.display = "none";
+  if (userId === currentUser.uid) {
+    changeNameBtn.style.display = "inline-block";
+  } else {
+    changeNameBtn.style.display = "none";
+  }
+  
+  updateProfileSubscribeButton(userId);
+  await updateProfileSubscribersCount(userId);
   
   document.getElementById("profilePosts").innerHTML = `
     <div style="text-align:center;color:var(--sub);padding:40px 0;">
@@ -883,89 +1102,150 @@ async function loadPosts(){
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
   
   try {
-    const snap = await db.collection("posts").orderBy("createdAt","desc").get();
+    let query = db.collection("posts").orderBy("createdAt","desc");
+    
+    if (currentFeed === 'subscriptions' && subscriptions.size > 0) {
+      // Загружаем посты только от подписок
+      const subscribedUsers = Array.from(subscriptions);
+      feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов от подписок...</div>";
+      
+      const allPosts = [];
+      
+      // Получаем посты от каждого подписанного пользователя
+      for (const userId of subscribedUsers) {
+        const userPostsSnap = await db.collection("posts")
+          .where("userId", "==", userId)
+          .orderBy("createdAt", "desc")
+          .limit(20)
+          .get();
+        
+        userPostsSnap.forEach(doc => {
+          allPosts.push({ id: doc.id, ...doc.data() });
+        });
+      }
+      
+      // Сортируем по дате
+      allPosts.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      
+      displayPosts(allPosts, feed);
+      return;
+      
+    } else if (currentFeed === 'subscriptions') {
+      // Нет подписок
+      feed.innerHTML = `
+        <div style='text-align:center;color:var(--sub);padding:40px 0;'>
+          Вы пока ни на кого не подписаны<br><br>
+          Подпишитесь на интересных пользователей,<br>
+          чтобы видеть их посты здесь!
+        </div>`;
+      return;
+    }
+    
+    // Для ленты "Все посты"
+    const snap = await query.get();
     
     if (snap.empty) {
       feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Пока нет постов. Будьте первым!</div>";
       return;
     }
     
-    feed.innerHTML = "";
-    
-    let lastPostDate = null;
-    
-    snap.forEach(doc=>{
-      const p = doc.data();
-      postsCache.set(doc.id, p);
-      
-      let postDate = null;
-      try {
-        postDate = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-      } catch(e){}
-      
-      if (lastPostDate && postDate) {
-        const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
-        if (dividerLabel) {
-          feed.innerHTML += `
-            <div class="post fade" style="text-align:center;color:var(--sub);font-size:14px">
-              ${dividerLabel}
-            </div>
-          `;
-        }
-      }
-      
-      if (postDate) lastPostDate = postDate;
-      
-      const liked = p.likedBy?.includes(currentUser.uid);
-      
-      let timeAgo = "только что";
-      let fullDateTime = "";
-      try {
-        if (p.createdAt) {
-          const postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-          timeAgo = formatTimeAgo(postDate);
-          fullDateTime = formatFullDateTime(postDate);
-        }
-      } catch (dateError) {
-        console.log("Ошибка форматирования даты:", dateError);
-      }
-      
-      // Правильно формируем HTML для поста
-      feed.innerHTML += `
-      <div class="post fade" id="post-${doc.id}">
-        <div class="post-header">
-          <div class="avatar">${p.username?.[0]||"A"}</div>
-          <div class="post-user-info">
-            <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
-              @${p.username}
-            </div>
-            <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
-          </div>
-          ${(p.userId===currentUser.uid||userData?.isAdmin)?
-            `<button class="trash" onclick="deletePost('${doc.id}', '${p.userId}')">🗑</button>`:""}
-        </div>
-        <div class="post-text">${p.text}</div>
-        <div class="post-actions">
-          <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-            ${liked?"❤️":"🤍"} <span id="likes-${doc.id}">${p.likes||0}</span>
-          </button>
-          <button class="action" onclick="openComments('${doc.id}')">
-            💬 ${p.commentsCount||0}
-          </button>
-          <button class="action viewed" title="Просмотры">
-            👁️ ${p.views||0}
-          </button>
-        </div>
-      </div>`;
+    const posts = [];
+    snap.forEach(doc => {
+      posts.push({ id: doc.id, ...doc.data() });
     });
     
-    setTimeout(setupViewTracking, 500);
-    setTimeout(checkPostToScroll, 100);
+    displayPosts(posts, feed);
     
   } catch(error) {
     console.error("Ошибка при загрузке постов:", error);
     feed.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка при загрузке постов: ${error.message}</div>`;
   }
+}
+
+function displayPosts(posts, feed) {
+  feed.innerHTML = "";
+  
+  let lastPostDate = null;
+  
+  posts.forEach(postData => {
+    const p = postData;
+    const postId = postData.id;
+    postsCache.set(postId, p);
+    
+    let postDate = null;
+    try {
+      postDate = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+    } catch(e){}
+    
+    if (lastPostDate && postDate) {
+      const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
+      if (dividerLabel) {
+        feed.innerHTML += `
+          <div class="post fade" style="text-align:center;color:var(--sub);font-size:14px">
+            ${dividerLabel}
+          </div>
+        `;
+      }
+    }
+    
+    if (postDate) lastPostDate = postDate;
+    
+    const liked = p.likedBy?.includes(currentUser.uid);
+    const isSubscribed = subscriptions.has(p.userId);
+    
+    let timeAgo = "только что";
+    let fullDateTime = "";
+    try {
+      if (p.createdAt) {
+        const postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+        timeAgo = formatTimeAgo(postDate);
+        fullDateTime = formatFullDateTime(postDate);
+      }
+    } catch (dateError) {
+      console.log("Ошибка форматирования даты:", dateError);
+    }
+    
+    // Правильно формируем HTML для поста
+    feed.innerHTML += `
+    <div class="post fade" id="post-${postId}">
+      <div class="post-header">
+        <div class="avatar">${p.username?.[0]||"A"}</div>
+        <div class="post-user-info">
+          <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
+            @${p.username}
+          </div>
+          <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+        </div>
+        ${p.userId !== currentUser.uid ? 
+          `<button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
+                  onclick="toggleSubscribe('${p.userId}', '${p.username}')"
+                  style="margin-right:8px">
+            ${isSubscribed ? 'В подписках' : 'Подписаться'}
+          </button>` : ''}
+        ${(p.userId===currentUser.uid||userData?.isAdmin)?
+          `<button class="trash" onclick="deletePost('${postId}', '${p.userId}')">🗑</button>`:""}
+      </div>
+      <div class="post-text">${p.text}</div>
+      <div class="post-actions">
+        <button class="action ${liked?"liked":""}" onclick="toggleLike('${postId}')">
+          ${liked?"❤️":"🤍"} <span id="likes-${postId}">${p.likes||0}</span>
+        </button>
+        <button class="action" onclick="openComments('${postId}')">
+          💬 ${p.commentsCount||0}
+        </button>
+        <button class="action viewed" title="Просмотры">
+          👁️ ${p.views||0}
+        </button>
+      </div>
+    </div>`;
+  });
+  
+  setTimeout(setupViewTracking, 500);
+  setTimeout(checkPostToScroll, 100);
 }
 
 async function createPost(){
@@ -1495,6 +1775,9 @@ async function openProfile(uid, name){
   } else {
     changeNameBtn.style.display = "none";
   }
+  
+  updateProfileSubscribeButton(uid);
+  await updateProfileSubscribersCount(uid);
   
   document.getElementById("profilePosts").innerHTML = `
     <div style="text-align:center;color:var(--sub);padding:40px 0;">

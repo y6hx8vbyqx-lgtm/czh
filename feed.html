@@ -624,6 +624,34 @@ auth.onAuthStateChanged(async u=>{
   setTimeout(checkPostToScroll, 1000);
 });
 
+function getTimeDividerLabel(prevDate, currentDate) {
+  if (!prevDate || !currentDate) return null;
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const prevDay = new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate());
+  const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  
+  if (currentDay.getTime() !== prevDay.getTime()) {
+    if (currentDay.getTime() === today.getTime()) {
+      return "Сегодня";
+    } else if (currentDay.getTime() === yesterday.getTime()) {
+      return "Вчера";
+    } else {
+      return currentDate.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+    }
+  }
+  
+  return null;
+}
+
 async function loadUserData() {
   try {
     const snap = await db.collection("users").doc(currentUser.uid).get();
@@ -864,9 +892,30 @@ async function loadPosts(){
     
     feed.innerHTML = "";
     
+    let lastPostDate = null;
+    
     snap.forEach(doc=>{
-      const p=doc.data();
+      const p = doc.data();
       postsCache.set(doc.id, p);
+      
+      let postDate = null;
+      try {
+        postDate = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+      } catch(e){}
+      
+      if (lastPostDate && postDate) {
+        const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
+        if (dividerLabel) {
+          feed.innerHTML += `
+            <div class="post fade" style="text-align:center;color:var(--sub);font-size:14px">
+              ${dividerLabel}
+            </div>
+          `;
+        }
+      }
+      
+      if (postDate) lastPostDate = postDate;
+      
       const liked = p.likedBy?.includes(currentUser.uid);
       
       let timeAgo = "только что";

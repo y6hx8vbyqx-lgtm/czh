@@ -23,6 +23,7 @@
   --views:#8e8e93;
   --message:#5ac8fa;
   --outgoing-message:#667eea;
+  --pinned:#ffd60a;
 }
 *{box-sizing:border-box}
 body{
@@ -107,6 +108,13 @@ body{
   border-radius: 50%;
   background: var(--message);
 }
+.chat-item.pinned {
+  background: rgba(255,214,10,0.1);
+  border-left: 4px solid var(--pinned);
+}
+.chat-item.pinned .pin-indicator {
+  color: var(--pinned);
+}
 .chat-avatar {
   width: 56px;
   height: 56px;
@@ -118,6 +126,7 @@ body{
   font-weight: 700;
   font-size: 20px;
   flex-shrink: 0;
+  position: relative;
 }
 .chat-info {
   flex: 1;
@@ -146,6 +155,45 @@ body{
   color: var(--sub);
   font-size: 12px;
   margin-top: 4px;
+}
+.chat-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.chat-item:hover .chat-actions {
+  opacity: 1;
+}
+.action-btn {
+  background: rgba(28,28,30,0.8);
+  border: none;
+  color: var(--sub);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.action-btn:hover {
+  background: var(--card);
+  color: var(--text);
+}
+.action-btn.pin-btn:hover {
+  color: var(--pinned);
+}
+.action-btn.delete-btn:hover {
+  color: var(--danger);
+}
+.action-btn.mobile-visible {
+  display: none;
 }
 .no-chats {
   text-align: center;
@@ -328,6 +376,7 @@ body{
   font-size: 12px;
   padding: 8px 0;
   position: relative;
+  margin: 12px 0;
 }
 .message-date-divider::before,
 .message-date-divider::after {
@@ -453,6 +502,41 @@ body{
   display: none;
 }
 
+/* Контекстное меню для мобильных */
+.context-menu {
+  position: fixed;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 8px;
+  z-index: 10000;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: none;
+}
+.context-menu.show {
+  display: block;
+  animation: fade 0.2s ease;
+}
+.menu-item {
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+.menu-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+.menu-item.pin-item:hover {
+  color: var(--pinned);
+}
+.menu-item.delete-item:hover {
+  color: var(--danger);
+}
+
 @media (max-width: 768px) {
   .back-btn {
     display: block;
@@ -467,7 +551,23 @@ body{
   .chat-header {
     padding: 12px;
   }
+  .action-btn {
+    opacity: 1;
+    background: var(--card);
+  }
+  .action-btn.mobile-visible {
+    display: flex;
+  }
+  .action-btn:not(.mobile-visible) {
+    display: none;
+  }
+  .chat-actions {
+    opacity: 1;
+    position: static;
+    margin-left: auto;
+  }
 }
+
 </style>
 </head>
 
@@ -528,6 +628,18 @@ body{
   </div>
 </div>
 
+<!-- Контекстное меню для мобильных -->
+<div class="context-menu" id="contextMenu">
+  <div class="menu-item pin-item" id="contextPinBtn">
+    <span>📌</span>
+    <span id="contextPinText">Закрепить чат</span>
+  </div>
+  <div class="menu-item delete-item" id="contextDeleteBtn">
+    <span>🗑️</span>
+    <span>Удалить чат</span>
+  </div>
+</div>
+
 <div class="notification" id="notification"></div>
 
 <script>
@@ -549,6 +661,9 @@ let currentChatUsername = null;
 let currentChatId = null;
 let chatMessagesListener = null;
 let usersCache = new Map();
+let pinnedChats = new Set();
+let contextMenuChatId = null;
+let contextMenuIsPinned = false;
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
 
@@ -619,11 +734,13 @@ async function loadUserData() {
       userData = {
         username: "user" + currentUser.uid.slice(-6),
         isAdmin: false,
-        blockedUsers: []
+        blockedUsers: [],
+        pinnedChats: []
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
       userData = snap.data();
+      pinnedChats = new Set(userData.pinnedChats || []);
     }
     
     if (userData.isAdmin === true) {
@@ -693,7 +810,7 @@ async function getUserInfo(userId) {
   }
 }
 
-// ==================== СПИСОК ЧАТОВ ====================
+// ==================== СПИСОК ЧАТОВ (С ЗАКРЕПЛЕНИЕМ) ====================
 
 async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
@@ -717,6 +834,8 @@ async function loadChatsList() {
     
     // Собираем чаты текущего пользователя
     const userChats = [];
+    const pinnedChatsArray = [];
+    const regularChatsArray = [];
     
     for (const doc of chatsSnap.docs) {
       const chat = doc.data();
@@ -727,25 +846,38 @@ async function loadChatsList() {
         
         if (otherUserId && !blockedUsers.has(otherUserId)) {
           const otherUserInfo = await getUserInfo(otherUserId);
+          const isPinned = pinnedChats.has(doc.id);
           
-          userChats.push({
+          const chatData = {
             id: doc.id,
             ...chat,
             otherUserId: otherUserId,
-            otherUserInfo: otherUserInfo
-          });
+            otherUserInfo: otherUserInfo,
+            isPinned: isPinned
+          };
+          
+          if (isPinned) {
+            pinnedChatsArray.push(chatData);
+          } else {
+            regularChatsArray.push(chatData);
+          }
         }
       }
     }
     
     // Сортируем по времени последнего сообщения
-    userChats.sort((a, b) => {
+    const sortByTime = (a, b) => {
       const timeA = a.lastMessageTime?.toDate ? a.lastMessageTime.toDate() : new Date(a.lastMessageTime || 0);
       const timeB = b.lastMessageTime?.toDate ? b.lastMessageTime.toDate() : new Date(b.lastMessageTime || 0);
       return timeB - timeA;
-    });
+    };
     
-    if (userChats.length === 0) {
+    pinnedChatsArray.sort(sortByTime);
+    regularChatsArray.sort(sortByTime);
+    
+    const sortedChats = [...pinnedChatsArray, ...regularChatsArray];
+    
+    if (sortedChats.length === 0) {
       chatsList.innerHTML = `
         <div class="no-chats">
           <div class="no-chats-icon">💬</div>
@@ -760,7 +892,7 @@ async function loadChatsList() {
     // Формируем список
     let chatsHTML = '';
     
-    for (const chat of userChats) {
+    for (const chat of sortedChats) {
       const otherUser = chat.otherUserInfo;
       if (!otherUser) continue;
       
@@ -776,9 +908,14 @@ async function loadChatsList() {
       const senderPrefix = chat.lastSender === currentUser.uid ? 'Вы: ' : '';
       
       chatsHTML += `
-        <div class="chat-item fade ${isUnread ? 'unread' : ''}" 
-             onclick="openChat('${chat.otherUserId}', '${otherUser.username}')">
-          <div class="chat-avatar">${otherUser.username?.[0]?.toUpperCase() || 'U'}</div>
+        <div class="chat-item fade ${isUnread ? 'unread' : ''} ${chat.isPinned ? 'pinned' : ''}" 
+             onclick="handleChatClick(event, '${chat.otherUserId}', '${otherUser.username}', '${chat.id}')"
+             data-chat-id="${chat.id}"
+             data-is-pinned="${chat.isPinned}">
+          <div class="chat-avatar">
+            ${otherUser.username?.[0]?.toUpperCase() || 'U'}
+            ${chat.isPinned ? '<span class="pin-indicator" style="position:absolute;top:-5px;right:-5px;color:var(--pinned);">📌</span>' : ''}
+          </div>
           <div class="chat-info">
             <div class="chat-user">
               @${otherUser.username}
@@ -787,11 +924,59 @@ async function loadChatsList() {
             <div class="chat-preview">${senderPrefix}${preview}</div>
             <div class="chat-time">${timeAgo}</div>
           </div>
+          <div class="chat-actions">
+            <button class="action-btn pin-btn mobile-visible" onclick="event.stopPropagation(); togglePinChat('${chat.id}')">
+              ${chat.isPinned ? '📌' : '📌'}
+            </button>
+            <button class="action-btn delete-btn mobile-visible" onclick="event.stopPropagation(); showDeleteConfirm('${chat.id}', '${otherUser.username}')">
+              🗑️
+            </button>
+          </div>
         </div>
       `;
     }
     
     chatsList.innerHTML = chatsHTML;
+    
+    // Добавляем обработчики для десктопов
+    setTimeout(() => {
+      const chatItems = document.querySelectorAll('.chat-item');
+      chatItems.forEach(item => {
+        // Для десктопа показываем кнопки при наведении
+        if (window.innerWidth > 768) {
+          item.addEventListener('mouseenter', () => {
+            const actions = item.querySelector('.chat-actions');
+            if (actions) actions.style.opacity = '1';
+          });
+          
+          item.addEventListener('mouseleave', () => {
+            const actions = item.querySelector('.chat-actions');
+            if (actions) actions.style.opacity = '0';
+          });
+        }
+        
+        // Для мобильных добавляем обработчик долгого нажатия
+        if (window.innerWidth <= 768) {
+          let longPressTimer;
+          const chatId = item.getAttribute('data-chat-id');
+          const isPinned = item.getAttribute('data-is-pinned') === 'true';
+          
+          item.addEventListener('touchstart', (e) => {
+            longPressTimer = setTimeout(() => {
+              showContextMenu(e, chatId, isPinned);
+            }, 500);
+          });
+          
+          item.addEventListener('touchend', () => {
+            clearTimeout(longPressTimer);
+          });
+          
+          item.addEventListener('touchmove', () => {
+            clearTimeout(longPressTimer);
+          });
+        }
+      });
+    }, 100);
     
   } catch (error) {
     console.error('Ошибка загрузки чатов:', error);
@@ -802,26 +987,183 @@ async function loadChatsList() {
   }
 }
 
+// ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ МОБИЛЬНЫХ ====================
+
+function showContextMenu(event, chatId, isPinned) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  contextMenuChatId = chatId;
+  contextMenuIsPinned = isPinned;
+  
+  const menu = document.getElementById('contextMenu');
+  const pinText = document.getElementById('contextPinText');
+  
+  pinText.textContent = isPinned ? 'Открепить чат' : 'Закрепить чат';
+  
+  // Позиционируем меню
+  const touch = event.touches ? event.touches[0] : event;
+  const x = Math.min(touch.clientX, window.innerWidth - 200);
+  const y = Math.min(touch.clientY, window.innerHeight - 150);
+  
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.classList.add('show');
+  
+  // Закрываем меню при клике снаружи
+  setTimeout(() => {
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('show');
+        document.removeEventListener('click', closeMenu);
+        document.removeEventListener('touchstart', closeMenu);
+      }
+    };
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('touchstart', closeMenu);
+  }, 10);
+}
+
+// ==================== ЗАКРЕПЛЕНИЕ ЧАТОВ ====================
+
+async function togglePinChat(chatId) {
+  try {
+    const isCurrentlyPinned = pinnedChats.has(chatId);
+    
+    if (isCurrentlyPinned) {
+      // Открепляем
+      pinnedChats.delete(chatId);
+      await db.collection("users").doc(currentUser.uid).update({
+        pinnedChats: firebase.firestore.FieldValue.arrayRemove(chatId)
+      });
+      showNotification("Чат откреплен");
+    } else {
+      // Закрепляем
+      pinnedChats.add(chatId);
+      await db.collection("users").doc(currentUser.uid).update({
+        pinnedChats: firebase.firestore.FieldValue.arrayUnion(chatId)
+      });
+      showNotification("Чат закреплен");
+    }
+    
+    // Обновляем UI
+    const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+    if (chatItem) {
+      chatItem.setAttribute('data-is-pinned', (!isCurrentlyPinned).toString());
+      chatItem.classList.toggle('pinned');
+      
+      const pinIndicator = chatItem.querySelector('.pin-indicator');
+      const pinBtn = chatItem.querySelector('.pin-btn');
+      
+      if (!isCurrentlyPinned) {
+        // Добавляем индикатор закрепления
+        const avatar = chatItem.querySelector('.chat-avatar');
+        if (avatar && !pinIndicator) {
+          const indicator = document.createElement('span');
+          indicator.className = 'pin-indicator';
+          indicator.style.position = 'absolute';
+          indicator.style.top = '-5px';
+          indicator.style.right = '-5px';
+          indicator.style.color = 'var(--pinned)';
+          indicator.textContent = '📌';
+          avatar.appendChild(indicator);
+        }
+        if (pinBtn) pinBtn.textContent = '📌';
+      } else {
+        // Удаляем индикатор закрепления
+        if (pinIndicator) pinIndicator.remove();
+        if (pinBtn) pinBtn.textContent = '📌';
+      }
+    }
+    
+    // Перезагружаем список чатов для правильной сортировки
+    loadChatsList();
+    
+  } catch (error) {
+    console.error("Ошибка при закреплении чата:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+// ==================== УДАЛЕНИЕ ЧАТА ====================
+
+function showDeleteConfirm(chatId, username) {
+  if (confirm(`Вы уверены, что хотите удалить чат с @${username}? Все сообщения будут удалены.`)) {
+    deleteChat(chatId);
+  }
+}
+
+async function deleteChat(chatId) {
+  try {
+    // Удаляем все сообщения чата
+    const messagesSnap = await db.collection('chats').doc(chatId)
+      .collection('messages').get();
+    
+    const batch = db.batch();
+    messagesSnap.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Удаляем сам чат
+    batch.delete(db.collection('chats').doc(chatId));
+    
+    await batch.commit();
+    
+    // Удаляем из закрепленных, если есть
+    if (pinnedChats.has(chatId)) {
+      pinnedChats.delete(chatId);
+      await db.collection("users").doc(currentUser.uid).update({
+        pinnedChats: firebase.firestore.FieldValue.arrayRemove(chatId)
+      });
+    }
+    
+    showNotification("Чат удален");
+    
+    // Если это текущий открытый чат - закрываем его
+    if (currentChatId === chatId) {
+      closeChat();
+    }
+    
+    // Обновляем список чатов
+    loadChatsList();
+    
+  } catch (error) {
+    console.error("Ошибка при удалении чата:", error);
+    showNotification("Ошибка удаления: " + error.message);
+  }
+}
+
 // ==================== ОКНО ЧАТА ====================
 
-async function openChat(userId, username) {
+function handleChatClick(event, userId, username, chatId) {
+  // Проверяем, была ли нажата кнопка действия
+  if (event.target.closest('.action-btn') || event.target.closest('.chat-actions')) {
+    return;
+  }
+  
+  // Открываем чат как обычно
+  openChat(userId, username, chatId);
+}
+
+async function openChat(userId, username, chatId = null) {
   currentChatUserId = userId;
   currentChatUsername = username;
   
-  // Находим ID чата
-  const chatsSnap = await db.collection('chats').get();
+  // Находим ID чата если не передан
+  if (!chatId) {
+    const chatsSnap = await db.collection('chats').get();
+    
+    chatsSnap.forEach(doc => {
+      const chat = doc.data();
+      if (chat.participants && 
+          chat.participants.includes(currentUser.uid) && 
+          chat.participants.includes(userId)) {
+        chatId = doc.id;
+      }
+    });
+  }
   
-  let foundChatId = null;
-  chatsSnap.forEach(doc => {
-    const chat = doc.data();
-    if (chat.participants && 
-        chat.participants.includes(currentUser.uid) && 
-        chat.participants.includes(userId)) {
-      foundChatId = doc.id;
-    }
-  });
-  
-  currentChatId = foundChatId;
+  currentChatId = chatId;
   
   // Обновляем UI чата
   document.getElementById('chatUserAvatar').textContent = username?.[0]?.toUpperCase() || 'U';
@@ -924,7 +1266,7 @@ async function toggleBlockUser() {
   }
 }
 
-// ==================== СООБЩЕНИЯ ====================
+// ==================== СООБЩЕНИЯ (ИСПРАВЛЕННАЯ ЛОГИКА ДАТ) ====================
 
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
@@ -966,11 +1308,12 @@ async function loadChatMessages() {
       const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
       const currentDate = formatMessageDate(msgDate);
       
-      // Добавляем разделитель даты если нужно
+      // Добавляем разделитель даты только если дата изменилась
       if (currentDate !== lastDate) {
-        chatMessages.innerHTML += `
-          <div class="message-date-divider">${currentDate}</div>
-        `;
+        const dateDivider = document.createElement('div');
+        dateDivider.className = 'message-date-divider';
+        dateDivider.textContent = currentDate;
+        chatMessages.appendChild(dateDivider);
         lastDate = currentDate;
       }
       
@@ -1009,65 +1352,71 @@ function setupChatMessagesListener() {
   
   chatMessagesListener = db.collection('chats').doc(currentChatId)
     .collection('messages')
-    .orderBy('timestamp', 'desc')
-    .limit(1)
+    .orderBy('timestamp', 'asc')
     .onSnapshot((snapshot) => {
+      const chatMessages = document.getElementById('chatMessages');
+      const noMessages = chatMessages.querySelector('.no-messages');
+      
+      // Если нет сообщений и появилось первое
+      if (noMessages && !snapshot.empty) {
+        loadChatMessages(); // Перезагружаем все сообщения с правильной группировкой по датам
+        return;
+      }
+      
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const msg = change.doc.data();
+          const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
+          const currentDate = formatMessageDate(msgDate);
           
-          if (msg.senderId === currentUser.uid) return;
+          // Проверяем, нужен ли разделитель даты
+          const lastElement = chatMessages.lastElementChild;
+          let needsDateDivider = true;
           
-          addMessageToUI(msg);
-          markMessageAsRead(change.doc.id);
+          if (lastElement && lastElement.classList.contains('message-date-divider')) {
+            if (lastElement.textContent === currentDate) {
+              needsDateDivider = false;
+            }
+          }
+          
+          // Добавляем разделитель даты если нужно
+          if (needsDateDivider) {
+            const dateDivider = document.createElement('div');
+            dateDivider.className = 'message-date-divider';
+            dateDivider.textContent = currentDate;
+            chatMessages.appendChild(dateDivider);
+          }
+          
+          // Добавляем сообщение
+          const isOutgoing = msg.senderId === currentUser.uid;
+          const messageTime = formatMessageTime(msgDate);
+          
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
+          messageDiv.innerHTML = `
+            <div class="message-text">${msg.text}</div>
+            <div class="message-time">
+              ${messageTime}
+              ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
+            </div>
+          `;
+          
+          chatMessages.appendChild(messageDiv);
+          
+          // Прокручиваем вниз
+          setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }, 100);
+          
+          // Помечаем как прочитанное если это входящее
+          if (!isOutgoing) {
+            markMessageAsRead(change.doc.id);
+          }
         }
       });
     }, (error) => {
       console.error('Ошибка слушателя сообщений:', error);
     });
-}
-
-function addMessageToUI(msg) {
-  const chatMessages = document.getElementById('chatMessages');
-  const noMessages = chatMessages.querySelector('.no-messages');
-  if (noMessages) noMessages.remove();
-  
-  const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
-  const currentDate = formatMessageDate(msgDate);
-  const lastMessageDivider = chatMessages.querySelector('.message-date-divider:last-child');
-  
-  let needsDateDivider = true;
-  if (lastMessageDivider) {
-    const lastDate = lastMessageDivider.textContent;
-    if (lastDate === currentDate) {
-      needsDateDivider = false;
-    }
-  }
-  
-  if (needsDateDivider) {
-    chatMessages.innerHTML += `
-      <div class="message-date-divider">${currentDate}</div>
-    `;
-  }
-  
-  const isOutgoing = msg.senderId === currentUser.uid;
-  const messageTime = formatMessageTime(msgDate);
-  
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
-  messageDiv.innerHTML = `
-    <div class="message-text">${msg.text}</div>
-    <div class="message-time">
-      ${messageTime}
-      ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
-    </div>
-  `;
-  
-  chatMessages.appendChild(messageDiv);
-  
-  setTimeout(() => {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }, 100);
 }
 
 async function sendMessage() {
@@ -1130,10 +1479,6 @@ async function sendMessage() {
     chatInput.value = '';
     chatInput.style.height = 'auto';
     
-    // Показываем свое сообщение сразу
-    messageData.read = false;
-    addMessageToUI(messageData);
-    
     // Обновляем список чатов
     loadChatsList();
     
@@ -1154,6 +1499,7 @@ async function markMessageAsRead(messageId) {
         read: true
       });
     
+    // Обновляем статус в UI
     const messageElements = document.querySelectorAll('.message-incoming .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
@@ -1189,6 +1535,7 @@ async function markChatAsRead(chatId) {
       await batch.commit();
     }
     
+    // Обновляем UI
     const messageElements = document.querySelectorAll('.message-incoming .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
@@ -1235,6 +1582,33 @@ function logout() {
 }
 
 // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
+
+// Инициализация контекстного меню
+document.addEventListener('DOMContentLoaded', () => {
+  const contextMenu = document.getElementById('contextMenu');
+  const contextPinBtn = document.getElementById('contextPinBtn');
+  const contextDeleteBtn = document.getElementById('contextDeleteBtn');
+  
+  contextPinBtn.addEventListener('click', () => {
+    if (contextMenuChatId) {
+      togglePinChat(contextMenuChatId);
+      contextMenu.classList.remove('show');
+    }
+  });
+  
+  contextDeleteBtn.addEventListener('click', () => {
+    if (contextMenuChatId) {
+      // Находим имя пользователя для подтверждения
+      const chatItem = document.querySelector(`.chat-item[data-chat-id="${contextMenuChatId}"]`);
+      if (chatItem) {
+        const usernameElement = chatItem.querySelector('.chat-user');
+        const username = usernameElement ? usernameElement.textContent.replace('@', '') : 'пользователем';
+        showDeleteConfirm(contextMenuChatId, username);
+      }
+      contextMenu.classList.remove('show');
+    }
+  });
+});
 
 document.getElementById('chatInput')?.addEventListener('input', function() {
   this.style.height = 'auto';

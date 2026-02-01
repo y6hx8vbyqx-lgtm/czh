@@ -221,13 +221,40 @@ body{
   font-size:28px;
   font-weight:700;
 }
+.profile-info{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
 .profile-name{
   font-size:18px;
   font-weight:700;
 }
 .profile-stats{
+  display:flex;
+  gap:16px;
+}
+.profile-stat{
+  display:flex;
+  flex-direction:column;
+}
+.profile-stat-value{
+  font-size:16px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.profile-stat-label{
   color:var(--sub);
-  font-size:14px;
+  font-size:12px;
+  margin-top:2px;
+}
+.likes-stat{
+  color:#ff2d55;
+}
+.posts-stat{
+  color:#5ac8fa;
 }
 
 /* Уведомление */
@@ -308,10 +335,23 @@ body{
   <div class="sheet-body">
     <div class="profile-header">
       <div class="profile-avatar" id="profileAvatar">A</div>
-      <div>
+      <div class="profile-info">
         <div class="profile-name" id="profileName">@anon</div>
         <div class="profile-stats">
-          <span id="profilePostsCount">0</span> постов
+          <div class="profile-stat">
+            <div class="profile-stat-value posts-stat">
+              <span>📝</span>
+              <span id="profilePostsCount">0</span>
+            </div>
+            <div class="profile-stat-label">постов</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value likes-stat">
+              <span>❤️</span>
+              <span id="profileLikesCount">0</span>
+            </div>
+            <div class="profile-stat-label">лайков</div>
+          </div>
         </div>
       </div>
     </div>
@@ -671,6 +711,26 @@ async function getUserPostsCount(uid) {
   return snap.size;
 }
 
+// Функция для получения общего количества лайков пользователя
+async function getUserLikesCount(uid) {
+  try {
+    const snap = await db.collection("posts")
+      .where("userId", "==", uid)
+      .get();
+    
+    let totalLikes = 0;
+    snap.forEach(doc => {
+      const post = doc.data();
+      totalLikes += (post.likes || 0);
+    });
+    
+    return totalLikes;
+  } catch(error) {
+    console.error("Ошибка при получении лайков пользователя:", error);
+    return 0;
+  }
+}
+
 // Функция для получения всех постов пользователя (без сложного запроса)
 async function getUserPosts(uid) {
   try {
@@ -728,19 +788,24 @@ async function getUserPosts(uid) {
 async function refreshProfilePosts(uid) {
   const profilePosts = document.getElementById("profilePosts");
   const profilePostsCount = document.getElementById("profilePostsCount");
+  const profileLikesCount = document.getElementById("profileLikesCount");
   
   if (!profilePosts) return;
   
   try {
     // Получаем количество постов
-    const count = await getUserPostsCount(uid);
-    profilePostsCount.textContent = count;
+    const postsCount = await getUserPostsCount(uid);
+    profilePostsCount.textContent = postsCount;
+    
+    // Получаем количество лайков
+    const likesCount = await getUserLikesCount(uid);
+    profileLikesCount.textContent = likesCount;
     
     // Очищаем контейнер
     profilePosts.innerHTML = "";
     
     // Если постов нет
-    if (count === 0) {
+    if (postsCount === 0) {
       profilePosts.innerHTML = `
         <div style="text-align:center;color:var(--sub);padding:40px 0;">
           У пользователя пока нет постов
@@ -772,7 +837,11 @@ async function refreshProfilePosts(uid) {
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
           <div class="post-text">${post.text}</div>
-          <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+          <div class="post-time" title="${fullDateTime}">
+            <span>${timeAgo}</span>
+            <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
+            <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
+          </div>
           ${canDelete ? 
             `<button class="trash" style="position:absolute;top:16px;right:16px;" 
                      onclick="deletePostFromProfile('${post.id}', '${uid}')">🗑</button>` : 
@@ -804,10 +873,12 @@ async function deletePostFromProfile(postId, userId) {
       postElement.remove();
     }
     
-    // Обновляем счетчик через запрос к Firestore
-    const profilePostsCountElement = document.getElementById("profilePostsCount");
-    const count = await getUserPostsCount(userId);
-    profilePostsCountElement.textContent = count;
+    // Обновляем счетчики через запрос к Firestore
+    const postsCount = await getUserPostsCount(userId);
+    const likesCount = await getUserLikesCount(userId);
+    
+    document.getElementById("profilePostsCount").textContent = postsCount;
+    document.getElementById("profileLikesCount").textContent = likesCount;
     
     // Обновляем основную ленту
     loadPosts();
@@ -833,7 +904,7 @@ async function openProfile(uid, name){
       Загрузка постов...
     </div>`;
   
-  // Затем загружаем посты
+  // Затем загружаем посты и статистику
   await refreshProfilePosts(uid);
 }
 

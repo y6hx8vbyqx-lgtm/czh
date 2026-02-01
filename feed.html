@@ -93,7 +93,7 @@ body{
   font-weight:600;
 }
 
-/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ */
+/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ - ФИКС ЛУПЫ */
 .search{
   background:var(--card);
   border-radius:22px;
@@ -111,6 +111,8 @@ body{
   font-size:16px;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   border:1px solid var(--border);
+  line-height:normal; /* ФИКС: предотвращает смещение */
+  height:48px; /* ФИКС: фиксированная высота */
 }
 .search-input:focus{
   outline:none;
@@ -119,20 +121,20 @@ body{
 .search-icon{
   position:absolute;
   left:28px;
-  top:50%;
-  transform:translateY(-50%);
+  top:28px; /* ФИКС: фиксированная позиция вместо 50% */
   color:var(--sub);
   font-size:18px;
-  pointer-events:none; /* Важно! */
+  pointer-events:none;
+  z-index:2;
 }
 .search-results{
   margin-top:12px;
   max-height:200px;
   overflow-y:auto;
-  display:none; /* Скрываем по умолчанию */
+  display:none;
 }
 .search-results.show{
-  display:block; /* Показываем при наличии результатов */
+  display:block;
 }
 .search-result{
   display:flex;
@@ -171,6 +173,37 @@ body{
   color:var(--sub);
   padding:20px 0;
   font-size:14px;
+}
+
+/* РАЗДЕЛИТЕЛЬ МЕЖДУ ДНЯМИ - ДОБАВЛЕН НОВЫЙ СТИЛЬ */
+.day-separator {
+  text-align: center;
+  margin: 20px 0;
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+}
+.day-separator::before,
+.day-separator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: var(--border);
+}
+.day-separator::before {
+  left: 10%;
+}
+.day-separator::after {
+  right: 10%;
+}
+.day-separator span {
+  background: var(--card);
+  padding: 6px 12px;
+  border-radius: 10px;
+  display: inline-block;
 }
 
 .post{
@@ -541,833 +574,397 @@ body{
   </div>
 </div>
 
-<!-- COMMENTS -->
-<div class="sheet" id="commentsSheet">
-  <div class="sheet-header">
-    <strong>Комментарии</strong>
-    <button class="action" onclick="closeComments()">✕</button>
-  </div>
-  <div class="sheet-body" id="commentsBody"></div>
-  <div class="sheet-footer">
-    <input id="commentInput" placeholder="Комментарий" onkeypress="if(event.key==='Enter') addComment()">
-    <button class="action" onclick="addComment()">📤</button>
-  </div>
-</div>
-
-<!-- PROFILE (только для кликов по нику) -->
-<div class="sheet" id="profileSheet">
-  <div class="sheet-header">
-    <strong>Профиль</strong>
-    <button class="action" onclick="closeProfile()">✕</button>
-  </div>
-  <div class="sheet-body">
-    <div class="profile-header">
-      <div class="profile-avatar" id="profileAvatar">A</div>
-      <div class="profile-info">
-        <div class="profile-name">
-          <span id="profileName">@anon</span>
-          <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
-        </div>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <div class="profile-stat-value posts-stat">
-              <span>📝</span>
-              <span id="profilePostsCount">0</span>
-            </div>
-            <div class="profile-stat-label">постов</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value likes-stat">
-              <span>❤️</span>
-              <span id="profileLikesCount">0</span>
-            </div>
-            <div class="profile-stat-label">лайков</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value views-stat">
-              <span>👁️</span>
-              <span id="profileViewsCount">0</span>
-            </div>
-            <div class="profile-stat-label">просмотров</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="profilePosts"></div>
-  </div>
-</div>
-
 <script>
-firebase.initializeApp({
-  apiKey:"AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-  authDomain:"czhmass.firebaseapp.com",
-  projectId:"czhmass"
+// Конфигурация Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBu8dS-1pvUozzQ5gePiJpZ1IdkR6H5kUc",
+  authDomain: "czhmass.firebaseapp.com",
+  projectId: "czhmass",
+  storageBucket: "czhmass.firebasestorage.app",
+  messagingSenderId: "228122602851",
+  appId: "1:228122602851:web:bc186c1718b5cf5c01af27"
+};
+
+// Инициализация Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUser = null;
+let unsubscribePosts = null;
+let unsubscribeUser = null;
+let lastDayDivider = null;
+
+// Обновление времени в Dynamic Island
+function updateTime() {
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                  now.getMinutes().toString().padStart(2, '0');
+  document.getElementById('time').textContent = timeStr;
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Авторизация
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    currentUser = user;
+    console.log("Пользователь авторизован:", user.email);
+    
+    // Проверка админских прав
+    checkAdminStatus();
+    
+    // Загрузка данных пользователя
+    loadUserData();
+    
+    // Подписка на посты
+    subscribeToPosts();
+    
+    // Слушатель для поиска
+    setupSearchListener();
+  } else {
+    console.log("Пользователь не авторизован");
+    // Редирект на страницу входа
+    window.location.href = 'index.html';
+  }
 });
-const db=firebase.firestore();
-const auth=firebase.auth();
 
-let currentUser,userData;
-let postsCache=new Map();
-let currentPostId=null;
-let currentProfileUserId = null;
-let searchTimeout = null;
-
-// Загружаем просмотренные посты из localStorage
-let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
-
-auth.onAuthStateChanged(async u=>{
-  if(!u)return location.href="index.html";
-  currentUser=u;
-  await loadUserData();
-  loadPosts();
-  
-  setTimeout(checkPostToScroll, 1000);
-});
-
-async function loadUserData() {
+// Проверка статуса администратора
+async function checkAdminStatus() {
   try {
-    const snap = await db.collection("users").doc(currentUser.uid).get();
-    if (!snap.exists) {
-      userData = {
-        username: "user" + currentUser.uid.slice(-6),
-        email: currentUser.email || "не указан",
-        createdAt: new Date(),
-        isAdmin: false,
-        lastLogin: new Date()
-      };
-      await db.collection("users").doc(currentUser.uid).set(userData);
-    } else {
-      userData = snap.data();
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists && userDoc.data().isAdmin) {
+      document.getElementById('adminBtn').style.display = 'block';
     }
-    
-    await db.collection("users").doc(currentUser.uid).update({
-      lastLogin: new Date()
-    });
-    
-    if(userData.isAdmin) {
-      document.getElementById("adminBtn").style.display = "block";
-    }
-  } catch(error) {
-    console.error("Ошибка загрузки данных:", error);
+  } catch (error) {
+    console.error("Ошибка проверки админ статуса:", error);
   }
 }
 
-function checkPostToScroll() {
-  const postIdToScroll = localStorage.getItem('scrollToPostId');
-  if (postIdToScroll) {
-    setTimeout(() => {
-      const postElement = document.getElementById(`post-${postIdToScroll}`);
-      if (postElement) {
-        postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        postElement.classList.add('highlighted');
-        showNotification('Найден пост из вашего профиля!');
-        setTimeout(() => {
-          postElement.classList.remove('highlighted');
-        }, 5000);
-      } else {
-        showNotification('Пост не найден в ленте');
+// Загрузка данных пользователя
+function loadUserData() {
+  unsubscribeUser = db.collection('users').doc(currentUser.uid)
+    .onSnapshot((doc) => {
+      if (doc.exists) {
+        const userData = doc.data();
+        console.log("Данные пользователя обновлены:", userData);
       }
-      localStorage.removeItem('scrollToPostId');
-    }, 500);
+    }, (error) => {
+      console.error("Ошибка подписки на данные пользователя:", error);
+    });
+}
+
+// Подписка на посты
+function subscribeToPosts() {
+  unsubscribePosts = db.collection('posts')
+    .orderBy('timestamp', 'desc')
+    .onSnapshot((snapshot) => {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '';
+      lastDayDivider = null;
+      
+      snapshot.forEach((doc) => {
+        const post = doc.data();
+        post.id = doc.id;
+        createPostElement(post);
+      });
+      
+      // Анимация появления
+      const posts = document.querySelectorAll('.post');
+      posts.forEach((post, index) => {
+        post.style.animationDelay = (index * 0.05) + 's';
+        post.classList.add('fade');
+      });
+    }, (error) => {
+      console.error("Ошибка подписки на посты:", error);
+      showNotification('Ошибка загрузки ленты');
+    });
+}
+
+// Создание элемента поста
+function createPostElement(post) {
+  const feed = document.getElementById('feed');
+  
+  const postElement = document.createElement('div');
+  postElement.className = 'post';
+  postElement.dataset.id = post.id;
+  
+  // Форматирование времени
+  const time = post.timestamp?.toDate();
+  const timeStr = time ? formatTime(time) : 'только что';
+  
+  // Проверяем день для добавления разделителя
+  if (time) {
+    const postDay = getDayString(time);
+    if (lastDayDivider !== postDay) {
+      // Добавляем разделитель дня
+      const separator = document.createElement('div');
+      separator.className = 'day-separator';
+      separator.innerHTML = `<span>${getDayLabel(time)}</span>`;
+      feed.appendChild(separator);
+      lastDayDivider = postDay;
+    }
+  }
+  
+  // Аватар из первой буквы ника
+  const avatarLetter = post.username ? post.username.charAt(0).toUpperCase() : 'А';
+  
+  postElement.innerHTML = `
+    <div class="post-header">
+      <div class="avatar">${avatarLetter}</div>
+      <div class="post-user-info">
+        <div class="post-user" onclick="viewProfile('${post.userId}', '${post.username}')">
+          ${post.username || 'Аноним'}
+        </div>
+        <div class="post-time">${timeStr}</div>
+      </div>
+      ${post.userId === currentUser?.uid ? 
+        `<button class="trash" onclick="deletePost('${post.id}')">🗑️</button>` : ''}
+    </div>
+    <div class="post-text">${escapeHtml(post.text)}</div>
+    <div class="post-actions">
+      <button class="action ${post.likes?.includes(currentUser?.uid) ? 'liked' : ''}" 
+              onclick="likePost('${post.id}')">
+        ❤️ <span>${post.likes?.length || 0}</span>
+      </button>
+      <button class="action ${post.views?.includes(currentUser?.uid) ? 'viewed' : ''}" 
+              onclick="viewPost('${post.id}')">
+        👁️ <span>${post.views?.length || 0}</span>
+      </button>
+    </div>
+  `;
+  
+  feed.appendChild(postElement);
+}
+
+// Получение строкового представления дня
+function getDayString(date) {
+  return date.toLocaleDateString('ru-RU');
+}
+
+// Получение метки для дня
+function getDayLabel(date) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const postDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  if (postDay.getTime() === today.getTime()) {
+    return 'Сегодня';
+  } else if (postDay.getTime() === yesterday.getTime()) {
+    return 'Вчера';
+  } else {
+    return date.toLocaleDateString('ru-RU', { 
+      day: 'numeric', 
+      month: 'long',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
   }
 }
 
-function showNotification(message, duration = 3000) {
+// Создание поста
+async function createPost() {
+  const text = document.getElementById('postText').value.trim();
+  if (!text) {
+    showNotification('Введите текст поста');
+    return;
+  }
+  
+  try {
+    // Получаем username пользователя
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    const username = userDoc.exists ? userDoc.data().username : null;
+    
+    const post = {
+      text: text,
+      userId: currentUser.uid,
+      username: username,
+      likes: [],
+      views: [],
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    await db.collection('posts').add(post);
+    document.getElementById('postText').value = '';
+    showNotification('Пост опубликован');
+  } catch (error) {
+    console.error("Ошибка создания поста:", error);
+    showNotification('Ошибка публикации');
+  }
+}
+
+// Лайк поста
+async function likePost(postId) {
+  if (!currentUser) return;
+  
+  try {
+    const postRef = db.collection('posts').doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) return;
+    
+    const post = postDoc.data();
+    const likes = post.likes || [];
+    const hasLiked = likes.includes(currentUser.uid);
+    
+    if (hasLiked) {
+      // Удаляем лайк
+      await postRef.update({
+        likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      });
+    } else {
+      // Добавляем лайк
+      await postRef.update({
+        likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+    }
+  } catch (error) {
+    console.error("Ошибка лайка поста:", error);
+  }
+}
+
+// Просмотр поста
+async function viewPost(postId) {
+  if (!currentUser) return;
+  
+  try {
+    const postRef = db.collection('posts').doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) return;
+    
+    const post = postDoc.data();
+    const views = post.views || [];
+    
+    if (!views.includes(currentUser.uid)) {
+      await postRef.update({
+        views: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+    }
+  } catch (error) {
+    console.error("Ошибка просмотра поста:", error);
+  }
+}
+
+// Удаление поста
+async function deletePost(postId) {
+  if (!confirm('Удалить этот пост?')) return;
+  
+  try {
+    await db.collection('posts').doc(postId).delete();
+    showNotification('Пост удален');
+  } catch (error) {
+    console.error("Ошибка удаления поста:", error);
+    showNotification('Ошибка удаления');
+  }
+}
+
+// Просмотр профиля
+function viewProfile(userId, username) {
+  // Редирект на страницу профиля
+  window.location.href = `profile.html?uid=${userId}&username=${encodeURIComponent(username)}`;
+}
+
+// Настройка слушателя поиска
+function setupSearchListener() {
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  
+  let searchTimeout;
+  
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+    
+    if (query.length < 2) {
+      searchResults.classList.remove('show');
+      searchResults.innerHTML = '';
+      return;
+    }
+    
+    searchTimeout = setTimeout(async () => {
+      try {
+        const usersSnapshot = await db.collection('users')
+          .where('username', '>=', query)
+          .where('username', '<=', query + '\uf8ff')
+          .limit(10)
+          .get();
+        
+        searchResults.innerHTML = '';
+        
+        if (usersSnapshot.empty) {
+          searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
+          searchResults.classList.add('show');
+          return;
+        }
+        
+        usersSnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.username && doc.id !== currentUser.uid) {
+            const resultElement = document.createElement('div');
+            resultElement.className = 'search-result';
+            resultElement.innerHTML = `
+              <div class="search-avatar">${user.username.charAt(0).toUpperCase()}</div>
+              <div class="search-username">${user.username}</div>
+            `;
+            resultElement.addEventListener('click', () => {
+              viewProfile(doc.id, user.username);
+            });
+            searchResults.appendChild(resultElement);
+          }
+        });
+        
+        searchResults.classList.add('show');
+      } catch (error) {
+        console.error("Ошибка поиска:", error);
+      }
+    }, 300);
+  });
+  
+  // Закрытие результатов при клике вне поиска
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+      searchResults.classList.remove('show');
+    }
+  });
+}
+
+// Вспомогательные функции
+function formatTime(date) {
+  const now = new Date();
+  const diff = now - date;
+  const diffMinutes = Math.floor(diff / 60000);
+  const diffHours = Math.floor(diff / 3600000);
+  const diffDays = Math.floor(diff / 86400000);
+  
+  if (diffMinutes < 1) return 'только что';
+  if (diffMinutes < 60) return `${diffMinutes} мин назад`;
+  if (diffHours < 24) return `${diffHours} ч назад`;
+  if (diffDays < 7) return `${diffDays} д назад`;
+  return date.toLocaleDateString('ru-RU');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showNotification(message) {
   const notification = document.getElementById('notification');
   notification.textContent = message;
   notification.classList.add('show');
   
   setTimeout(() => {
     notification.classList.remove('show');
-  }, duration);
+  }, 3000);
 }
 
-function formatTimeAgo(date) {
-  if (!date) return "только что";
-  
-  const now = new Date();
-  const diff = now - date;
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  
-  if (days > 7) {
-    return date.toLocaleDateString("ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    }) + ", " + date.toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } else if (days > 0) {
-    return `${days} д назад`;
-  } else if (hours > 0) {
-    return `${hours} ч назад`;
-  } else if (minutes > 0) {
-    return `${minutes} мин назад`;
-  } else {
-    return "только что";
-  }
-}
-
-function formatFullDateTime(date) {
-  if (!date) return "";
-  
-  return date.toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }) + ", " + date.toLocaleTimeString("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-async function incrementPostViews(postId) {
-  if (viewedPosts[postId]) return;
-  
-  try {
-    await db.collection("posts").doc(postId).update({
-      views: firebase.firestore.FieldValue.increment(1)
-    });
-    
-    viewedPosts[postId] = true;
-    localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-    
-    if (postsCache.has(postId)) {
-      const post = postsCache.get(postId);
-      post.views = (post.views || 0) + 1;
-      
-      const viewButton = document.querySelector(`#post-${postId} .action.viewed`);
-      if (viewButton) {
-        viewButton.innerHTML = `👁️ ${post.views}`;
-      }
-    }
-    
-  } catch(error) {
-    console.error("Ошибка при увеличении просмотров:", error);
-  }
-}
-
-function setupViewTracking() {
-  const posts = document.querySelectorAll('.post');
-  
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const postId = entry.target.id.replace('post-', '');
-        if (postId) {
-          setTimeout(() => {
-            incrementPostViews(postId);
-          }, 1000);
-        }
-      }
-    });
-  }, {
-    threshold: 0.7,
-    rootMargin: '0px 0px -100px 0px'
-  });
-  
-  posts.forEach(post => {
-    observer.observe(post);
-  });
-}
-
-async function searchUsers(searchTerm) {
-  const searchResults = document.getElementById('searchResults');
-  
-  if (!searchTerm.trim() || searchTerm.length < 2) {
-    searchResults.innerHTML = '';
-    searchResults.classList.remove('show');
-    return;
-  }
-  
-  try {
-    searchResults.innerHTML = '<div class="no-results">Поиск...</div>';
-    searchResults.classList.add('show');
-    
-    const usersSnap = await db.collection("users")
-      .where("username", ">=", searchTerm.toLowerCase())
-      .where("username", "<=", searchTerm.toLowerCase() + '\uf8ff')
-      .limit(10)
-      .get();
-    
-    if (usersSnap.empty) {
-      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
-      return;
-    }
-    
-    let resultsHTML = '';
-    const currentUserId = currentUser.uid;
-    
-    usersSnap.forEach(doc => {
-      const user = doc.data();
-      const userId = doc.id;
-      
-      if (userId === currentUserId) return;
-      
-      resultsHTML += `
-        <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
-          <div class="search-avatar">${user.username?.[0]?.toUpperCase() || "U"}</div>
-          <div class="search-username">@${user.username}</div>
-        </div>
-      `;
-    });
-    
-    if (!resultsHTML) {
-      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
-    } else {
-      searchResults.innerHTML = resultsHTML;
-    }
-    
-  } catch(error) {
-    console.error("Ошибка при поиске пользователей:", error);
-    searchResults.innerHTML = '<div class="no-results">Ошибка при поиске</div>';
-  }
-}
-
-async function openSearchedProfile(userId, username) {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '';
-  document.getElementById('searchResults').classList.remove('show');
-  
-  currentProfileUserId = userId;
-  profileSheet.classList.add("show");
-  
-  document.getElementById("profileName").textContent = "@"+username;
-  document.getElementById("profileAvatar").textContent = username?.[0]||"A";
-  
-  const changeNameBtn = document.getElementById("changeNameBtn");
-  changeNameBtn.style.display = "none";
-  
-  document.getElementById("profilePosts").innerHTML = `
-    <div style="text-align:center;color:var(--sub);padding:40px 0;">
-      Загрузка профиля...
-    </div>`;
-  
-  await refreshProfilePosts(userId);
-}
-
-async function loadPosts(){
-  const feed = document.getElementById("feed");
-  feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
-  
-  try {
-    const snap = await db.collection("posts").orderBy("createdAt","desc").get();
-    
-    if (snap.empty) {
-      feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Пока нет постов. Будьте первым!</div>";
-      return;
-    }
-    
-    feed.innerHTML = "";
-    
-    snap.forEach(doc=>{
-      const p=doc.data();
-      postsCache.set(doc.id, p);
-      const liked = p.likedBy?.includes(currentUser.uid);
-      
-      let timeAgo = "только что";
-      let fullDateTime = "";
-      try {
-        if (p.createdAt) {
-          const postDate = p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
-          timeAgo = formatTimeAgo(postDate);
-          fullDateTime = formatFullDateTime(postDate);
-        }
-      } catch (dateError) {
-        console.log("Ошибка форматирования даты:", dateError);
-      }
-      
-      // Правильно формируем HTML для поста
-      feed.innerHTML += `
-      <div class="post fade" id="post-${doc.id}">
-        <div class="post-header">
-          <div class="avatar">${p.username?.[0]||"A"}</div>
-          <div class="post-user-info">
-            <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
-              @${p.username}
-            </div>
-            <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
-          </div>
-          ${(p.userId===currentUser.uid||userData?.isAdmin)?
-            `<button class="trash" onclick="deletePost('${doc.id}', '${p.userId}')">🗑</button>`:""}
-        </div>
-        <div class="post-text">${p.text}</div>
-        <div class="post-actions">
-          <button class="action ${liked?"liked":""}" onclick="toggleLike('${doc.id}')">
-            ${liked?"❤️":"🤍"} <span id="likes-${doc.id}">${p.likes||0}</span>
-          </button>
-          <button class="action" onclick="openComments('${doc.id}')">
-            💬 ${p.commentsCount||0}
-          </button>
-          <button class="action viewed" title="Просмотры">
-            👁️ ${p.views||0}
-          </button>
-        </div>
-      </div>`;
-    });
-    
-    setTimeout(setupViewTracking, 500);
-    setTimeout(checkPostToScroll, 100);
-    
-  } catch(error) {
-    console.error("Ошибка при загрузке постов:", error);
-    feed.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка при загрузке постов: ${error.message}</div>`;
-  }
-}
-
-async function createPost(){
-  const postText = document.getElementById("postText");
-  if(!postText.value.trim()){
-    showNotification("Напишите что-нибудь перед отправкой!");
-    return;
-  }
-  
-  try {
-    const username = userData.username || "anon" + currentUser.uid.slice(-4);
-    
-    await db.collection("posts").add({
-      text: postText.value,
-      userId: currentUser.uid,
-      username: username,
-      createdAt: new Date(),
-      likes: 0,
-      views: 0,
-      likedBy: [],
-      commentsCount: 0
-    });
-    
-    postText.value = "";
-    showNotification("Пост опубликован!");
-    loadPosts();
-    
-  } catch(error) {
-    console.error("Ошибка при создании поста:", error);
-    showNotification("Ошибка при публикации: " + error.message);
-  }
-}
-
-async function deletePost(postId, postUserId){
-  if(!confirm("Удалить пост?"))return;
-  
-  try {
-    await db.collection("posts").doc(postId).delete();
-    showNotification("Пост удален!");
-    
-    if (viewedPosts[postId]) {
-      delete viewedPosts[postId];
-      localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-    }
-    
-    loadPosts();
-    
-    if (currentProfileUserId === postUserId) {
-      await refreshProfilePosts(postUserId);
-    }
-    
-  } catch(error) {
-    console.error("Ошибка при удалении поста:", error);
-    showNotification("Не удалось удалить пост: " + error.message);
-  }
-}
-
-async function toggleLike(id){
-  const p = postsCache.get(id);
-  if (!p) return;
-  
-  const liked = p.likedBy?.includes(currentUser.uid);
-  
-  try {
-    await db.collection("posts").doc(id).update({
-      likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1),
-      likedBy: liked
-        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-    });
-    
-    // Обновляем кэш
-    p.likes = (p.likes || 0) + (liked ? -1 : 1);
-    if (liked) {
-      p.likedBy = p.likedBy?.filter(uid => uid !== currentUser.uid) || [];
-    } else {
-      if (!p.likedBy) p.likedBy = [];
-      p.likedBy.push(currentUser.uid);
-    }
-    
-    // Обновляем отображение
-    const likeButton = document.querySelector(`#post-${id} .action`);
-    const likesSpan = document.getElementById(`likes-${id}`);
-    if (likeButton && likesSpan) {
-      likeButton.classList.toggle('liked', !liked);
-      likeButton.innerHTML = `${!liked?"❤️":"🤍"} <span id="likes-${id}">${p.likes}</span>`;
-    }
-    
-    showNotification(liked ? "Лайк убран" : "Посту понравилось!");
-    
-  } catch(error) {
-    console.error("Ошибка при лайке:", error);
-    showNotification("Ошибка: " + error.message);
-  }
-}
-
-function openComments(id){
-  currentPostId = id;
-  commentsSheet.classList.add("show");
-  loadComments();
-}
-
-function closeComments(){
-  commentsSheet.classList.remove("show");
-}
-
-async function loadComments(){
-  const commentsBody = document.getElementById("commentsBody");
-  commentsBody.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка комментариев...</div>";
-  
-  try {
-    const snap = await db.collection("posts").doc(currentPostId)
-      .collection("comments").orderBy("createdAt").get();
-    
-    if (snap.empty) {
-      commentsBody.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Комментариев пока нет</div>";
-      return;
-    }
-    
-    commentsBody.innerHTML = "";
-    
-    snap.forEach(d=>{
-      const c=d.data();
-      
-      let timeAgo = "только что";
-      try {
-        if (c.createdAt) {
-          const commentDate = c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt);
-          timeAgo = formatTimeAgo(commentDate);
-        }
-      } catch (dateError) {
-        console.log("Ошибка форматирования даты комментария:", dateError);
-      }
-      
-      const canDelete = c.userId === currentUser.uid || userData?.isAdmin;
-      
-      commentsBody.innerHTML += `
-        <div class="post fade">
-          <div class="post-header">
-            <div class="avatar">${c.username?.[0]||"A"}</div>
-            <div class="post-user-info">
-              <strong>@${c.username}</strong>
-              <div class="post-time">${timeAgo}</div>
-            </div>
-            ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment('${d.id}')">🗑</button>` : ''}
-          </div>
-          <div class="post-text">${c.text}</div>
-        </div>`;
-    });
-    
-  } catch(error) {
-    console.error("Ошибка при загрузке комментариев:", error);
-    commentsBody.innerHTML = `<div style='text-align:center;color:var(--danger);padding:40px 0;'>Ошибка загрузки: ${error.message}</div>`;
-  }
-}
-
-async function deleteComment(commentId) {
-  if(!confirm("Удалить комментарий?")) return;
-  
-  try {
-    await db.collection("posts").doc(currentPostId)
-      .collection("comments").doc(commentId).delete();
-    
-    await db.collection("posts").doc(currentPostId)
-      .update({
-        commentsCount: firebase.firestore.FieldValue.increment(-1)
-      });
-    
-    showNotification("Комментарий удален!");
-    loadComments();
-    loadPosts();
-    
-  } catch(error) {
-    console.error("Ошибка при удалении комментария:", error);
-    showNotification("Ошибка: " + error.message);
-  }
-}
-
-async function addComment(){
-  const commentInput = document.getElementById("commentInput");
-  if(!commentInput.value.trim()){
-    showNotification("Напишите комментарий!");
-    return;
-  }
-  
-  try {
-    const username = userData.username || "anon" + currentUser.uid.slice(-4);
-    
-    await db.collection("posts").doc(currentPostId)
-      .collection("comments").add({
-        text: commentInput.value,
-        userId: currentUser.uid,
-        username: username,
-        createdAt: new Date()
-      });
-    
-    await db.collection("posts").doc(currentPostId)
-      .update({
-        commentsCount: firebase.firestore.FieldValue.increment(1)
-      });
-    
-    commentInput.value = "";
-    showNotification("Комментарий добавлен!");
-    loadComments();
-    loadPosts();
-    
-  } catch(error) {
-    console.error("Ошибка при добавлении комментария:", error);
-    showNotification("Ошибка: " + error.message);
-  }
-}
-
-async function getUserPostsCount(uid) {
-  const snap = await db.collection("posts")
-    .where("userId", "==", uid)
-    .get();
-  return snap.size;
-}
-
-async function getUserLikesCount(uid) {
-  try {
-    const snap = await db.collection("posts")
-      .where("userId", "==", uid)
-      .get();
-    
-    let totalLikes = 0;
-    snap.forEach(doc => {
-      const post = doc.data();
-      totalLikes += (post.likes || 0);
-    });
-    
-    return totalLikes;
-  } catch(error) {
-    console.error("Ошибка при получении лайков пользователя:", error);
-    return 0;
-  }
-}
-
-async function getUserViewsCount(uid) {
-  try {
-    const snap = await db.collection("posts")
-      .where("userId", "==", uid)
-      .get();
-    
-    let totalViews = 0;
-    snap.forEach(doc => {
-      const post = doc.data();
-      totalViews += (post.views || 0);
-    });
-    
-    return totalViews;
-  } catch(error) {
-    console.error("Ошибка при получении просмотров пользователя:", error);
-    return 0;
-  }
-}
-
-async function getUserPosts(uid) {
-  try {
-    const allPostsSnap = await db.collection("posts")
-      .orderBy("createdAt", "desc")
-      .limit(100)
-      .get();
-    
-    const userPosts = [];
-    allPostsSnap.forEach(doc => {
-      const post = doc.data();
-      if (post.userId === uid) {
-        userPosts.push({
-          id: doc.id,
-          ...post
-        });
-      }
-    });
-    
-    return userPosts;
-  } catch(error) {
-    console.error("Ошибка при получении постов пользователя:", error);
-    
-    if (error.code === 'failed-precondition') {
-      const simpleSnap = await db.collection("posts")
-        .where("userId", "==", uid)
-        .get();
-      
-      const userPosts = [];
-      simpleSnap.forEach(doc => {
-        userPosts.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
-      userPosts.sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-        return dateB - dateA;
-      });
-      
-      return userPosts.slice(0, 50);
-    }
-    
-    throw error;
-  }
-}
-
-async function refreshProfilePosts(uid) {
-  const profilePosts = document.getElementById("profilePosts");
-  const profilePostsCount = document.getElementById("profilePostsCount");
-  const profileLikesCount = document.getElementById("profileLikesCount");
-  const profileViewsCount = document.getElementById("profileViewsCount");
-  
-  if (!profilePosts) return;
-  
-  try {
-    const postsCount = await getUserPostsCount(uid);
-    profilePostsCount.textContent = postsCount;
-    
-    const likesCount = await getUserLikesCount(uid);
-    profileLikesCount.textContent = likesCount;
-    
-    const viewsCount = await getUserViewsCount(uid);
-    profileViewsCount.textContent = viewsCount;
-    
-    profilePosts.innerHTML = "";
-    
-    if (postsCount === 0) {
-      profilePosts.innerHTML = `
-        <div style="text-align:center;color:var(--sub);padding:40px 0;">
-          У пользователя пока нет постов
-        </div>`;
-      return;
-    }
-    
-    const userPosts = await getUserPosts(uid);
-    
-    userPosts.forEach(post => {
-      const canDelete = post.userId === currentUser.uid || userData?.isAdmin;
-      
-      let timeAgo = "только что";
-      let fullDateTime = "";
-      
-      try {
-        if (post.createdAt) {
-          const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
-          timeAgo = formatTimeAgo(postDate);
-          fullDateTime = formatFullDateTime(postDate);
-        }
-      } catch (dateError) {
-        console.log("Ошибка форматирования даты:", dateError);
-      }
-      
-      profilePosts.innerHTML += `
-        <div class="post fade" id="profile-post-${post.id}">
-          <div class="post-text">${post.text}</div>
-          <div class="post-time" title="${fullDateTime}">
-            <span>${timeAgo}</span>
-            <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
-            <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
-            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
-          </div>
-          ${canDelete ? 
-            `<button class="trash" style="position:absolute;top:16px;right:16px;" 
-                     onclick="deletePostFromProfile('${post.id}', '${uid}')">🗑</button>` : 
-            ""}
-        </div>`;
-    });
-    
-  } catch(error) {
-    console.error("Ошибка при загрузке постов профиля:", error);
-    profilePosts.innerHTML = `
-      <div style="text-align:center;color:var(--danger);padding:40px 0;">
-        ${error.message.includes("index") ? 
-          "Пожалуйста, создайте индекс в Firebase Console" : 
-          "Ошибка при загрузке постов"}
-      </div>`;
-  }
-}
-
-async function deletePostFromProfile(postId, userId) {
-  if(!confirm("Удалить этот пост из профиля?")) return;
-  
-  try {
-    await db.collection("posts").doc(postId).delete();
-    
-    if (viewedPosts[postId]) {
-      delete viewedPosts[postId];
-      localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-    }
-    
-    const postElement = document.getElementById(`profile-post-${postId}`);
-    if (postElement) {
-      postElement.remove();
-    }
-    
-    const postsCount = await getUserPostsCount(userId);
-    const likesCount = await getUserLikesCount(userId);
-    const viewsCount = await getUserViewsCount(userId);
-    
-    document.getElementById("profilePostsCount").textContent = postsCount;
-    document.getElementById("profileLikesCount").textContent = likesCount;
-    document.getElementById("profileViewsCount").textContent = viewsCount;
-    
-    loadPosts();
-    showNotification("Пост удален из профиля!");
-    
-  } catch(error) {
-    console.error("Ошибка при удалении поста:", error);
-    showNotification("Не удалось удалить пост: " + error.message);
-  }
-}
-
-async function updateUsernameInAllPosts(userId, newUsername) {
-  try {
-    const postsSnap = await db.collection("posts")
-      .where("userId", "==", userId)
-      .get();
-    
-    const batch = db.batch();
-    postsSnap.forEach(doc => {
-      batch.update(doc.ref, { username: newUsername });
-    });
-    
-    const allPostsSnap = await db.collection("posts").get();
-    allPostsSnap.forEach(postDoc => {
-      const commentsRef = postDoc.ref.collection("comments")
-        .where("userId", "==", userId);
-      
-      commentsRef.get().then(commentsSnap => {
-        commentsSnap.forEach(commentDoc => {
-          batch.update(commentDoc.ref, { username: newUsername });
-        });
-      });
-    });
-    
-    await batch.commit();
-    return true;
-  } catch(error) {
-    console.error("Ошибка при обновлении имени в постах:", error);
-    return false;
-  }
-}
-
+// Функции для модального окна смены имени
 function openChangeNameModal() {
-  const modal = document.getElementById('changeNameModal');
-  const input = document.getElementById('newUsernameInput');
-  
-  const currentName = userData?.username || '';
-  input.value = currentName.replace('@', '');
-  
-  modal.classList.add('show');
-  input.focus();
+  document.getElementById('changeNameModal').classList.add('show');
 }
 
 function closeChangeNameModal() {
@@ -1375,139 +972,49 @@ function closeChangeNameModal() {
 }
 
 async function changeUsername() {
-  const input = document.getElementById('newUsernameInput');
-  const newUsername = input.value.trim();
+  const newUsername = document.getElementById('newUsernameInput').value.trim();
   
   if (!newUsername) {
-    showNotification("Введите новое имя!");
-    return;
-  }
-  
-  if (newUsername.length < 3) {
-    showNotification("Имя должно быть не менее 3 символов!");
+    showNotification('Введите новое имя');
     return;
   }
   
   if (newUsername.length > 20) {
-    showNotification("Имя должно быть не более 20 символов!");
-    return;
-  }
-  
-  if (!/^[a-zA-Zа-яА-Я0-9_]+$/.test(newUsername)) {
-    showNotification("Имя может содержать только буквы, цифры и подчеркивание!");
+    showNotification('Имя не должно превышать 20 символов');
     return;
   }
   
   try {
-    await db.collection("users").doc(currentUser.uid).update({
+    // Проверка уникальности имени
+    const usernameSnapshot = await db.collection('users')
+      .where('username', '==', newUsername)
+      .get();
+    
+    if (!usernameSnapshot.empty) {
+      showNotification('Это имя уже занято');
+      return;
+    }
+    
+    // Обновление имени
+    await db.collection('users').doc(currentUser.uid).update({
       username: newUsername
     });
     
-    userData.username = newUsername;
-    
-    const updateSuccess = await updateUsernameInAllPosts(currentUser.uid, newUsername);
-    
-    if (updateSuccess) {
-      showNotification("Имя успешно изменено! Обновляю данные...");
-      
-      if (currentProfileUserId === currentUser.uid) {
-        document.getElementById("profileName").textContent = "@" + newUsername;
-        document.getElementById("profileAvatar").textContent = newUsername[0]?.toUpperCase() || "U";
-      }
-      
-      closeChangeNameModal();
-      
-      setTimeout(() => {
-        loadPosts();
-      }, 1000);
-      
-    } else {
-      showNotification("Имя изменено, но возникла ошибка при обновлении старых постов");
-    }
-    
-  } catch(error) {
-    console.error("Ошибка при смене имени:", error);
-    showNotification("Ошибка при смене имени: " + error.message);
+    closeChangeNameModal();
+    showNotification('Имя успешно изменено');
+    document.getElementById('newUsernameInput').value = '';
+  } catch (error) {
+    console.error("Ошибка смены имени:", error);
+    showNotification('Ошибка смены имени');
   }
 }
 
-async function openProfile(uid, name){
-  if (!uid || !name) return;
-  
-  currentProfileUserId = uid;
-  profileSheet.classList.add("show");
-  
-  document.getElementById("profileName").textContent = "@"+name;
-  document.getElementById("profileAvatar").textContent = name?.[0]||"A";
-  
-  const changeNameBtn = document.getElementById("changeNameBtn");
-  if (uid === currentUser.uid) {
-    changeNameBtn.style.display = "inline-block";
-  } else {
-    changeNameBtn.style.display = "none";
-  }
-  
-  document.getElementById("profilePosts").innerHTML = `
-    <div style="text-align:center;color:var(--sub);padding:40px 0;">
-      Загрузка постов...
-    </div>`;
-  
-  await refreshProfilePosts(uid);
+// Выход
+function logout() {
+  if (unsubscribePosts) unsubscribePosts();
+  if (unsubscribeUser) unsubscribeUser();
+  auth.signOut();
 }
-
-function closeProfile(){
-  currentProfileUserId = null;
-  profileSheet.classList.remove("show");
-}
-
-function logout(){
-  if(confirm("Выйти из аккаунта?")){
-    auth.signOut().then(()=>{
-      location.href="index.html";
-    });
-  }
-}
-
-// Поиск при вводе текста
-document.getElementById("searchInput").addEventListener("input", function(e) {
-  const searchTerm = e.target.value.trim();
-  
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  
-  if (searchTerm.length >= 2) {
-    searchTimeout = setTimeout(() => {
-      searchUsers(searchTerm);
-    }, 300);
-  } else {
-    document.getElementById("searchResults").innerHTML = '';
-    document.getElementById("searchResults").classList.remove('show');
-  }
-});
-
-// Enter для отправки поста
-document.getElementById("postText").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    createPost();
-  }
-});
-
-// Enter для смены имени
-document.getElementById("newUsernameInput").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    changeUsername();
-  }
-});
-
-setInterval(()=>{
-  const timeElement = document.getElementById("time");
-  if(timeElement){
-    timeElement.textContent = new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-  }
-},1000);
 </script>
 
 </body>

@@ -95,6 +95,7 @@ body{
   border-radius:22px;
   padding:16px;
   margin-bottom:14px;
+  position:relative;
 }
 .post-header{
   display:flex;
@@ -131,6 +132,11 @@ body{
   margin-left:auto;
   background:none;border:none;
   color:var(--danger);font-size:18px;
+}
+.post-time{
+  color:var(--sub);
+  font-size:12px;
+  margin-top:8px;
 }
 
 .sheet{
@@ -272,6 +278,7 @@ const auth=firebase.auth();
 let currentUser,userData;
 let postsCache=new Map();
 let currentPostId=null;
+let currentProfileUserId = null; // Для отслеживания чей профиль открыт
 
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
@@ -297,7 +304,7 @@ async function loadPosts(){
           @${p.username}
         </div>
         ${(p.userId===currentUser.uid||userData.isAdmin)?
-          `<button class="trash" onclick="deletePost('${doc.id}')">🗑</button>`:""}
+          `<button class="trash" onclick="deletePost('${doc.id}', '${p.userId}')">🗑</button>`:""}
       </div>
       <div class="post-text">${p.text}</div>
       <div class="post-actions">
@@ -327,10 +334,25 @@ async function createPost(){
   loadPosts();
 }
 
-async function deletePost(id){
+async function deletePost(postId, postUserId){
   if(!confirm("Удалить пост?"))return;
-  await db.collection("posts").doc(id).delete();
-  loadPosts();
+  
+  try {
+    // Удаляем пост
+    await db.collection("posts").doc(postId).delete();
+    
+    // Перезагружаем основную ленту
+    loadPosts();
+    
+    // Если профиль открыт и это пост того же пользователя, обновляем профиль
+    if (currentProfileUserId === postUserId) {
+      await refreshProfilePosts(postUserId);
+    }
+    
+  } catch(error) {
+    console.error("Ошибка при удалении поста:", error);
+    alert("Не удалось удалить пост");
+  }
 }
 
 async function toggleLike(id){
@@ -397,31 +419,112 @@ async function getUserPostsCount(uid) {
   return snap.size;
 }
 
+// Функция для обновления постов в профиле
+async function refreshProfilePosts(uid) {
+  const profilePostsContainer = document.getElementById("profilePosts");
+  const profilePostsCountElement = document.getElementById("profilePostsCount");
+  
+  if (!profilePostsContainer) return;
+  
+  try {
+    // Получаем посты пользователя
+    const snap = await db.collection("posts")
+      .where("userId", "==", uid)
+      .orderBy("createdAt", "desc")
+      .get();
+    
+    // Обновляем счетчик
+    profilePostsCountElement.textContent = snap.size;
+    
+    // Очищаем контейнер
+    profilePostsContainer.innerHTML = "";
+    
+    // Если постов нет
+    if (snap.empty) {
+      profilePostsContainer.innerHTML = `
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          У пользователя пока нет постов
+        </div>`;
+      return;
+    }
+    
+    // Добавляем посты
+    snap.forEach(doc=>{
+      const p = doc.data();
+      const canDelete = p.userId === currentUser.uid || userData.isAdmin;
+      
+      // Форматируем дату
+      const postDate = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+      const formattedDate = postDate.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+      const formattedTime = postDate.toLocaleTimeString("ru-RU", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      
+      profilePostsContainer.innerHTML += `
+        <div class="post fade" id="profile-post-${doc.id}">
+          <div class="post-text">${p.text}</div>
+          <div class="post-time">${formattedDate}, ${formattedTime}</div>
+          ${canDelete ? 
+            `<button class="trash" style="position:absolute;top:16px;right:16px;" 
+                     onclick="deletePostFromProfile('${doc.id}', '${uid}')">🗑</button>` : 
+            ""}
+        </div>`;
+    });
+    
+  } catch(error) {
+    console.error("Ошибка при загрузке постов профиля:", error);
+    profilePostsContainer.innerHTML = `
+      <div style="text-align:center;color:var(--danger);padding:40px 0;">
+        Ошибка при загрузке постов
+      </div>`;
+  }
+}
+
+// Функция удаления поста из профиля
+async function deletePostFromProfile(postId, userId) {
+  if(!confirm("Удалить этот пост из профиля?")) return;
+  
+  try {
+    await db.collection("posts").doc(postId).delete();
+    
+    // Удаляем пост из DOM
+    const postElement = document.getElementById(`profile-post-${postId}`);
+    if (postElement) {
+      postElement.remove();
+    }
+    
+    // Обновляем счетчик
+    const profilePostsCountElement = document.getElementById("profilePostsCount");
+    const currentCount = parseInt(profilePostsCountElement.textContent) || 0;
+    profilePostsCountElement.textContent = Math.max(0, currentCount - 1);
+    
+    // Обновляем основную ленту
+    loadPosts();
+    
+  } catch(error) {
+    console.error("Ошибка при удалении поста:", error);
+    alert("Не удалось удалить пост");
+  }
+}
+
 async function openProfile(uid, name){
+  currentProfileUserId = uid; // Сохраняем ID пользователя чей профиль открыт
+  
   profileSheet.classList.add("show");
   profileName.textContent="@"+name;
   profileAvatar.textContent=name?.[0]||"A";
-  profilePosts.innerHTML="";
   
-  // Получаем количество постов пользователя
-  const postsCount = await getUserPostsCount(uid);
-  profilePostsCount.textContent = postsCount;
-  
-  // Загружаем посты пользователя
-  const snap=await db.collection("posts")
-    .where("userId","==",uid)
-    .orderBy("createdAt","desc")
-    .get();
-    
-  snap.forEach(d=>{
-    profilePosts.innerHTML+=`
-      <div class="post fade">
-        <div class="post-text">${d.data().text}</div>
-      </div>`;
-  });
+  // Обновляем посты в профиле
+  await refreshProfilePosts(uid);
 }
 
 function closeProfile(){
+  currentProfileUserId = null; // Сбрасываем при закрытии
   profileSheet.classList.remove("show");
 }
 

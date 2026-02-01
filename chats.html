@@ -131,6 +131,7 @@ body{
 .chat-info {
   flex: 1;
   min-width: 0;
+  padding-right: 80px; /* Место для кнопок */
 }
 .chat-user {
   font-weight: 600;
@@ -158,8 +159,9 @@ body{
 }
 .chat-actions {
   position: absolute;
-  top: 16px;
+  top: 50%;
   right: 16px;
+  transform: translateY(-50%);
   display: flex;
   gap: 8px;
   opacity: 0;
@@ -168,32 +170,35 @@ body{
 .chat-item:hover .chat-actions {
   opacity: 1;
 }
+.chat-item.mobile-actions-visible .chat-actions {
+  opacity: 1;
+}
 .action-btn {
   background: rgba(28,28,30,0.8);
   border: none;
   color: var(--sub);
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.2s;
 }
 .action-btn:hover {
   background: var(--card);
   color: var(--text);
+  transform: scale(1.1);
 }
 .action-btn.pin-btn:hover {
   color: var(--pinned);
+  background: rgba(255,214,10,0.1);
 }
 .action-btn.delete-btn:hover {
   color: var(--danger);
-}
-.action-btn.mobile-visible {
-  display: none;
+  background: rgba(255,69,58,0.1);
 }
 .no-chats {
   text-align: center;
@@ -244,6 +249,7 @@ body{
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
   position: relative;
+  min-height: 72px;
 }
 .chat-user-info {
   display: flex;
@@ -401,6 +407,8 @@ body{
   border-top: 1px solid var(--border);
   display: flex;
   gap: 10px;
+  align-items: flex-end;
+  position: relative;
 }
 .chat-input {
   flex: 1;
@@ -414,6 +422,7 @@ body{
   resize: none;
   min-height: 44px;
   max-height: 120px;
+  line-height: 1.4;
 }
 .chat-input:focus {
   outline: none;
@@ -550,21 +559,27 @@ body{
   }
   .chat-header {
     padding: 12px;
-  }
-  .action-btn {
-    opacity: 1;
-    background: var(--card);
-  }
-  .action-btn.mobile-visible {
-    display: flex;
-  }
-  .action-btn:not(.mobile-visible) {
-    display: none;
+    min-height: 64px;
   }
   .chat-actions {
-    opacity: 1;
-    position: static;
-    margin-left: auto;
+    opacity: 1 !important;
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    gap: 6px;
+  }
+  .action-btn {
+    background: rgba(28,28,30,0.9);
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .chat-info {
+    padding-right: 70px;
+  }
+  .chat-input-area {
+    padding: 12px;
   }
 }
 
@@ -906,29 +921,33 @@ async function loadChatsList() {
       }
       
       const senderPrefix = chat.lastSender === currentUser.uid ? 'Вы: ' : '';
+      const pinIcon = chat.isPinned ? '📌' : '📌';
+      const pinBtnTitle = chat.isPinned ? 'Открепить чат' : 'Закрепить чат';
       
       chatsHTML += `
         <div class="chat-item fade ${isUnread ? 'unread' : ''} ${chat.isPinned ? 'pinned' : ''}" 
              onclick="handleChatClick(event, '${chat.otherUserId}', '${otherUser.username}', '${chat.id}')"
              data-chat-id="${chat.id}"
-             data-is-pinned="${chat.isPinned}">
+             data-is-pinned="${chat.isPinned}"
+             onmouseenter="showChatActions(this)"
+             onmouseleave="hideChatActions(this)">
           <div class="chat-avatar">
             ${otherUser.username?.[0]?.toUpperCase() || 'U'}
-            ${chat.isPinned ? '<span class="pin-indicator" style="position:absolute;top:-5px;right:-5px;color:var(--pinned);">📌</span>' : ''}
           </div>
           <div class="chat-info">
             <div class="chat-user">
               @${otherUser.username}
               ${adminUsers.has(chat.otherUserId) ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+              ${chat.isPinned ? '<span style="color:var(--pinned);margin-left:4px;">📌</span>' : ''}
             </div>
             <div class="chat-preview">${senderPrefix}${preview}</div>
             <div class="chat-time">${timeAgo}</div>
           </div>
           <div class="chat-actions">
-            <button class="action-btn pin-btn mobile-visible" onclick="event.stopPropagation(); togglePinChat('${chat.id}')">
-              ${chat.isPinned ? '📌' : '📌'}
+            <button class="action-btn pin-btn" onclick="event.stopPropagation(); togglePinChat('${chat.id}')" title="${pinBtnTitle}">
+              ${pinIcon}
             </button>
-            <button class="action-btn delete-btn mobile-visible" onclick="event.stopPropagation(); showDeleteConfirm('${chat.id}', '${otherUser.username}')">
+            <button class="action-btn delete-btn" onclick="event.stopPropagation(); showDeleteConfirm('${chat.id}', '${otherUser.username}')" title="Удалить чат">
               🗑️
             </button>
           </div>
@@ -938,45 +957,37 @@ async function loadChatsList() {
     
     chatsList.innerHTML = chatsHTML;
     
-    // Добавляем обработчики для десктопов
-    setTimeout(() => {
+    // Добавляем обработчики для мобильных
+    if (window.innerWidth <= 768) {
       const chatItems = document.querySelectorAll('.chat-item');
       chatItems.forEach(item => {
-        // Для десктопа показываем кнопки при наведении
-        if (window.innerWidth > 768) {
-          item.addEventListener('mouseenter', () => {
-            const actions = item.querySelector('.chat-actions');
-            if (actions) actions.style.opacity = '1';
-          });
-          
-          item.addEventListener('mouseleave', () => {
-            const actions = item.querySelector('.chat-actions');
-            if (actions) actions.style.opacity = '0';
-          });
-        }
+        let longPressTimer;
+        const chatId = item.getAttribute('data-chat-id');
+        const isPinned = item.getAttribute('data-is-pinned') === 'true';
         
-        // Для мобильных добавляем обработчик долгого нажатия
-        if (window.innerWidth <= 768) {
-          let longPressTimer;
-          const chatId = item.getAttribute('data-chat-id');
-          const isPinned = item.getAttribute('data-is-pinned') === 'true';
-          
-          item.addEventListener('touchstart', (e) => {
-            longPressTimer = setTimeout(() => {
-              showContextMenu(e, chatId, isPinned);
-            }, 500);
-          });
-          
-          item.addEventListener('touchend', () => {
-            clearTimeout(longPressTimer);
-          });
-          
-          item.addEventListener('touchmove', () => {
-            clearTimeout(longPressTimer);
-          });
-        }
+        item.addEventListener('touchstart', (e) => {
+          longPressTimer = setTimeout(() => {
+            showContextMenu(e, chatId, isPinned);
+          }, 500);
+        });
+        
+        item.addEventListener('touchend', () => {
+          clearTimeout(longPressTimer);
+        });
+        
+        item.addEventListener('touchmove', () => {
+          clearTimeout(longPressTimer);
+        });
+        
+        // Показываем кнопки при нажатии на мобильных
+        item.addEventListener('click', (e) => {
+          if (!e.target.closest('.action-btn')) {
+            // Клик не по кнопке действия - показываем/скрываем кнопки
+            item.classList.toggle('mobile-actions-visible');
+          }
+        });
       });
-    }, 100);
+    }
     
   } catch (error) {
     console.error('Ошибка загрузки чатов:', error);
@@ -984,6 +995,26 @@ async function loadChatsList() {
       <div class="no-chats" style="color:var(--danger)">
         Ошибка загрузки чатов: ${error.message}
       </div>`;
+  }
+}
+
+// ==================== УПРАВЛЕНИЕ КНОПКАМИ НА ДЕСКТОПЕ ====================
+
+function showChatActions(chatItem) {
+  if (window.innerWidth > 768) {
+    const actions = chatItem.querySelector('.chat-actions');
+    if (actions) {
+      actions.style.opacity = '1';
+    }
+  }
+}
+
+function hideChatActions(chatItem) {
+  if (window.innerWidth > 768) {
+    const actions = chatItem.querySelector('.chat-actions');
+    if (actions) {
+      actions.style.opacity = '0';
+    }
   }
 }
 
@@ -1052,32 +1083,38 @@ async function togglePinChat(chatId) {
       chatItem.setAttribute('data-is-pinned', (!isCurrentlyPinned).toString());
       chatItem.classList.toggle('pinned');
       
-      const pinIndicator = chatItem.querySelector('.pin-indicator');
       const pinBtn = chatItem.querySelector('.pin-btn');
+      const usernameElement = chatItem.querySelector('.chat-user');
       
       if (!isCurrentlyPinned) {
-        // Добавляем индикатор закрепления
-        const avatar = chatItem.querySelector('.chat-avatar');
-        if (avatar && !pinIndicator) {
-          const indicator = document.createElement('span');
-          indicator.className = 'pin-indicator';
-          indicator.style.position = 'absolute';
-          indicator.style.top = '-5px';
-          indicator.style.right = '-5px';
-          indicator.style.color = 'var(--pinned)';
-          indicator.textContent = '📌';
-          avatar.appendChild(indicator);
+        // Добавляем значок закрепления
+        let pinIndicator = usernameElement.querySelector('.pin-indicator');
+        if (!pinIndicator) {
+          pinIndicator = document.createElement('span');
+          pinIndicator.className = 'pin-indicator';
+          pinIndicator.style.cssText = 'color:var(--pinned);margin-left:4px;';
+          pinIndicator.textContent = '📌';
+          usernameElement.appendChild(pinIndicator);
         }
-        if (pinBtn) pinBtn.textContent = '📌';
+        if (pinBtn) {
+          pinBtn.innerHTML = '📌';
+          pinBtn.title = 'Открепить чат';
+        }
       } else {
-        // Удаляем индикатор закрепления
+        // Удаляем значок закрепления
+        const pinIndicator = usernameElement.querySelector('.pin-indicator');
         if (pinIndicator) pinIndicator.remove();
-        if (pinBtn) pinBtn.textContent = '📌';
+        if (pinBtn) {
+          pinBtn.innerHTML = '📌';
+          pinBtn.title = 'Закрепить чат';
+        }
       }
     }
     
     // Перезагружаем список чатов для правильной сортировки
-    loadChatsList();
+    setTimeout(() => {
+      loadChatsList();
+    }, 300);
     
   } catch (error) {
     console.error("Ошибка при закреплении чата:", error);
@@ -1125,7 +1162,9 @@ async function deleteChat(chatId) {
     }
     
     // Обновляем список чатов
-    loadChatsList();
+    setTimeout(() => {
+      loadChatsList();
+    }, 300);
     
   } catch (error) {
     console.error("Ошибка при удалении чата:", error);
@@ -1138,6 +1177,13 @@ async function deleteChat(chatId) {
 function handleChatClick(event, userId, username, chatId) {
   // Проверяем, была ли нажата кнопка действия
   if (event.target.closest('.action-btn') || event.target.closest('.chat-actions')) {
+    return;
+  }
+  
+  // На мобильных закрываем кнопки если они открыты
+  const chatItem = event.currentTarget;
+  if (chatItem.classList.contains('mobile-actions-visible')) {
+    chatItem.classList.remove('mobile-actions-visible');
     return;
   }
   
@@ -1602,7 +1648,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const chatItem = document.querySelector(`.chat-item[data-chat-id="${contextMenuChatId}"]`);
       if (chatItem) {
         const usernameElement = chatItem.querySelector('.chat-user');
-        const username = usernameElement ? usernameElement.textContent.replace('@', '') : 'пользователем';
+        const username = usernameElement ? usernameElement.textContent.replace('@', '').replace('📌', '').trim() : 'пользователем';
         showDeleteConfirm(contextMenuChatId, username);
       }
       contextMenu.classList.remove('show');

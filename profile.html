@@ -19,7 +19,7 @@
   --sub:#9a9a9a;
   --accent:linear-gradient(135deg,#667eea,#764ba2);
   --danger:#ff453a;
-  --success:#32d74b;
+  --success:#30d158;
 }
 *{box-sizing:border-box}
 body{
@@ -226,29 +226,26 @@ body{
   display:flex;
   flex-direction:column;
   gap:6px;
-  flex:1;
-}
-.profile-name-container{
-  display:flex;
-  align-items:center;
-  gap:10px;
 }
 .profile-name{
   font-size:18px;
   font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
 .change-name-btn{
-  background:rgba(255,255,255,0.1);
+  background:none;
   border:none;
   color:var(--sub);
-  border-radius:8px;
-  padding:4px 8px;
-  font-size:12px;
+  font-size:14px;
   cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
   transition:background 0.2s;
 }
 .change-name-btn:hover{
-  background:rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.1);
 }
 .profile-stats{
   display:flex;
@@ -277,49 +274,6 @@ body{
   color:#5ac8fa;
 }
 
-/* Форма смены имени */
-.name-change-form{
-  background:var(--card);
-  border-radius:16px;
-  padding:16px;
-  margin-top:16px;
-  margin-bottom:16px;
-  display:none;
-}
-.name-change-form.show{
-  display:block;
-}
-.name-change-form input{
-  width:100%;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:12px;
-  color:#fff;
-  margin-bottom:12px;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
-.name-change-buttons{
-  display:flex;
-  gap:8px;
-}
-.name-change-buttons button{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:12px;
-  font-weight:600;
-  cursor:pointer;
-}
-.name-change-buttons button:first-child{
-  background:var(--success);
-  color:white;
-}
-.name-change-buttons button:last-child{
-  background:rgba(255,255,255,0.1);
-  color:var(--text);
-}
-
 /* Уведомление */
 .notification{
   position:fixed;
@@ -341,6 +295,89 @@ body{
 .notification.show{
   opacity:1;
   transform:translateX(-50%) translateY(0);
+}
+
+/* Модальное окно для смены имени */
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:3000;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.3s;
+}
+.modal-overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.modal{
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  width:90%;
+  max-width:400px;
+  transform:translateY(20px);
+  transition:transform 0.3s;
+}
+.modal-overlay.show .modal{
+  transform:translateY(0);
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+.modal-title{
+  font-size:20px;
+  font-weight:700;
+}
+.modal-close{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:20px;
+  cursor:pointer;
+}
+.modal-input{
+  width:100%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:16px;
+  font-family:inherit;
+}
+.modal-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.modal-buttons{
+  display:flex;
+  gap:12px;
+}
+.modal-btn{
+  flex:1;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-weight:600;
+  cursor:pointer;
+  font-size:16px;
+}
+.modal-btn.primary{
+  background:var(--accent);
+  color:white;
+}
+.modal-btn.secondary{
+  background:rgba(255,255,255,0.1);
+  color:white;
 }
 </style>
 </head>
@@ -376,6 +413,21 @@ body{
 <!-- Уведомление -->
 <div class="notification" id="notification"></div>
 
+<!-- Модальное окно для смены имени -->
+<div class="modal-overlay" id="changeNameModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Сменить имя</div>
+      <button class="modal-close" onclick="closeChangeNameModal()">✕</button>
+    </div>
+    <input type="text" class="modal-input" id="newUsernameInput" placeholder="Новое имя (без @)" maxlength="20">
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeChangeNameModal()">Отмена</button>
+      <button class="modal-btn primary" onclick="changeUsername()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMENTS -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
@@ -399,9 +451,9 @@ body{
     <div class="profile-header">
       <div class="profile-avatar" id="profileAvatar">A</div>
       <div class="profile-info">
-        <div class="profile-name-container">
-          <div class="profile-name" id="profileName">@anon</div>
-          <button class="change-name-btn" onclick="toggleNameChangeForm()">✏️</button>
+        <div class="profile-name">
+          <span id="profileName">@anon</span>
+          <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
         </div>
         <div class="profile-stats">
           <div class="profile-stat">
@@ -421,16 +473,6 @@ body{
         </div>
       </div>
     </div>
-    
-    <!-- Форма смены имени -->
-    <div class="name-change-form" id="nameChangeForm">
-      <input type="text" id="newUsernameInput" placeholder="Новое имя пользователя" maxlength="20">
-      <div class="name-change-buttons">
-        <button onclick="changeUsername()">Сохранить</button>
-        <button onclick="toggleNameChangeForm()">Отмена</button>
-      </div>
-    </div>
-    
     <div id="profilePosts"></div>
   </div>
 </div>
@@ -452,14 +494,39 @@ let currentProfileUserId = null;
 auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
-  const snap=await db.collection("users").doc(u.uid).get();
-  userData=snap.data()||{};
-  if(userData.isAdmin) adminBtn.style.display="block";
+  await loadUserData();
   loadPosts();
   
   // Проверяем, нужно ли прокрутить к определенному посту
   setTimeout(checkPostToScroll, 1000);
 });
+
+// Загружаем данные пользователя
+async function loadUserData() {
+  const snap = await db.collection("users").doc(currentUser.uid).get();
+  if (!snap.exists) {
+    // Если документ не существует, создаем его
+    userData = {
+      username: "user" + currentUser.uid.slice(-6),
+      email: currentUser.email || "не указан",
+      createdAt: new Date(),
+      isAdmin: false,
+      lastLogin: new Date()
+    };
+    await db.collection("users").doc(currentUser.uid).set(userData);
+  } else {
+    userData = snap.data();
+  }
+  
+  // Обновляем время последнего входа
+  await db.collection("users").doc(currentUser.uid).update({
+    lastLogin: new Date()
+  });
+  
+  if(userData.isAdmin) {
+    document.getElementById("adminBtn").style.display = "block";
+  }
+}
 
 // Проверяем, нужно ли прокрутить к посту из профиля
 function checkPostToScroll() {
@@ -966,83 +1033,116 @@ async function deletePostFromProfile(postId, userId) {
   }
 }
 
-// Показать/скрыть форму смены имени
-function toggleNameChangeForm() {
-  const form = document.getElementById('nameChangeForm');
+// Обновляем имя пользователя во всех его постах
+async function updateUsernameInAllPosts(userId, newUsername) {
+  try {
+    // Находим все посты пользователя
+    const postsSnap = await db.collection("posts")
+      .where("userId", "==", userId)
+      .get();
+    
+    // Обновляем каждый пост
+    const batch = db.batch();
+    postsSnap.forEach(doc => {
+      batch.update(doc.ref, { username: newUsername });
+    });
+    
+    // Находим все комментарии пользователя
+    const allPostsSnap = await db.collection("posts").get();
+    allPostsSnap.forEach(postDoc => {
+      const commentsRef = postDoc.ref.collection("comments")
+        .where("userId", "==", userId);
+      
+      commentsRef.get().then(commentsSnap => {
+        commentsSnap.forEach(commentDoc => {
+          batch.update(commentDoc.ref, { username: newUsername });
+        });
+      });
+    });
+    
+    await batch.commit();
+    return true;
+  } catch(error) {
+    console.error("Ошибка при обновлении имени в постах:", error);
+    return false;
+  }
+}
+
+// Открыть модальное окно для смены имени
+function openChangeNameModal() {
+  const modal = document.getElementById('changeNameModal');
   const input = document.getElementById('newUsernameInput');
   
-  if (form.classList.contains('show')) {
-    form.classList.remove('show');
-    input.value = '';
-  } else {
-    form.classList.add('show');
-    input.focus();
-  }
+  // Показываем текущее имя (без @)
+  const currentName = userData.username || '';
+  input.value = currentName.replace('@', '');
+  
+  modal.classList.add('show');
+  input.focus();
+}
+
+// Закрыть модальное окно
+function closeChangeNameModal() {
+  document.getElementById('changeNameModal').classList.remove('show');
 }
 
 // Сменить имя пользователя
 async function changeUsername() {
-  const newUsernameInput = document.getElementById('newUsernameInput');
-  const newUsername = newUsernameInput.value.trim();
+  const input = document.getElementById('newUsernameInput');
+  const newUsername = input.value.trim();
   
   if (!newUsername) {
-    showNotification("Введите новое имя пользователя!");
+    showNotification("Введите новое имя!");
     return;
   }
   
   if (newUsername.length < 3) {
-    showNotification("Имя должно быть минимум 3 символа!");
+    showNotification("Имя должно быть не менее 3 символов!");
     return;
   }
   
   if (newUsername.length > 20) {
-    showNotification("Имя не должно превышать 20 символов!");
+    showNotification("Имя должно быть не более 20 символов!");
     return;
   }
   
-  // Проверяем, не начинается ли имя с @
-  const cleanUsername = newUsername.startsWith('@') ? newUsername.substring(1) : newUsername;
+  if (!/^[a-zA-Zа-яА-Я0-9_]+$/.test(newUsername)) {
+    showNotification("Имя может содержать только буквы, цифры и подчеркивание!");
+    return;
+  }
   
   try {
-    // Обновляем имя в профиле пользователя
-    await db.collection('users').doc(currentUser.uid).update({
-      username: cleanUsername,
-      updatedAt: new Date()
+    // Обновляем в Firestore
+    await db.collection("users").doc(currentUser.uid).update({
+      username: newUsername
     });
-    
-    // Обновляем имя во всех постах пользователя
-    const postsSnapshot = await db.collection('posts')
-      .where('userId', '==', currentUser.uid)
-      .get();
-    
-    const batch = db.batch();
-    postsSnapshot.forEach(doc => {
-      batch.update(doc.ref, { username: cleanUsername });
-    });
-    
-    await batch.commit();
-    
-    // Обновляем имя во всех комментариях пользователя
-    // Для этого нужно пройтись по всем постам и обновить комментарии
-    // Это можно сделать фоново, но для простоты пока обновим только посты
     
     // Обновляем локальные данные
-    userData.username = cleanUsername;
+    userData.username = newUsername;
     
-    // Обновляем аватар и имя в профиле
-    document.getElementById('profileName').textContent = '@' + cleanUsername;
-    document.getElementById('profileAvatar').textContent = cleanUsername[0].toUpperCase();
+    // Обновляем имя во всех постах и комментариях
+    const updateSuccess = await updateUsernameInAllPosts(currentUser.uid, newUsername);
     
-    // Скрываем форму
-    toggleNameChangeForm();
-    
-    // Показываем уведомление
-    showNotification("Имя успешно изменено!");
-    
-    // Обновляем основную ленту
-    setTimeout(() => {
-      loadPosts();
-    }, 500);
+    if (updateSuccess) {
+      showNotification("Имя успешно изменено! Обновляю данные...");
+      
+      // Обновляем текущий профиль, если он открыт
+      if (currentProfileUserId === currentUser.uid) {
+        document.getElementById("profileName").textContent = "@" + newUsername;
+        document.getElementById("profileAvatar").textContent = newUsername[0]?.toUpperCase() || "U";
+      }
+      
+      // Закрываем модальное окно
+      closeChangeNameModal();
+      
+      // Перезагружаем посты, чтобы увидеть изменения
+      setTimeout(() => {
+        loadPosts();
+      }, 1000);
+      
+    } else {
+      showNotification("Имя изменено, но возникла ошибка при обновлении старых постов");
+    }
     
   } catch(error) {
     console.error("Ошибка при смене имени:", error);
@@ -1054,22 +1154,17 @@ async function openProfile(uid, name){
   currentProfileUserId = uid;
   profileSheet.classList.add("show");
   
-  // Скрываем форму смены имени при открытии чужого профиля
-  const form = document.getElementById('nameChangeForm');
-  form.classList.remove('show');
-  document.getElementById('newUsernameInput').value = '';
-  
-  // Показываем кнопку смены имени только для своего профиля
-  const changeNameBtn = document.querySelector('.change-name-btn');
-  if (uid === currentUser.uid) {
-    changeNameBtn.style.display = 'block';
-  } else {
-    changeNameBtn.style.display = 'none';
-  }
-  
   // header
   document.getElementById("profileName").textContent="@"+name;
   document.getElementById("profileAvatar").textContent=name?.[0]||"A";
+  
+  // Показываем/скрываем кнопку смены имени (только для своего профиля)
+  const changeNameBtn = document.getElementById("changeNameBtn");
+  if (uid === currentUser.uid) {
+    changeNameBtn.style.display = "inline-block";
+  } else {
+    changeNameBtn.style.display = "none";
+  }
   
   // Сначала показываем загрузку
   document.getElementById("profilePosts").innerHTML = `
@@ -1095,4 +1190,28 @@ function logout(){
 }
 
 // Enter для отправки поста
-document
+document.getElementById("postText").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    createPost();
+  }
+});
+
+// Enter для смены имени
+document.getElementById("newUsernameInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    changeUsername();
+  }
+});
+
+setInterval(()=>{
+  const timeElement = document.getElementById("time");
+  if(timeElement){
+    timeElement.textContent = new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  }
+},1000);
+</script>
+
+</body>
+</html>

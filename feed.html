@@ -407,6 +407,11 @@ body{
   gap:8px;
   flex-wrap:wrap;
 }
+.profile-name-with-badge{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
 .change-name-btn{
   background:none;
   border:none;
@@ -751,7 +756,10 @@ body{
       <div class="profile-avatar" id="profileAvatar">A</div>
       <div class="profile-info">
         <div class="profile-name">
-          <span id="profileName">@anon</span>
+          <div class="profile-name-with-badge">
+            <span id="profileName">@anon</span>
+            <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
+          </div>
           <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
         </div>
@@ -1048,17 +1056,21 @@ async function loadUserBio(userId) {
         bioText.style.display = 'block';
         bioEmpty.style.display = 'none';
         
-        // Показываем счетчик слов
-        const wordCount = countWords(bio);
-        wordCounter.textContent = `Слов: ${wordCount}/50`;
-        wordCounter.style.display = 'block';
-        
-        // Изменяем цвет в зависимости от количества слов
-        wordCounter.classList.remove('warning', 'error');
-        if (wordCount > 40 && wordCount <= 50) {
-          wordCounter.classList.add('warning');
-        } else if (wordCount > 50) {
-          wordCounter.classList.add('error');
+        // Показываем счетчик слов ТОЛЬКО для своего профиля
+        if (userId === currentUser.uid) {
+          const wordCount = countWords(bio);
+          wordCounter.textContent = `Слов: ${wordCount}/50`;
+          wordCounter.style.display = 'block';
+          
+          // Изменяем цвет в зависимости от количества слов
+          wordCounter.classList.remove('warning', 'error');
+          if (wordCount > 40 && wordCount <= 50) {
+            wordCounter.classList.add('warning');
+          } else if (wordCount > 50) {
+            wordCounter.classList.add('error');
+          }
+        } else {
+          wordCounter.style.display = 'none';
         }
       } else {
         bioText.style.display = 'none';
@@ -1072,6 +1084,14 @@ async function loadUserBio(userId) {
         editBtn.style.display = 'block';
       } else {
         editBtn.style.display = 'none';
+      }
+      
+      // Показываем галочку для админов
+      const verifiedBadge = document.getElementById('profileVerifiedBadge');
+      if (adminUsers.has(userId)) {
+        verifiedBadge.style.display = 'inline';
+      } else {
+        verifiedBadge.style.display = 'none';
       }
     }
   } catch(error) {

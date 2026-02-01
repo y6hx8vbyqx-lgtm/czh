@@ -93,7 +93,7 @@ body{
   font-weight:600;
 }
 
-/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ - ФИКС ЛУПЫ */
+/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ - ИСПРАВЛЕНИЕ ЛУПЫ */
 .search{
   background:var(--card);
   border-radius:22px;
@@ -111,8 +111,8 @@ body{
   font-size:16px;
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   border:1px solid var(--border);
-  line-height:normal; /* ФИКС: предотвращает смещение */
-  height:48px; /* ФИКС: фиксированная высота */
+  height: 48px; /* Фиксированная высота */
+  line-height: normal; /* Убираем вертикальное смещение */
 }
 .search-input:focus{
   outline:none;
@@ -121,11 +121,10 @@ body{
 .search-icon{
   position:absolute;
   left:28px;
-  top:28px; /* ФИКС: фиксированная позиция вместо 50% */
+  top:28px; /* ФИКС: было top:50%; transform:translateY(-50%) */
   color:var(--sub);
   font-size:18px;
   pointer-events:none;
-  z-index:2;
 }
 .search-results{
   margin-top:12px;
@@ -175,8 +174,8 @@ body{
   font-size:14px;
 }
 
-/* РАЗДЕЛИТЕЛЬ МЕЖДУ ДНЯМИ - ДОБАВЛЕН НОВЫЙ СТИЛЬ */
-.day-separator {
+/* РАЗДЕЛИТЕЛЬ ПО ДНЯМ */
+.day-divider {
   text-align: center;
   margin: 20px 0;
   color: var(--sub);
@@ -184,8 +183,8 @@ body{
   font-weight: 600;
   position: relative;
 }
-.day-separator::before,
-.day-separator::after {
+.day-divider::before,
+.day-divider::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -193,17 +192,16 @@ body{
   height: 1px;
   background: var(--border);
 }
-.day-separator::before {
+.day-divider::before {
   left: 10%;
 }
-.day-separator::after {
+.day-divider::after {
   right: 10%;
 }
-.day-separator span {
+.day-divider span {
   background: var(--card);
   padding: 6px 12px;
   border-radius: 10px;
-  display: inline-block;
 }
 
 .post{
@@ -593,7 +591,7 @@ const db = firebase.firestore();
 let currentUser = null;
 let unsubscribePosts = null;
 let unsubscribeUser = null;
-let lastDayDivider = null;
+let lastDay = null;
 
 // Обновление времени в Dynamic Island
 function updateTime() {
@@ -605,7 +603,7 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
-// Авторизация
+// Авторизация - КАК БЫЛО В ОРИГИНАЛЕ
 auth.onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
@@ -624,8 +622,10 @@ auth.onAuthStateChanged((user) => {
     setupSearchListener();
   } else {
     console.log("Пользователь не авторизован");
-    // Редирект на страницу входа
-    window.location.href = 'index.html';
+    // Редирект на страницу входа - КАК БЫЛО В ОРИГИНАЛЕ
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 100);
   }
 });
 
@@ -654,14 +654,14 @@ function loadUserData() {
     });
 }
 
-// Подписка на посты
+// Подписка на посты - С ДОБАВЛЕНИЕМ РАЗДЕЛИТЕЛЕЙ
 function subscribeToPosts() {
   unsubscribePosts = db.collection('posts')
     .orderBy('timestamp', 'desc')
     .onSnapshot((snapshot) => {
       const feed = document.getElementById('feed');
       feed.innerHTML = '';
-      lastDayDivider = null;
+      lastDay = null;
       
       snapshot.forEach((doc) => {
         const post = doc.data();
@@ -681,9 +681,55 @@ function subscribeToPosts() {
     });
 }
 
-// Создание элемента поста
+// Создание элемента поста - С РАЗДЕЛИТЕЛЯМИ ДНЕЙ
 function createPostElement(post) {
   const feed = document.getElementById('feed');
+  
+  // Проверяем день поста для добавления разделителя
+  if (post.timestamp) {
+    const postDate = post.timestamp.toDate();
+    const postDay = postDate.toLocaleDateString('ru-RU');
+    
+    if (lastDay !== postDay) {
+      // Добавляем разделитель дня
+      const dayDivider = document.createElement('div');
+      dayDivider.className = 'day-divider';
+      
+      const today = new Date();
+      const postDayDate = new Date(postDate.getFullYear(), postDate.getMonth(), postDate.getDate());
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const yesterdayDate = new Date(todayDate);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      
+      let dayLabel;
+      if (postDayDate.getTime() === todayDate.getTime()) {
+        dayLabel = 'Сегодня';
+      } else if (postDayDate.getTime() === yesterdayDate.getTime()) {
+        dayLabel = 'Вчера';
+      } else {
+        const diffTime = Math.abs(todayDate - postDayDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 7) {
+          const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+          dayLabel = days[postDate.getDay()];
+        } else if (diffDays < 30) {
+          const weeks = Math.floor(diffDays / 7);
+          dayLabel = `${weeks} ${getWeekWord(weeks)} назад`;
+        } else {
+          dayLabel = postDate.toLocaleDateString('ru-RU', { 
+            day: 'numeric', 
+            month: 'long',
+            year: postDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+          });
+        }
+      }
+      
+      dayDivider.innerHTML = `<span>${dayLabel}</span>`;
+      feed.appendChild(dayDivider);
+      lastDay = postDay;
+    }
+  }
   
   const postElement = document.createElement('div');
   postElement.className = 'post';
@@ -692,19 +738,6 @@ function createPostElement(post) {
   // Форматирование времени
   const time = post.timestamp?.toDate();
   const timeStr = time ? formatTime(time) : 'только что';
-  
-  // Проверяем день для добавления разделителя
-  if (time) {
-    const postDay = getDayString(time);
-    if (lastDayDivider !== postDay) {
-      // Добавляем разделитель дня
-      const separator = document.createElement('div');
-      separator.className = 'day-separator';
-      separator.innerHTML = `<span>${getDayLabel(time)}</span>`;
-      feed.appendChild(separator);
-      lastDayDivider = postDay;
-    }
-  }
   
   // Аватар из первой буквы ника
   const avatarLetter = post.username ? post.username.charAt(0).toUpperCase() : 'А';
@@ -737,31 +770,11 @@ function createPostElement(post) {
   feed.appendChild(postElement);
 }
 
-// Получение строкового представления дня
-function getDayString(date) {
-  return date.toLocaleDateString('ru-RU');
-}
-
-// Получение метки для дня
-function getDayLabel(date) {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  const postDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  
-  if (postDay.getTime() === today.getTime()) {
-    return 'Сегодня';
-  } else if (postDay.getTime() === yesterday.getTime()) {
-    return 'Вчера';
-  } else {
-    return date.toLocaleDateString('ru-RU', { 
-      day: 'numeric', 
-      month: 'long',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
-  }
+// Вспомогательная функция для правильного склонения "недель"
+function getWeekWord(weeks) {
+  if (weeks === 1) return 'неделя';
+  if (weeks >= 2 && weeks <= 4) return 'недели';
+  return 'недель';
 }
 
 // Создание поста

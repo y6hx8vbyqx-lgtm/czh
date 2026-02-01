@@ -252,9 +252,16 @@ body{
   font-weight:600;
   cursor:pointer;
   transition:opacity 0.2s;
+  display:flex;
+  align-items:center;
+  gap:4px;
 }
 .post-user:hover{
   opacity:0.7;
+}
+.verified-badge{
+  color:#5ac8fa;
+  font-size:14px;
 }
 .post-time{
   color:var(--sub);
@@ -563,7 +570,6 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
-    <button class="nav-btn" id="subscriptionsBtn" style="display:none">📋</button>
     <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
     <button class="nav-btn" onclick="logout()">🚪</button>
@@ -702,6 +708,7 @@ let currentProfileUserId = null;
 let searchTimeout = null;
 let currentFeed = 'all'; // 'all' или 'subscriptions'
 let subscriptions = new Set();
+let adminUsers = new Set(); // Кэш для админов
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -710,11 +717,27 @@ auth.onAuthStateChanged(async u=>{
   if(!u)return location.href="index.html";
   currentUser=u;
   await loadUserData();
+  await loadAdminUsers(); // Загружаем список админов
   await loadSubscriptions();
   loadPosts();
   
   setTimeout(checkPostToScroll, 1000);
 });
+
+async function loadAdminUsers() {
+  try {
+    const adminSnap = await db.collection("users")
+      .where("isAdmin", "==", true)
+      .get();
+    
+    adminUsers.clear();
+    adminSnap.forEach(doc => {
+      adminUsers.add(doc.id);
+    });
+  } catch(error) {
+    console.error("Ошибка загрузки админов:", error);
+  }
+}
 
 function getTimeDividerLabel(prevDate, currentDate) {
   if (!prevDate || !currentDate) return null;
@@ -768,9 +791,6 @@ async function loadUserData() {
     if(userData.isAdmin) {
       document.getElementById("adminBtn").style.display = "block";
     }
-    
-    // Показываем кнопку подписок
-    document.getElementById("subscriptionsBtn").style.display = "block";
     
   } catch(error) {
     console.error("Ошибка загрузки данных:", error);
@@ -1042,11 +1062,15 @@ async function searchUsers(searchTerm) {
       if (userId === currentUserId) return;
       
       const isSubscribed = subscriptions.has(userId);
+      const isAdmin = user.isAdmin || false;
       
       resultsHTML += `
         <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
           <div class="search-avatar">${user.username?.[0]?.toUpperCase() || "U"}</div>
-          <div class="search-username">@${user.username}</div>
+          <div class="search-username">
+            @${user.username}
+            ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+          </div>
           <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
                   onclick="event.stopPropagation(); toggleSubscribe('${userId}', '${user.username}')"
                   style="margin-left:auto">
@@ -1209,6 +1233,7 @@ function displayPosts(posts, feed) {
     
     const liked = p.likedBy?.includes(currentUser.uid);
     const isSubscribed = subscriptions.has(p.userId);
+    const isAdmin = adminUsers.has(p.userId);
     
     let timeAgo = "только что";
     let fullDateTime = "";
@@ -1230,6 +1255,7 @@ function displayPosts(posts, feed) {
         <div class="post-user-info">
           <div class="post-user" onclick="openProfile('${p.userId}','${p.username}')">
             @${p.username}
+            ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
           </div>
           <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
         </div>
@@ -1394,13 +1420,14 @@ async function loadComments(){
       }
       
       const canDelete = c.userId === currentUser.uid || userData?.isAdmin;
+      const isAdmin = adminUsers.has(c.userId);
       
       commentsBody.innerHTML += `
         <div class="post fade">
           <div class="post-header">
             <div class="avatar">${c.username?.[0]||"A"}</div>
             <div class="post-user-info">
-              <strong>@${c.username}</strong>
+              <strong>@${c.username} ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}</strong>
               <div class="post-time">${timeAgo}</div>
             </div>
             ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment('${d.id}')">🗑</button>` : ''}

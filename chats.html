@@ -24,6 +24,8 @@
   --message:#5ac8fa;
   --outgoing-message:#667eea;
   --pinned:#ffd60a;
+  --reply:#5ac8fa;
+  --heart:#ff375f;
 }
 *{box-sizing:border-box}
 body{
@@ -339,6 +341,57 @@ body{
   opacity: 0.9;
 }
 
+/* Ответ на сообщение */
+.reply-preview {
+  background: var(--card);
+  border-left: 4px solid var(--reply);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.reply-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.reply-sender {
+  font-size: 12px;
+  color: var(--reply);
+  font-weight: 600;
+}
+.reply-close-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  font-size: 14px;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reply-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+.reply-text {
+  font-size: 13px;
+  color: var(--sub);
+  line-height: 1.3;
+  flex: 1;
+}
+.reply-icon {
+  color: var(--reply);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
 /* Сообщения */
 .chat-messages {
   flex: 1;
@@ -358,6 +411,11 @@ body{
   word-break: break-word;
   position: relative;
   animation: fade 0.3s ease;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.message:hover {
+  background: rgba(255,255,255,0.03);
 }
 .message-outgoing {
   align-self: flex-end;
@@ -370,6 +428,35 @@ body{
   background: var(--card);
   border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
+}
+.message-replied {
+  margin-top: 4px;
+}
+.message-reply {
+  background: rgba(90,200,250,0.1);
+  border-left: 3px solid var(--reply);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+}
+.message-reply-sender {
+  font-weight: 600;
+  color: var(--reply);
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.message-reply-text {
+  color: var(--sub);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .message-text {
   font-size: 15px;
@@ -421,6 +508,80 @@ body{
 .message-action-btn.delete-message-btn:hover {
   color: var(--danger);
 }
+.message-action-btn.reply-btn:hover {
+  color: var(--reply);
+}
+.message-action-btn.heart-btn:hover {
+  color: var(--heart);
+}
+
+/* Реакции на сообщения */
+.message-reactions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.reaction {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reaction:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.1);
+}
+.reaction.liked {
+  background: rgba(255,55,95,0.2);
+  color: var(--heart);
+}
+.reaction-count {
+  font-size: 11px;
+}
+
+/* Панель с реакциями */
+.reactions-panel {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s;
+  pointer-events: none;
+}
+.reactions-panel.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.reaction-emoji {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 4px;
+  border-radius: 12px;
+}
+.reaction-emoji:hover {
+  transform: scale(1.2);
+  background: rgba(255,255,255,0.1);
+}
+.reaction-emoji.heart:hover {
+  color: var(--heart);
+}
+
 .message-date-divider {
   text-align: center;
   color: var(--sub);
@@ -451,11 +612,21 @@ body{
   padding: 16px;
   border-top: 1px solid var(--border);
   display: flex;
+  flex-direction: column;
   gap: 10px;
   align-items: flex-end;
   position: relative;
   flex-shrink: 0; /* Важно - не сжимается */
   z-index: 10;
+}
+.reply-container {
+  width: 100%;
+}
+.chat-input-wrapper {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
 }
 .chat-input {
   flex: 1;
@@ -605,6 +776,12 @@ body{
 .menu-item.delete-message-item:hover {
   color: var(--danger);
 }
+.menu-item.reply-item:hover {
+  color: var(--reply);
+}
+.menu-item.reaction-item:hover {
+  color: var(--heart);
+}
 
 @media (max-width: 768px) {
   .dynamic-island {
@@ -725,11 +902,25 @@ body{
     </div>
     
     <div class="chat-input-area">
-      <textarea class="chat-input" id="chatInput" 
-                placeholder="Напишите сообщение..." 
-                rows="1"
-                maxlength="1000"></textarea>
-      <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">➤</button>
+      <div class="reply-container" id="replyContainer" style="display:none">
+        <div class="reply-preview" id="replyPreview">
+          <div class="reply-icon">↩️</div>
+          <div style="flex:1">
+            <div class="reply-preview-header">
+              <div class="reply-sender" id="replySender">@username</div>
+              <button class="reply-close-btn" onclick="cancelReply()">✕</button>
+            </div>
+            <div class="reply-text" id="replyText">Текст сообщения...</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-wrapper">
+        <textarea class="chat-input" id="chatInput" 
+                  placeholder="Напишите сообщение..." 
+                  rows="1"
+                  maxlength="1000"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">➤</button>
+      </div>
     </div>
   </div>
 </div>
@@ -748,10 +939,29 @@ body{
 
 <!-- Контекстное меню для сообщений -->
 <div class="context-menu" id="messageContextMenu">
+  <div class="menu-item reply-item" id="contextReplyBtn">
+    <span>↩️</span>
+    <span>Ответить</span>
+  </div>
+  <div class="menu-item reaction-item" id="contextReactionBtn">
+    <span>❤️</span>
+    <span>Сердечко</span>
+  </div>
   <div class="menu-item delete-message-item" id="contextDeleteMessageBtn">
     <span>🗑️</span>
-    <span>Удалить сообщение</span>
+    <span>Удалить</span>
   </div>
+</div>
+
+<!-- Панель реакций -->
+<div class="reactions-panel" id="reactionsPanel">
+  <div class="reaction-emoji heart" onclick="addReaction('❤️')">❤️</div>
+  <div class="reaction-emoji" onclick="addReaction('👍')">👍</div>
+  <div class="reaction-emoji" onclick="addReaction('👎')">👎</div>
+  <div class="reaction-emoji" onclick="addReaction('😂')">😂</div>
+  <div class="reaction-emoji" onclick="addReaction('😮')">😮</div>
+  <div class="reaction-emoji" onclick="addReaction('😢')">😢</div>
+  <div class="reaction-emoji" onclick="addReaction('😡')">😡</div>
 </div>
 
 <div class="notification" id="notification"></div>
@@ -779,7 +989,9 @@ let pinnedChats = new Set();
 let contextMenuChatId = null;
 let contextMenuIsPinned = false;
 let contextMenuMessageId = null;
-let lastMessageId = null; // Для предотвращения дублирования
+let lastMessageId = null;
+let replyingToMessage = null; // Сообщение, на которое отвечаем
+let selectedMessageForReaction = null; // Сообщение для реакции
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
 
@@ -1158,11 +1370,12 @@ function showChatContextMenu(event, chatId, isPinned) {
 
 // ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ СООБЩЕНИЙ ====================
 
-function showMessageContextMenu(event, messageId) {
+function showMessageContextMenu(event, messageId, messageData) {
   event.preventDefault();
   event.stopPropagation();
   
   contextMenuMessageId = messageId;
+  selectedMessageForReaction = messageData;
   
   const menu = document.getElementById('messageContextMenu');
   
@@ -1187,6 +1400,196 @@ function showMessageContextMenu(event, messageId) {
     document.addEventListener('click', closeMenu);
     document.addEventListener('touchstart', closeMenu);
   }, 10);
+}
+
+// ==================== ПАНЕЛЬ РЕАКЦИЙ ====================
+
+function showReactionsPanel(event, messageId, messageData) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  selectedMessageForReaction = { id: messageId, ...messageData };
+  
+  const panel = document.getElementById('reactionsPanel');
+  
+  // Позиционируем панель
+  const rect = event.target.getBoundingClientRect();
+  const x = Math.min(rect.left, window.innerWidth - 250);
+  const y = rect.top - 60;
+  
+  panel.style.left = x + 'px';
+  panel.style.top = y + 'px';
+  panel.classList.add('show');
+  
+  // Закрываем панель при клике снаружи
+  setTimeout(() => {
+    const closePanel = (e) => {
+      if (!panel.contains(e.target)) {
+        panel.classList.remove('show');
+        document.removeEventListener('click', closePanel);
+        document.removeEventListener('touchstart', closePanel);
+      }
+    };
+    document.addEventListener('click', closePanel);
+    document.addEventListener('touchstart', closePanel);
+  }, 10);
+}
+
+// ==================== ОТВЕТ НА СООБЩЕНИЯ ====================
+
+function replyToMessage(messageId, messageData) {
+  const senderInfo = messageData.senderId === currentUser.uid ? 
+    { username: 'Вы' } : 
+    { username: currentChatUsername };
+  
+  replyingToMessage = {
+    id: messageId,
+    text: messageData.text,
+    senderId: messageData.senderId,
+    senderName: senderInfo.username
+  };
+  
+  // Показываем превью ответа
+  document.getElementById('replyContainer').style.display = 'block';
+  document.getElementById('replySender').textContent = senderInfo.username;
+  document.getElementById('replyText').textContent = messageData.text.length > 50 ? 
+    messageData.text.substring(0, 47) + '...' : 
+    messageData.text;
+  
+  // Фокусируемся на поле ввода
+  document.getElementById('chatInput').focus();
+}
+
+function cancelReply() {
+  replyingToMessage = null;
+  document.getElementById('replyContainer').style.display = 'none';
+}
+
+// ==================== РЕАКЦИИ НА СООБЩЕНИЯ ====================
+
+async function addReaction(emoji) {
+  if (!selectedMessageForReaction || !currentChatId) return;
+  
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .doc(selectedMessageForReaction.id);
+    
+    // Получаем текущие реакции
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    
+    // Проверяем, есть ли уже реакция от этого пользователя
+    const userReaction = currentReactions[currentUser.uid];
+    
+    if (userReaction === emoji) {
+      // Убираем реакцию
+      delete currentReactions[currentUser.uid];
+    } else {
+      // Добавляем/изменяем реакцию
+      currentReactions[currentUser.uid] = emoji;
+    }
+    
+    // Обновляем сообщение
+    await messageRef.update({
+      reactions: currentReactions
+    });
+    
+    // Закрываем панель реакций
+    document.getElementById('reactionsPanel').classList.remove('show');
+    
+    // Обновляем UI сообщения
+    updateMessageReactions(selectedMessageForReaction.id, currentReactions);
+    
+  } catch (error) {
+    console.error("Ошибка при добавлении реакции:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+async function toggleHeartReaction(messageId) {
+  if (!currentChatId) return;
+  
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .doc(messageId);
+    
+    // Получаем текущие реакции
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    
+    // Проверяем, есть ли уже сердечко от этого пользователя
+    const userReaction = currentReactions[currentUser.uid];
+    
+    if (userReaction === '❤️') {
+      // Убираем сердечко
+      delete currentReactions[currentUser.uid];
+      showNotification("Реакция убрана");
+    } else {
+      // Добавляем сердечко
+      currentReactions[currentUser.uid] = '❤️';
+      showNotification("❤️ Добавлено");
+    }
+    
+    // Обновляем сообщение
+    await messageRef.update({
+      reactions: currentReactions
+    });
+    
+    // Обновляем UI сообщения
+    updateMessageReactions(messageId, currentReactions);
+    
+  } catch (error) {
+    console.error("Ошибка при добавлении сердечка:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+function updateMessageReactions(messageId, reactions) {
+  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (!messageElement) return;
+  
+  // Находим или создаем контейнер реакций
+  let reactionsContainer = messageElement.querySelector('.message-reactions');
+  
+  if (!reactionsContainer) {
+    reactionsContainer = document.createElement('div');
+    reactionsContainer.className = 'message-reactions';
+    
+    // Вставляем перед временем сообщения
+    const timeElement = messageElement.querySelector('.message-time');
+    messageElement.insertBefore(reactionsContainer, timeElement);
+  }
+  
+  // Очищаем контейнер
+  reactionsContainer.innerHTML = '';
+  
+  // Группируем реакции по эмодзи
+  const reactionGroups = {};
+  Object.entries(reactions).forEach(([userId, emoji]) => {
+    if (!reactionGroups[emoji]) {
+      reactionGroups[emoji] = [];
+    }
+    reactionGroups[emoji].push(userId);
+  });
+  
+  // Добавляем реакции в UI
+  Object.entries(reactionGroups).forEach(([emoji, users]) => {
+    const isLikedByMe = users.includes(currentUser.uid);
+    
+    const reactionElement = document.createElement('div');
+    reactionElement.className = `reaction ${isLikedByMe ? 'liked' : ''}`;
+    reactionElement.setAttribute('data-emoji', emoji);
+    reactionElement.onclick = () => addReaction(emoji);
+    
+    reactionElement.innerHTML = `
+      <span>${emoji}</span>
+      <span class="reaction-count">${users.length}</span>
+    `;
+    
+    reactionsContainer.appendChild(reactionElement);
+  });
 }
 
 // ==================== ЗАКРЕПЛЕНИЕ ЧАТОВ ====================
@@ -1416,6 +1819,9 @@ async function openChat(userId, username, chatId = null) {
   // Открываем окно чата
   document.getElementById('chatOverlay').classList.add('show');
   
+  // Сбрасываем ответ на сообщение
+  cancelReply();
+  
   // Сбрасываем последнее сообщение
   lastMessageId = null;
   
@@ -1451,6 +1857,7 @@ function closeChat() {
   currentChatUsername = null;
   currentChatId = null;
   lastMessageId = null;
+  replyingToMessage = null;
   
   loadChatsList();
 }
@@ -1516,7 +1923,7 @@ async function toggleBlockUser() {
   }
 }
 
-// ==================== СООБЩЕНИЯ (ИСПРАВЛЕННАЯ ЛОГИКА РАЗДЕЛИТЕЛЕЙ) ====================
+// ==================== СООБЩЕНИЯ ====================
 
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
@@ -1597,22 +2004,52 @@ function addMessageToUI(msg, isNew = true) {
   const currentDate = formatMessageDate(msgDate);
   const isOutgoing = msg.senderId === currentUser.uid;
   const messageTime = formatMessageTime(msgDate);
+  const senderInfo = msg.senderId === currentUser.uid ? 
+    { username: 'Вы' } : 
+    { username: currentChatUsername };
   
   // Создаем элемент сообщения
   const messageDiv = document.createElement('div');
-  messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
+  messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'} ${msg.replyTo ? 'message-replied' : ''}`;
   messageDiv.setAttribute('data-message-id', msg.id);
   
+  // Проверяем, есть ли ответ на другое сообщение
+  let replyHTML = '';
+  if (msg.replyTo) {
+    const replySender = msg.replyTo.senderId === currentUser.uid ? 'Вы' : currentChatUsername;
+    const replyText = msg.replyTo.text.length > 50 ? 
+      msg.replyTo.text.substring(0, 47) + '...' : 
+      msg.replyTo.text;
+    
+    replyHTML = `
+      <div class="message-reply">
+        <div class="message-reply-sender">${replySender}</div>
+        <div class="message-reply-text">${replyText}</div>
+      </div>
+    `;
+  }
+  
   messageDiv.innerHTML = `
+    ${replyHTML}
     <div class="message-text">${msg.text}</div>
     <div class="message-time">
       ${messageTime}
       ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
     </div>
     <div class="message-actions">
+      <button class="message-action-btn reply-btn" 
+              onclick="event.stopPropagation(); replyToMessage('${msg.id}', ${JSON.stringify(msg).replace(/'/g, "\\'")})"
+              title="Ответить">
+        ↩️
+      </button>
+      <button class="message-action-btn heart-btn" 
+              onclick="event.stopPropagation(); toggleHeartReaction('${msg.id}')"
+              title="Сердечко">
+        ❤️
+      </button>
       ${isOutgoing ? `
         <button class="message-action-btn delete-message-btn" 
-                onclick="showDeleteMessageConfirm('${msg.id}')"
+                onclick="event.stopPropagation(); showDeleteMessageConfirm('${msg.id}')"
                 title="Удалить сообщение">
           🗑️
         </button>
@@ -1653,16 +2090,19 @@ function addMessageToUI(msg, isNew = true) {
   
   chatMessages.appendChild(messageDiv);
   
+  // Добавляем реакции если есть
+  if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+    updateMessageReactions(msg.id, msg.reactions);
+  }
+  
   // Добавляем обработчики для мобильных
   if (window.innerWidth <= 768) {
     let longPressTimer;
     
     messageDiv.addEventListener('touchstart', (e) => {
-      if (isOutgoing) {
-        longPressTimer = setTimeout(() => {
-          showMessageContextMenu(e, msg.id);
-        }, 500);
-      }
+      longPressTimer = setTimeout(() => {
+        showMessageContextMenu(e, msg.id, msg);
+      }, 500);
     });
     
     messageDiv.addEventListener('touchend', () => {
@@ -1671,6 +2111,33 @@ function addMessageToUI(msg, isNew = true) {
     
     messageDiv.addEventListener('touchmove', () => {
       clearTimeout(longPressTimer);
+    });
+    
+    // Двойной тап для сердечка
+    let tapCount = 0;
+    let tapTimer;
+    
+    messageDiv.addEventListener('click', (e) => {
+      if (e.target.closest('.message-action-btn')) return;
+      
+      tapCount++;
+      if (tapCount === 1) {
+        tapTimer = setTimeout(() => {
+          tapCount = 0;
+        }, 300);
+      } else if (tapCount === 2) {
+        clearTimeout(tapTimer);
+        tapCount = 0;
+        toggleHeartReaction(msg.id);
+      }
+    });
+  }
+  
+  // Добавляем обработчик клика для панели реакций (на десктопе)
+  if (window.innerWidth > 768) {
+    messageDiv.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showReactionsPanel(e, msg.id, msg);
     });
   }
   
@@ -1682,7 +2149,7 @@ function addMessageToUI(msg, isNew = true) {
   }
 }
 
-// Исправленный слушатель сообщений (без дублирования)
+// Исправленный слушатель сообщений
 function setupChatMessagesListener() {
   if (chatMessagesListener || !currentChatId) return;
   
@@ -1725,6 +2192,13 @@ function setupChatMessagesListener() {
             if (!isOutgoing) {
               markMessageAsRead(msgId);
             }
+          }
+        } else if (change.type === 'modified') {
+          // Обновляем реакции если сообщение было изменено
+          const msg = change.doc.data();
+          const messageElement = document.querySelector(`[data-message-id="${msgId}"]`);
+          if (messageElement && msg.reactions) {
+            updateMessageReactions(msgId, msg.reactions);
           }
         } else if (change.type === 'removed') {
           // Удаляем сообщение из UI если оно было удалено
@@ -1774,6 +2248,15 @@ async function sendMessage() {
     read: false
   };
   
+  // Добавляем информацию об ответе если есть
+  if (replyingToMessage) {
+    messageData.replyTo = {
+      messageId: replyingToMessage.id,
+      senderId: replyingToMessage.senderId,
+      text: replyingToMessage.text
+    };
+  }
+  
   try {
     let chatId = currentChatId;
     
@@ -1807,9 +2290,10 @@ async function sendMessage() {
       .collection('messages')
       .add(messageData);
     
-    // Очищаем поле ввода
+    // Очищаем поле ввода и сбрасываем ответ
     chatInput.value = '';
     chatInput.style.height = 'auto';
+    cancelReply();
     
     // Разблокируем кнопку отправки
     sendBtn.innerHTML = originalText;
@@ -1951,7 +2435,23 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Меню для сообщений
   const messageContextMenu = document.getElementById('messageContextMenu');
+  const contextReplyBtn = document.getElementById('contextReplyBtn');
+  const contextReactionBtn = document.getElementById('contextReactionBtn');
   const contextDeleteMessageBtn = document.getElementById('contextDeleteMessageBtn');
+  
+  contextReplyBtn.addEventListener('click', () => {
+    if (contextMenuMessageId && selectedMessageForReaction) {
+      replyToMessage(contextMenuMessageId, selectedMessageForReaction);
+      messageContextMenu.classList.remove('show');
+    }
+  });
+  
+  contextReactionBtn.addEventListener('click', () => {
+    if (contextMenuMessageId) {
+      toggleHeartReaction(contextMenuMessageId);
+      messageContextMenu.classList.remove('show');
+    }
+  });
   
   contextDeleteMessageBtn.addEventListener('click', () => {
     if (contextMenuMessageId) {
@@ -1970,6 +2470,11 @@ document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
+  }
+  
+  // Отмена ответа на сообщение по Escape
+  if (e.key === 'Escape' && replyingToMessage) {
+    cancelReply();
   }
 });
 

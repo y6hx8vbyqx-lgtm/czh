@@ -290,6 +290,7 @@ body{
   display:flex;
   gap:16px;
   margin-top:12px;
+  align-items:center;
 }
 .action{
   background:none;
@@ -308,6 +309,7 @@ body{
 .liked{color:#ff2d55}
 .viewed{color:var(--views)}
 .reposted{color:#64d2ff}
+.shared{color:#30d158}
 .trash{
   margin-left:auto;
   background:none;border:none;
@@ -481,14 +483,11 @@ body{
 .posts-stat{
   color:#5ac8fa;
 }
-.views-stat{
-  color:var(--views);
+.subscribers-stat{
+  color:#ff9500;
 }
 .reposts-stat{
   color:#64d2ff;
-}
-.subscribers-stat{
-  color:#ff9500;
 }
 
 /* Описание профиля */
@@ -753,6 +752,49 @@ body{
 .repost-icon {
   color: #64d2ff;
 }
+
+/* Модальное окно для выбора чата */
+.chat-selection-modal .modal {
+  max-width: 500px;
+}
+.chat-selection-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+.chat-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #1c1c1e;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.chat-selection-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+.chat-selection-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.chat-selection-username {
+  font-weight: 600;
+  flex: 1;
+}
+.chat-selection-no-chats {
+  text-align: center;
+  color: var(--sub);
+  padding: 40px 20px;
+}
 </style>
 </head>
 
@@ -839,6 +881,26 @@ body{
   </div>
 </div>
 
+<!-- Модальное окно для выбора чата -->
+<div class="modal-overlay chat-selection-modal" id="shareToChatModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Поделиться постом</div>
+      <button class="modal-close" onclick="closeShareToChatModal()">✕</button>
+    </div>
+    <div class="chat-selection-list" id="chatSelectionList">
+      <div class="chat-selection-no-chats">
+        <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+        <div>У вас нет активных чатов</div>
+        <div style="font-size: 14px; margin-top: 8px;">Начните общение с кем-нибудь, чтобы делиться постами</div>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeShareToChatModal()">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMENTS -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
@@ -885,13 +947,6 @@ body{
               <span id="profileLikesCount">0</span>
             </div>
             <div class="profile-stat-label">лайков</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value views-stat">
-              <span>👁️</span>
-              <span id="profileViewsCount">0</span>
-            </div>
-            <div class="profile-stat-label">просмотров</div>
           </div>
           <div class="profile-stat">
             <div class="profile-stat-value subscribers-stat">
@@ -961,6 +1016,7 @@ let subscriptions = new Set();
 let adminUsers = new Set();
 let blockedUsers = new Set();
 let currentProfileTab = 'posts';
+let postToShare = null;
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -1261,13 +1317,17 @@ async function displayPosts(posts) {
     if (post.repostedBy && post.repostedBy.length > 0) {
       // Проверяем, подписан ли текущий пользователь на тех, кто репостнул
       const repostingUsers = post.repostedBy.filter(username => {
-        // Находим ID пользователя по имени
-        const repostingUser = Array.from(subscriptions).find(subId => {
-          // Здесь нужно получить username подписанного пользователя
-          // Для упрощения проверяем только своих репостов
-          return username === userData.username;
-        });
-        return repostingUser || username === userData.username;
+        // Проверяем только свои репосты и репосты подписок
+        return username === userData.username || 
+               subscriptions.has(post.userId) || 
+               (() => {
+                 // Находим ID пользователя по имени из подписок
+                 const sub = Array.from(subscriptions).find(subId => {
+                   const subUser = usersCache.get(subId);
+                   return subUser && subUser.username === username;
+                 });
+                 return sub !== undefined;
+               })();
       });
       
       if (repostingUsers.length > 0) {
@@ -1346,12 +1406,6 @@ async function displayPosts(posts) {
           </div>
           <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
         </div>
-        ${post.userId !== currentUser.uid ? 
-          `<button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
-                  onclick="toggleSubscribe('${post.userId}', '${post.username}')"
-                  style="margin-right:8px">
-            ${isSubscribed ? 'В подписках' : 'Подписаться'}
-          </button>` : ''}
         ${(post.userId === currentUser.uid || userData?.isAdmin) ?
           `<button class="trash" onclick="deletePost('${postId}', '${post.userId}')">🗑</button>` : ""}
       </div>
@@ -1369,6 +1423,15 @@ async function displayPosts(posts) {
         <button class="action viewed" title="Просмотры">
           👁️ ${post.views || 0}
         </button>
+        <button class="action shared" onclick="sharePostToChat('${postId}')" title="Поделиться в чат">
+          ↗️
+        </button>
+        ${post.userId !== currentUser.uid ? 
+          `<button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
+                  onclick="toggleSubscribe('${post.userId}', '${post.username}')"
+                  style="margin-left:auto">
+            ${isSubscribed ? 'В подписках' : 'Подписаться'}
+          </button>` : ''}
       </div>
     </div>`;
   });
@@ -1572,6 +1635,179 @@ async function toggleRepost(id) {
     console.error("Ошибка при репосте:", error);
     showNotification("Ошибка: " + error.message);
   }
+}
+
+// ==================== ПОДЕЛИТЬСЯ В ЧАТ ====================
+
+// Открыть меню выбора чата для отправки поста
+async function sharePostToChat(postId) {
+  const post = postsCache.get(postId);
+  if (!post) return;
+  
+  postToShare = postId;
+  
+  // Загружаем список активных чатов
+  await loadActiveChatsForSharing();
+  
+  // Показываем модальное окно
+  document.getElementById('shareToChatModal').classList.add('show');
+}
+
+// Загрузка активных чатов для отправки поста
+async function loadActiveChatsForSharing() {
+  const chatSelectionList = document.getElementById('chatSelectionList');
+  chatSelectionList.innerHTML = '<div style="text-align:center;color:var(--sub);padding:20px 0;">Загрузка чатов...</div>';
+  
+  try {
+    // Получаем все чаты пользователя
+    const chatsSnap = await db.collection('chats').get();
+    
+    const activeChats = [];
+    
+    for (const doc of chatsSnap.docs) {
+      const chat = doc.data();
+      
+      // Проверяем, является ли пользователь участником чата
+      if (chat.participants && chat.participants.includes(currentUser.uid)) {
+        // Находим ID другого участника
+        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+        
+        if (!otherUserId) continue;
+        
+        // Пропускаем если пользователь заблокирован
+        if (blockedUsers.has(otherUserId)) continue;
+        
+        // Получаем информацию о другом пользователе
+        const otherUserInfo = await getUserInfo(otherUserId);
+        
+        // Проверяем, есть ли в чате сообщения
+        const messagesSnap = await db.collection('chats').doc(doc.id)
+          .collection('messages')
+          .limit(1)
+          .get();
+        
+        // Добавляем чат только если в нем есть сообщения
+        if (!messagesSnap.empty) {
+          activeChats.push({
+            id: doc.id,
+            otherUserId: otherUserId,
+            otherUserInfo: otherUserInfo,
+            chatId: doc.id
+          });
+        }
+      }
+    }
+    
+    if (activeChats.length === 0) {
+      chatSelectionList.innerHTML = `
+        <div class="chat-selection-no-chats">
+          <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+          <div>У вас нет активных чатов</div>
+          <div style="font-size: 14px; margin-top: 8px;">Начните общение с кем-нибудь, чтобы делиться постами</div>
+        </div>`;
+      return;
+    }
+    
+    // Генерируем HTML
+    let chatsHTML = '';
+    
+    activeChats.forEach(chat => {
+      const otherUser = chat.otherUserInfo;
+      if (!otherUser) return;
+      
+      chatsHTML += `
+        <div class="chat-selection-item" onclick="sendPostToChat('${chat.otherUserId}', '${otherUser.username}', '${chat.chatId}')">
+          <div class="chat-selection-avatar">${otherUser.username?.[0]?.toUpperCase() || 'U'}</div>
+          <div class="chat-selection-username">@${otherUser.username}</div>
+        </div>
+      `;
+    });
+    
+    chatSelectionList.innerHTML = chatsHTML;
+    
+  } catch (error) {
+    console.error('Ошибка загрузки чатов:', error);
+    chatSelectionList.innerHTML = `
+      <div class="chat-selection-no-chats" style="color:var(--danger)">
+        Ошибка загрузки чатов
+      </div>`;
+  }
+}
+
+// Отправка поста в выбранный чат
+async function sendPostToChat(userId, username, chatId = null) {
+  if (!postToShare) return;
+  
+  const post = postsCache.get(postToShare);
+  if (!post) {
+    showNotification("Ошибка: пост не найден");
+    return;
+  }
+  
+  try {
+    let targetChatId = chatId;
+    
+    if (!targetChatId) {
+      // Ищем существующий чат
+      const chatsSnap = await db.collection('chats').get();
+      
+      for (const doc of chatsSnap.docs) {
+        const chat = doc.data();
+        if (chat.participants && 
+            chat.participants.includes(currentUser.uid) && 
+            chat.participants.includes(userId)) {
+          targetChatId = doc.id;
+          break;
+        }
+      }
+      
+      // Если чата нет, создаем его (но не добавляем сообщение)
+      if (!targetChatId) {
+        showNotification("Сначала начните общение с пользователем!");
+        return;
+      }
+    }
+    
+    // Создаем сообщение с постом
+    const messageText = `📢 Поделился постом от @${post.username}:\n\n"${post.text}"\n\n🔗 Оригинальный пост: ${window.location.origin}/feed.html?post=${postToShare}`;
+    
+    const messageData = {
+      text: messageText,
+      senderId: currentUser.uid,
+      timestamp: new Date(),
+      read: false,
+      isPostShare: true,
+      sharedPostId: postToShare,
+      sharedPostAuthor: post.username
+    };
+    
+    // Добавляем сообщение в чат
+    await db.collection('chats').doc(targetChatId)
+      .collection('messages')
+      .add(messageData);
+    
+    // Обновляем информацию о чате
+    await db.collection('chats').doc(targetChatId).update({
+      lastMessage: "📢 Поделился постом",
+      lastSender: currentUser.uid,
+      lastMessageTime: new Date(),
+      updatedAt: new Date(),
+      unreadFor: firebase.firestore.FieldValue.arrayUnion(userId)
+    });
+    
+    showNotification(`Пост отправлен @${username}`);
+    closeShareToChatModal();
+    
+  } catch (error) {
+    console.error('Ошибка отправки поста в чат:', error);
+    showNotification('Ошибка отправки: ' + error.message);
+  }
+}
+
+// Закрыть модальное окно выбора чата
+function closeShareToChatModal() {
+  postToShare = null;
+  document.getElementById('shareToChatModal').classList.remove('show');
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
@@ -1873,7 +2109,6 @@ async function refreshProfilePosts(uid) {
   const profilePosts = document.getElementById("profilePosts");
   const profilePostsCount = document.getElementById("profilePostsCount");
   const profileLikesCount = document.getElementById("profileLikesCount");
-  const profileViewsCount = document.getElementById("profileViewsCount");
   
   if (!profilePosts) return;
   
@@ -1883,9 +2118,6 @@ async function refreshProfilePosts(uid) {
     
     const likesCount = await getUserLikesCount(uid);
     profileLikesCount.textContent = likesCount;
-    
-    const viewsCount = await getUserViewsCount(uid);
-    profileViewsCount.textContent = viewsCount;
     
     profilePosts.innerHTML = "";
     
@@ -1922,8 +2154,8 @@ async function refreshProfilePosts(uid) {
             <span>${timeAgo}</span>
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
-            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
             <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
+            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
           </div>
           ${canDelete ? 
             `<button class="trash" style="position:absolute;top:16px;right:16px;" 
@@ -2056,6 +2288,9 @@ async function refreshProfileReposts(uid) {
             <button class="action viewed" title="Просмотры">
               👁️ ${post.views || 0}
             </button>
+            <button class="action shared" onclick="event.stopPropagation(); sharePostToChat('${post.id}')" title="Поделиться в чат">
+              ↗️
+            </button>
           </div>
         </div>`;
     });
@@ -2098,26 +2333,6 @@ async function getUserLikesCount(uid) {
     return totalLikes;
   } catch (error) {
     console.error("Ошибка при получении лайков пользователя:", error);
-    return 0;
-  }
-}
-
-// Получение количества просмотров пользователя
-async function getUserViewsCount(uid) {
-  try {
-    const snap = await db.collection("posts")
-      .where("userId", "==", uid)
-      .get();
-    
-    let totalViews = 0;
-    snap.forEach(doc => {
-      const post = doc.data();
-      totalViews += (post.views || 0);
-    });
-    
-    return totalViews;
-  } catch (error) {
-    console.error("Ошибка при получении просмотров пользователя:", error);
     return 0;
   }
 }
@@ -2185,11 +2400,9 @@ async function deletePostFromProfile(postId, userId) {
     
     const postsCount = await getUserPostsCount(userId);
     const likesCount = await getUserLikesCount(userId);
-    const viewsCount = await getUserViewsCount(userId);
     
     document.getElementById("profilePostsCount").textContent = postsCount;
     document.getElementById("profileLikesCount").textContent = likesCount;
-    document.getElementById("profileViewsCount").textContent = viewsCount;
     
     loadPosts();
     showNotification("Пост удален из профиля!");
@@ -2216,6 +2429,34 @@ function goToChatWithUser() {
   
   // Переходим на страницу чатов
   location.href = 'chats.html';
+}
+
+// Получение информации о пользователе (для кэширования)
+async function getUserInfo(userId) {
+  if (userId === currentUser.uid) {
+    return {
+      username: userData.username || "user" + currentUser.uid.slice(-6),
+      isAdmin: userData.isAdmin || false
+    };
+  }
+  
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      return {
+        username: user.username || "user" + userId.slice(-6),
+        isAdmin: user.isAdmin || false
+      };
+    }
+  } catch (error) {
+    console.error("Ошибка получения информации о пользователе:", error);
+  }
+  
+  return {
+    username: "user" + userId.slice(-6),
+    isAdmin: false
+  };
 }
 
 // ==================== ФУНКЦИИ ДЛЯ КОММЕНТАРИЕВ ====================

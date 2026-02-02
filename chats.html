@@ -418,11 +418,15 @@ body{
   position: relative;
   animation: fade 0.3s ease;
   cursor: pointer;
-  transition: background 0.2s;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 .message:active {
-  background: transparent !important;
+  opacity: 0.8 !important;
+  transform: scale(0.98) !important;
+  transition: all 0.1s ease;
 }
 .message:hover {
   background: rgba(255,255,255,0.03);
@@ -485,69 +489,10 @@ body{
 .message-status {
   font-size: 10px;
 }
+
+/* Убраны все кнопки действий на сообщениях */
 .message-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.message:hover .message-actions {
-  opacity: 1;
-}
-.message-action-btn {
-  background: rgba(0,0,0,0.5);
-  border: none;
-  color: var(--sub);
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-}
-.message-action-btn:hover {
-  background: rgba(0,0,0,0.7);
-  color: var(--text);
-}
-.message-action-btn.delete-message-btn:hover {
-  color: var(--danger);
-}
-.message-action-btn.reply-btn:hover {
-  color: var(--reply);
-}
-.message-action-btn.heart-btn:hover {
-  color: var(--heart);
-}
-
-/* Мобильные кнопки действий для сообщений */
-.mobile-message-actions {
-  display: none;
-  gap: 8px;
-  margin-top: 8px;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.mobile-action-btn {
-  background: rgba(28,28,30,0.8);
-  border: none;
-  color: var(--sub);
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  display: none !important;
 }
 
 /* Реакции на сообщения */
@@ -774,7 +719,7 @@ body{
   display: none;
 }
 
-/* Контекстное меню для мобильных */
+/* Контекстное меню для всех устройств */
 .context-menu {
   position: fixed;
   background: var(--card);
@@ -816,11 +761,6 @@ body{
 }
 .menu-item.reaction-item:hover {
   color: var(--heart);
-}
-
-/* Сообщение с открытыми действиями на мобильных */
-.message.mobile-actions-visible {
-  padding-bottom: 8px;
 }
 
 @media (max-width: 768px) {
@@ -880,25 +820,15 @@ body{
     padding: 16px;
   }
   
-  /* Скрываем обычные кнопки действий на мобильных */
-  .message-actions {
-    display: none !important;
-  }
-  
-  /* Показываем мобильные кнопки действий когда нужно */
-  .message.mobile-actions-visible .mobile-message-actions {
-    display: flex;
-  }
-  
-  /* Убираем ховер-эффекты на тач-устройствах */
+  /* На мобильных убираем ховер-эффекты */
   .message:hover {
     background: transparent !important;
   }
   
-  /* Убираем выделение при нажатии */
+  /* Улучшаем анимацию нажатия на мобильных */
   .message:active {
-    background: transparent !important;
-    opacity: 0.9;
+    opacity: 0.7 !important;
+    transform: scale(0.96) !important;
   }
   
   .no-chats {
@@ -980,7 +910,7 @@ body{
   </div>
 </div>
 
-<!-- Контекстное меню для мобильных (для чатов) -->
+<!-- Контекстное меню для чатов -->
 <div class="context-menu" id="contextMenu">
   <div class="menu-item pin-item" id="contextPinBtn">
     <span>📌</span>
@@ -1047,7 +977,6 @@ let contextMenuMessageId = null;
 let lastMessageId = null;
 let replyingToMessage = null;
 let selectedMessageForReaction = null;
-let selectedMessageForMobile = null;
 let isMobile = window.innerWidth <= 768;
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
@@ -1195,7 +1124,7 @@ async function getUserInfo(userId) {
   }
 }
 
-// ==================== СПИСОК ЧАТОВ (С ЗАКРЕПЛЕНИЕМ) ====================
+// ==================== СПИСОК ЧАТОВ ====================
 
 async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
@@ -1322,35 +1251,6 @@ async function loadChatsList() {
     
     chatsList.innerHTML = chatsHTML;
     
-    if (isMobile) {
-      const chatItems = document.querySelectorAll('.chat-item');
-      chatItems.forEach(item => {
-        let longPressTimer;
-        const chatId = item.getAttribute('data-chat-id');
-        const isPinned = item.getAttribute('data-is-pinned') === 'true';
-        
-        item.addEventListener('touchstart', (e) => {
-          longPressTimer = setTimeout(() => {
-            showChatContextMenu(e, chatId, isPinned);
-          }, 500);
-        });
-        
-        item.addEventListener('touchend', () => {
-          clearTimeout(longPressTimer);
-        });
-        
-        item.addEventListener('touchmove', () => {
-          clearTimeout(longPressTimer);
-        });
-        
-        item.addEventListener('click', (e) => {
-          if (!e.target.closest('.action-btn')) {
-            item.classList.toggle('mobile-actions-visible');
-          }
-        });
-      });
-    }
-    
   } catch (error) {
     console.error('Ошибка загрузки чатов:', error);
     chatsList.innerHTML = `
@@ -1380,7 +1280,7 @@ function hideChatActions(chatItem) {
   }
 }
 
-// ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ МОБИЛЬНЫХ ====================
+// ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ ЧАТОВ ====================
 
 function showChatContextMenu(event, chatId, isPinned) {
   event.preventDefault();
@@ -1426,9 +1326,8 @@ function showMessageContextMenu(event, messageId, messageData) {
   
   const menu = document.getElementById('messageContextMenu');
   
-  const touch = event.touches ? event.touches[0] : event;
-  const x = Math.min(touch.clientX, window.innerWidth - 200);
-  const y = Math.min(touch.clientY, window.innerHeight - 150);
+  const x = Math.min(event.clientX, window.innerWidth - 200);
+  const y = Math.min(event.clientY, window.innerHeight - 150);
   
   menu.style.left = x + 'px';
   menu.style.top = y + 'px';
@@ -1447,41 +1346,10 @@ function showMessageContextMenu(event, messageId, messageData) {
   }, 10);
 }
 
-// ==================== ПАНЕЛЬ РЕАКЦИЙ ====================
-
-function showReactionsPanel(event, messageId, messageData) {
-  event.preventDefault();
-  event.stopPropagation();
-  
-  selectedMessageForReaction = { id: messageId, ...messageData };
-  
-  const panel = document.getElementById('reactionsPanel');
-  
-  const rect = event.target.getBoundingClientRect();
-  const x = Math.min(rect.left, window.innerWidth - 250);
-  const y = rect.top - 60;
-  
-  panel.style.left = x + 'px';
-  panel.style.top = y + 'px';
-  panel.classList.add('show');
-  
-  setTimeout(() => {
-    const closePanel = (e) => {
-      if (!panel.contains(e.target)) {
-        panel.classList.remove('show');
-        document.removeEventListener('click', closePanel);
-        document.removeEventListener('touchstart', closePanel);
-      }
-    };
-    document.addEventListener('click', closePanel);
-    document.addEventListener('touchstart', closePanel);
-  }, 10);
-}
-
 // ==================== ОТВЕТ НА СООБЩЕНИЯ ====================
 
 function replyToMessage(messageId, messageData) {
-  console.log('replyToMessage вызван:', messageId, messageData);
+  console.log('Ответ на сообщение:', messageId, messageData);
   
   const senderInfo = messageData.senderId === currentUser.uid ? 
     { username: 'Вы' } : 
@@ -1513,9 +1381,10 @@ function replyToMessage(messageId, messageData) {
     chatInput.focus();
   }
   
-  // На мобильных скрываем кнопки действий
-  if (isMobile && selectedMessageForMobile) {
-    hideMobileMessageActions();
+  // Закрываем контекстное меню
+  const menu = document.getElementById('messageContextMenu');
+  if (menu) {
+    menu.classList.remove('show');
   }
   
   showNotification('Отвечаете на сообщение');
@@ -1592,8 +1461,10 @@ async function toggleHeartReaction(messageId) {
     
     updateMessageReactions(messageId, currentReactions);
     
-    if (isMobile && selectedMessageForMobile) {
-      hideMobileMessageActions();
+    // Закрываем контекстное меню
+    const menu = document.getElementById('messageContextMenu');
+    if (menu) {
+      menu.classList.remove('show');
     }
     
   } catch (error) {
@@ -1644,88 +1515,6 @@ function updateMessageReactions(messageId, reactions) {
     
     reactionsContainer.appendChild(reactionElement);
   });
-}
-
-// ==================== УПРАВЛЕНИЕ СООБЩЕНИЯМИ НА МОБИЛЬНЫХ ====================
-
-function showMobileMessageActions(messageElement, messageId, messageData) {
-  hideMobileMessageActions();
-  
-  selectedMessageForMobile = { id: messageId, ...messageData };
-  messageElement.classList.add('mobile-actions-visible');
-  
-  const isOutgoing = messageData.senderId === currentUser.uid;
-  const mobileActions = document.createElement('div');
-  mobileActions.className = 'mobile-message-actions';
-  
-  mobileActions.innerHTML = `
-    <button class="mobile-action-btn" onclick="replyToMessage('${messageId}', ${JSON.stringify(messageData).replace(/'/g, "\\'")})" title="Ответить">
-      ↩️
-    </button>
-    <button class="mobile-action-btn" onclick="toggleHeartReaction('${messageId}')" title="Сердечко">
-      ❤️
-    </button>
-    ${isOutgoing ? `
-      <button class="mobile-action-btn" onclick="showDeleteMessageConfirm('${messageId}')" title="Удалить">
-        🗑️
-      </button>
-    ` : ''}
-  `;
-  
-  const timeElement = messageElement.querySelector('.message-time');
-  messageElement.insertBefore(mobileActions, timeElement);
-  
-  setTimeout(() => {
-    const closeHandler = (e) => {
-      if (!messageElement.contains(e.target)) {
-        hideMobileMessageActions();
-      }
-    };
-    document.addEventListener('click', closeHandler);
-    document.addEventListener('touchstart', closeHandler);
-    
-    messageElement._closeHandler = closeHandler;
-  }, 10);
-}
-
-function hideMobileMessageActions() {
-  if (selectedMessageForMobile) {
-    const messageElement = document.querySelector(`[data-message-id="${selectedMessageForMobile.id}"]`);
-    if (messageElement) {
-      messageElement.classList.remove('mobile-actions-visible');
-      
-      const mobileActions = messageElement.querySelector('.mobile-message-actions');
-      if (mobileActions) {
-        mobileActions.remove();
-      }
-      
-      if (messageElement._closeHandler) {
-        document.removeEventListener('click', messageElement._closeHandler);
-        document.removeEventListener('touchstart', messageElement._closeHandler);
-        delete messageElement._closeHandler;
-      }
-    }
-    selectedMessageForMobile = null;
-  }
-}
-
-function handleMessageClick(event, messageId, messageData) {
-  if (event.target.closest('.message-action-btn') || 
-      event.target.closest('.mobile-action-btn') ||
-      event.target.closest('.reaction')) {
-    return;
-  }
-  
-  if (isMobile) {
-    const messageElement = event.currentTarget;
-    
-    if (selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
-      hideMobileMessageActions();
-      return;
-    }
-    
-    showMobileMessageActions(messageElement, messageId, messageData);
-  }
 }
 
 // ==================== ЗАКРЕПЛЕНИЕ ЧАТОВ ====================
@@ -1879,8 +1668,10 @@ async function deleteMessage(messageId) {
     
     showNotification("Сообщение удалено");
     
-    if (isMobile && selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
-      hideMobileMessageActions();
+    // Закрываем контекстное меню
+    const menu = document.getElementById('messageContextMenu');
+    if (menu) {
+      menu.classList.remove('show');
     }
     
     loadChatsList();
@@ -1895,12 +1686,6 @@ async function deleteMessage(messageId) {
 
 function handleChatClick(event, userId, username, chatId) {
   if (event.target.closest('.action-btn') || event.target.closest('.chat-actions')) {
-    return;
-  }
-  
-  const chatItem = event.currentTarget;
-  if (chatItem.classList.contains('mobile-actions-visible')) {
-    chatItem.classList.remove('mobile-actions-visible');
     return;
   }
   
@@ -1936,7 +1721,6 @@ async function openChat(userId, username, chatId = null) {
   
   document.getElementById('chatOverlay').classList.add('show');
   cancelReply();
-  hideMobileMessageActions();
   lastMessageId = null;
   
   await loadChatMessages();
@@ -1967,7 +1751,6 @@ function closeChat() {
   currentChatId = null;
   lastMessageId = null;
   replyingToMessage = null;
-  hideMobileMessageActions();
   loadChatsList();
 }
 
@@ -2114,7 +1897,41 @@ function addMessageToUI(msg, isNew = true) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'} ${msg.replyTo ? 'message-replied' : ''}`;
   messageDiv.setAttribute('data-message-id', msg.id);
-  messageDiv.onclick = (e) => handleMessageClick(e, msg.id, msg);
+  
+  // Обработчики для всех устройств
+  messageDiv.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // На ПК: правая кнопка - сразу ответ
+    if (!isMobile) {
+      replyToMessage(msg.id, msg);
+    }
+  });
+  
+  // На мобильных: долгое нажатие - контекстное меню
+  if (isMobile) {
+    let longPressTimer;
+    
+    messageDiv.addEventListener('touchstart', (e) => {
+      longPressTimer = setTimeout(() => {
+        showMessageContextMenu(e, msg.id, msg);
+      }, 500);
+    });
+    
+    messageDiv.addEventListener('touchend', () => {
+      clearTimeout(longPressTimer);
+    });
+    
+    messageDiv.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer);
+    });
+  } else {
+    // На ПК: левая кнопка - контекстное меню
+    messageDiv.addEventListener('click', (e) => {
+      if (e.button === 0) { // Левая кнопка мыши
+        showMessageContextMenu(e, msg.id, msg);
+      }
+    });
+  }
   
   let replyHTML = '';
   if (msg.replyTo) {
@@ -2138,27 +1955,6 @@ function addMessageToUI(msg, isNew = true) {
       ${messageTime}
       ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
     </div>
-    ${!isMobile ? `
-      <div class="message-actions">
-        <button class="message-action-btn reply-btn" 
-                onclick="event.stopPropagation(); replyToMessage('${msg.id}', ${JSON.stringify(msg).replace(/'/g, "\\'")})"
-                title="Ответить">
-          ↩️
-        </button>
-        <button class="message-action-btn heart-btn" 
-                onclick="event.stopPropagation(); toggleHeartReaction('${msg.id}')"
-                title="Сердечко">
-          ❤️
-        </button>
-        ${isOutgoing ? `
-          <button class="message-action-btn delete-message-btn" 
-                  onclick="event.stopPropagation(); showDeleteMessageConfirm('${msg.id}')"
-                  title="Удалить сообщение">
-            🗑️
-          </button>
-        ` : ''}
-      </div>
-    ` : ''}
   `;
   
   if (isNew) {
@@ -2194,49 +1990,6 @@ function addMessageToUI(msg, isNew = true) {
     updateMessageReactions(msg.id, msg.reactions);
   }
   
-  if (isMobile) {
-    let longPressTimer;
-    
-    messageDiv.addEventListener('touchstart', (e) => {
-      longPressTimer = setTimeout(() => {
-        showMessageContextMenu(e, msg.id, msg);
-      }, 500);
-    });
-    
-    messageDiv.addEventListener('touchend', () => {
-      clearTimeout(longPressTimer);
-    });
-    
-    messageDiv.addEventListener('touchmove', () => {
-      clearTimeout(longPressTimer);
-    });
-    
-    let tapCount = 0;
-    let tapTimer;
-    
-    messageDiv.addEventListener('click', (e) => {
-      if (e.target.closest('.mobile-action-btn')) return;
-      
-      tapCount++;
-      if (tapCount === 1) {
-        tapTimer = setTimeout(() => {
-          tapCount = 0;
-        }, 300);
-      } else if (tapCount === 2) {
-        clearTimeout(tapTimer);
-        tapCount = 0;
-        toggleHeartReaction(msg.id);
-      }
-    });
-  }
-  
-  if (!isMobile) {
-    messageDiv.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      showReactionsPanel(e, msg.id, msg);
-    });
-  }
-  
   if (isNew) {
     setTimeout(() => {
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -2244,7 +1997,7 @@ function addMessageToUI(msg, isNew = true) {
   }
 }
 
-// Исправленный слушатель сообщений
+// Слушатель сообщений
 function setupChatMessagesListener() {
   if (chatMessagesListener || !currentChatId) return;
   
@@ -2334,14 +2087,13 @@ async function sendMessage() {
     read: false
   };
   
-  // ВАЖНО: Добавляем информацию об ответе
+  // Добавляем информацию об ответе если есть
   if (replyingToMessage) {
     messageData.replyTo = {
       messageId: replyingToMessage.id,
       senderId: replyingToMessage.senderId,
       text: replyingToMessage.text
     };
-    console.log('Отправляем ответ на сообщение:', replyingToMessage);
   }
   
   try {
@@ -2370,16 +2122,12 @@ async function sendMessage() {
       });
     }
     
-    // Отправляем сообщение
     await db.collection('chats').doc(chatId)
       .collection('messages')
       .add(messageData);
     
-    // Очищаем поле ввода
     chatInput.value = '';
     chatInput.style.height = 'auto';
-    
-    // Сбрасываем ответ после отправки
     cancelReply();
     
     sendBtn.innerHTML = originalText;
@@ -2483,10 +2231,10 @@ function logout() {
   }
 }
 
-// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
+// ==================== ИНИЦИАЛИЗАЦИЯ КОНТЕКСТНЫХ МЕНЮ ====================
 
-// Инициализация контекстных меню
 document.addEventListener('DOMContentLoaded', () => {
+  // Меню для чатов
   const contextMenu = document.getElementById('contextMenu');
   const contextPinBtn = document.getElementById('contextPinBtn');
   const contextDeleteBtn = document.getElementById('contextDeleteBtn');
@@ -2510,6 +2258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
+  // Меню для сообщений
   const messageContextMenu = document.getElementById('messageContextMenu');
   const contextReplyBtn = document.getElementById('contextReplyBtn');
   const contextReactionBtn = document.getElementById('contextReactionBtn');
@@ -2518,24 +2267,23 @@ document.addEventListener('DOMContentLoaded', () => {
   contextReplyBtn.addEventListener('click', () => {
     if (contextMenuMessageId && selectedMessageForReaction) {
       replyToMessage(contextMenuMessageId, selectedMessageForReaction);
-      messageContextMenu.classList.remove('show');
     }
   });
   
   contextReactionBtn.addEventListener('click', () => {
     if (contextMenuMessageId) {
       toggleHeartReaction(contextMenuMessageId);
-      messageContextMenu.classList.remove('show');
     }
   });
   
   contextDeleteMessageBtn.addEventListener('click', () => {
     if (contextMenuMessageId) {
       showDeleteMessageConfirm(contextMenuMessageId);
-      messageContextMenu.classList.remove('show');
     }
   });
 });
+
+// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
 
 document.getElementById('chatInput')?.addEventListener('input', function() {
   this.style.height = 'auto';
@@ -2570,6 +2318,16 @@ async function checkOpenChatOnLoad() {
   }
 }
 
+// Закрываем контекстные меню при клике снаружи
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.context-menu') && !e.target.closest('.reactions-panel')) {
+    const menus = document.querySelectorAll('.context-menu.show, .reactions-panel.show');
+    menus.forEach(menu => {
+      menu.classList.remove('show');
+    });
+  }
+});
+
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
 auth.onAuthStateChanged(async (user) => {
@@ -2579,7 +2337,6 @@ auth.onAuthStateChanged(async (user) => {
   }
   
   currentUser = user;
-  console.log('Пользователь авторизован:', user.uid);
   
   await loadUserData();
   await loadAdminUsers();
@@ -2626,15 +2383,6 @@ window.addEventListener('load', () => {
 
 window.addEventListener('resize', () => {
   isMobile = window.innerWidth <= 768;
-});
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.context-menu') && !e.target.closest('.reactions-panel')) {
-    const menus = document.querySelectorAll('.context-menu.show, .reactions-panel.show');
-    menus.forEach(menu => {
-      menu.classList.remove('show');
-    });
-  }
 });
 </script>
 

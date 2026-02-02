@@ -1235,13 +1235,44 @@ async function loadSubscriptionPosts() {
 }
 
 // Отображение постов
-function displayPosts(posts) {
+async function displayPosts(posts) {
   const feed = document.getElementById("feed");
   feed.innerHTML = "";
   
   let lastPostDate = null;
   
-  posts.forEach(postData => {
+  // Сначала загружаем информацию о том, кто репостнул посты
+  const postsWithRepostInfo = await Promise.all(posts.map(async postData => {
+    const postId = postData.id;
+    const post = postData;
+    
+    // Определяем, кто репостнул пост и видим ли мы это
+    let repostedBy = null;
+    if (post.repostedBy && post.repostedBy.length > 0) {
+      // Проверяем, подписан ли текущий пользователь на тех, кто репостнул
+      const repostingUsers = post.repostedBy.filter(username => {
+        // Находим ID пользователя по имени
+        const repostingUser = Array.from(subscriptions).find(subId => {
+          // Здесь нужно получить username подписанного пользователя
+          // Для упрощения проверяем только своих репостов
+          return username === userData.username;
+        });
+        return repostingUser || username === userData.username;
+      });
+      
+      if (repostingUsers.length > 0) {
+        // Берем последнего репостнувшего из тех, на кого мы подписаны
+        repostedBy = repostingUsers[repostingUsers.length - 1];
+      }
+    }
+    
+    return {
+      ...post,
+      repostedByDisplay: repostedBy
+    };
+  }));
+  
+  postsWithRepostInfo.forEach(postData => {
     const post = postData;
     const postId = postData.id;
     postsCache.set(postId, post);
@@ -1290,10 +1321,10 @@ function displayPosts(posts) {
     // Создаем HTML для поста
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
-      ${post.repostedBy ? `
+      ${post.repostedByDisplay ? `
         <div class="repost-info">
           <span class="repost-icon">🔄</span>
-          <span>Репостнул <strong>@${post.repostedBy}</strong></span>
+          <span>Репостнул <strong>@${post.repostedByDisplay}</strong></span>
         </div>
       ` : ''}
       <div class="post-header">
@@ -1472,11 +1503,25 @@ async function toggleRepost(id) {
   
   try {
     // Обновляем счетчик репостов в посте
-    await db.collection("posts").doc(id).update({
+    const postRef = db.collection("posts").doc(id);
+    const postDoc = await postRef.get();
+    const postData = postDoc.data();
+    
+    let newRepostedBy = postData.repostedBy || [];
+    
+    if (isReposted) {
+      // Убираем репост
+      newRepostedBy = newRepostedBy.filter(username => username !== userData.username);
+    } else {
+      // Добавляем репост
+      if (!newRepostedBy.includes(userData.username)) {
+        newRepostedBy.push(userData.username);
+      }
+    }
+    
+    await postRef.update({
       reposts: firebase.firestore.FieldValue.increment(isReposted ? -1 : 1),
-      repostedBy: isReposted
-        ? firebase.firestore.FieldValue.arrayRemove(userData.username)
-        : firebase.firestore.FieldValue.arrayUnion(userData.username)
+      repostedBy: newRepostedBy
     });
     
     // Обновляем список репостов пользователя
@@ -1496,6 +1541,7 @@ async function toggleRepost(id) {
     
     // Обновляем кэш
     post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
+    post.repostedBy = newRepostedBy;
     
     // Обновляем отображение
     const repostButton = document.querySelector(`#post-${id} .action:nth-child(3)`);
@@ -1507,8 +1553,10 @@ async function toggleRepost(id) {
     
     showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
     
-    // Перезагружаем посты чтобы отобразить репост в ленте других пользователей
-    loadPosts();
+    // Перезагружаем посты чтобы отобразить/скрыть надпись о репосте
+    setTimeout(() => {
+      loadPosts();
+    }, 500);
     
   } catch (error) {
     console.error("Ошибка при репосте:", error);

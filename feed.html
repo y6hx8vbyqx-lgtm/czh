@@ -318,8 +318,8 @@ body{
   padding:0;
 }
 
-/* Кнопка подписки */
-.subscribe-btn{
+/* Кнопка подписки в хедере поста */
+.subscribe-btn-header{
   background:var(--accent);
   border:none;
   color:#fff;
@@ -331,16 +331,16 @@ body{
   transition:all 0.2s;
   white-space:nowrap;
 }
-.subscribe-btn:hover{
+.subscribe-btn-header:hover{
   opacity:0.9;
 }
-.subscribe-btn.subscribed{
+.subscribe-btn-header.subscribed{
   background:var(--sub);
   color:var(--bg);
 }
 
-/* Кнопка чата */
-.chat-btn {
+/* Кнопка чата в хедере */
+.chat-btn-header {
   background: #5ac8fa;
   border: none;
   color: var(--bg);
@@ -351,12 +351,11 @@ body{
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
-  margin-left: 8px;
 }
-.chat-btn:hover {
+.chat-btn-header:hover {
   opacity: 0.9;
 }
-.chat-btn:disabled {
+.chat-btn-header:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -980,8 +979,8 @@ body{
             <span id="profileName">@anon</span>
             <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
           </div>
-          <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
-          <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
+          <button class="subscribe-btn-header" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
+          <button class="chat-btn-header" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
         </div>
         <div class="profile-stats">
@@ -1280,7 +1279,7 @@ async function loadAllPosts() {
   try {
     const snap = await db.collection("posts")
       .orderBy("createdAt", "desc")
-      .limit(100)
+      .limit(50)
       .get();
     
     if (snap.empty) {
@@ -1326,9 +1325,14 @@ async function loadAllPosts() {
         return dateB - dateA;
       });
       
-      displayPosts(posts.slice(0, 100));
+      displayPosts(posts.slice(0, 50));
     } catch (fallbackError) {
-      throw error; // Бросаем оригинальную ошибку
+      feed.innerHTML = `
+        <div style='text-align:center;color:var(--danger);padding:40px 0;'>
+          Ошибка загрузки постов. Пожалуйста, создайте индекс в Firebase Console:<br>
+          Поле: createdAt<br>
+          Порядок: По убыванию
+        </div>`;
     }
   }
 }
@@ -1341,7 +1345,7 @@ async function loadSubscriptionPosts() {
   try {
     const snap = await db.collection("posts")
       .orderBy("createdAt", "desc")
-      .limit(100)
+      .limit(50)
       .get();
     
     if (snap.empty) {
@@ -1370,11 +1374,14 @@ async function loadSubscriptionPosts() {
     
   } catch (error) {
     console.error("Ошибка при загрузке постов подписок:", error);
-    throw error;
+    feed.innerHTML = `
+      <div style='text-align:center;color:var(--danger);padding:40px 0;'>
+        Ошибка загрузки постов
+      </div>`;
   }
 }
 
-// Отображение постов
+// Отображение постов (ИСПРАВЛЕННАЯ ВЕРСИЯ - кнопка подписки перенесена в header)
 async function displayPosts(posts) {
   const feed = document.getElementById("feed");
   feed.innerHTML = "";
@@ -1462,7 +1469,7 @@ async function displayPosts(posts) {
       console.log("Ошибка форматирования даты:", dateError);
     }
     
-    // Создаем HTML для поста
+    // Создаем HTML для поста (ИСПРАВЛЕНО: кнопка подписки перенесена в header)
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
       ${post.repostedByDisplay ? `
@@ -1480,6 +1487,12 @@ async function displayPosts(posts) {
           </div>
           <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
         </div>
+        ${post.userId !== currentUser.uid ? 
+          `<button class="subscribe-btn-header ${isSubscribed ? 'subscribed' : ''}" 
+                  onclick="toggleSubscribe('${post.userId}', '${post.username}')"
+                  style="margin-left:8px">
+            ${isSubscribed ? 'В подписках' : 'Подписаться'}
+          </button>` : ''}
         ${(post.userId === currentUser.uid || userData?.isAdmin) ?
           `<button class="trash" onclick="deletePost('${postId}', '${post.userId}')">🗑</button>` : ""}
       </div>
@@ -1500,12 +1513,6 @@ async function displayPosts(posts) {
         <button class="action shared" onclick="sharePostToChat('${postId}')" title="Поделиться в чат">
           ↗️
         </button>
-        ${post.userId !== currentUser.uid ? 
-          `<button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
-                  onclick="toggleSubscribe('${post.userId}', '${post.username}')"
-                  style="margin-left:auto">
-            ${isSubscribed ? 'В подписках' : 'Подписаться'}
-          </button>` : ''}
       </div>
     </div>`;
   });
@@ -1808,7 +1815,7 @@ async function loadActiveChatsForSharing() {
   }
 }
 
-// Отправка поста в выбранный чат (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// Отправка поста в выбранный чат
 async function sendPostToChat(userId, username, chatId = null) {
   if (!postToShare) return;
   
@@ -1847,7 +1854,7 @@ async function sendPostToChat(userId, username, chatId = null) {
       }
     }
     
-    // Создаем сообщение с превью поста (ИСПРАВЛЕНО)
+    // Создаем сообщение с превью поста
     const messageData = {
       text: `📢 Поделился постом от @${post.username}`,
       senderId: currentUser.uid,
@@ -1983,7 +1990,7 @@ function updateProfileSubscribeButton(userId) {
     button.style.display = 'inline-block';
     const isSubscribed = subscriptions.has(userId);
     button.textContent = isSubscribed ? 'В подписках' : 'Подписаться';
-    button.className = isSubscribed ? 'subscribe-btn subscribed' : 'subscribe-btn';
+    button.className = isSubscribed ? 'subscribe-btn-header subscribed' : 'subscribe-btn-header';
     button.onclick = () => toggleSubscribe(userId, document.getElementById('profileName').textContent.replace('@', ''));
   }
 }
@@ -2044,6 +2051,9 @@ async function toggleSubscribe(userId, username) {
     
     // Перезагружаем посты, если мы в ленте подписок
     if (currentFeed === 'subscriptions') {
+      loadPosts();
+    } else {
+      // Иначе просто перезагружаем текущие посты чтобы обновить кнопки
       loadPosts();
     }
     
@@ -2355,9 +2365,9 @@ async function refreshProfileReposts(uid) {
               <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
             </div>
             ${post.userId !== currentUser.uid ? 
-              `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
+              `<button class="subscribe-btn-header ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
                       onclick="event.stopPropagation(); toggleSubscribe('${post.userId}', '${post.username}')"
-                      style="margin-right:8px">
+                      style="margin-left:8px">
                 ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
               </button>` : ''}
           </div>
@@ -3020,7 +3030,7 @@ async function searchUsers(searchTerm) {
             @${user.username}
             ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
           </div>
-          <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
+          <button class="subscribe-btn-header ${isSubscribed ? 'subscribed' : ''}" 
                   onclick="event.stopPropagation(); toggleSubscribe('${userId}', '${user.username}')"
                   style="margin-left:auto">
             ${isSubscribed ? 'В подписках' : 'Подписаться'}

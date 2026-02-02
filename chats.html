@@ -1250,13 +1250,20 @@ async function getUserInfo(userId) {
   }
 }
 
-// ==================== СПИСОК ЧАТОВ ====================
+// ==================== СПИСОК ЧАТОВ (ИСПРАВЛЕННАЯ ФУНКЦИЯ) ====================
 
 async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
   
   try {
-    const chatsSnap = await db.collection('chats').get();
+    // Показываем загрузку пока получаем данные
+    chatsList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><div>Загрузка чатов...</div></div>';
+    
+    // Получаем ВСЕ чаты где currentUser является участником
+    const chatsQuery = db.collection('chats')
+      .where('participants', 'array-contains', currentUser.uid);
+    
+    const chatsSnap = await chatsQuery.get();
     
     if (chatsSnap.empty) {
       chatsList.innerHTML = `
@@ -1275,33 +1282,45 @@ async function loadChatsList() {
     const pinnedChatsArray = [];
     const regularChatsArray = [];
     
+    // Обрабатываем каждый чат
     for (const doc of chatsSnap.docs) {
       const chat = doc.data();
+      const chatId = doc.id;
       
-      if (chat.participants && chat.participants.includes(currentUser.uid)) {
-        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+      // Находим ID второго участника
+      const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+      
+      // Пропускаем если нет второго участника или пользователь заблокирован
+      if (!otherUserId || blockedUsers.has(otherUserId)) {
+        continue;
+      }
+      
+      try {
+        // Получаем информацию о другом пользователе
+        const otherUserInfo = await getUserInfo(otherUserId);
+        const isPinned = pinnedChats.has(chatId);
         
-        if (otherUserId && !blockedUsers.has(otherUserId)) {
-          const otherUserInfo = await getUserInfo(otherUserId);
-          const isPinned = pinnedChats.has(doc.id);
-          
-          const chatData = {
-            id: doc.id,
-            ...chat,
-            otherUserId: otherUserId,
-            otherUserInfo: otherUserInfo,
-            isPinned: isPinned
-          };
-          
-          if (isPinned) {
-            pinnedChatsArray.push(chatData);
-          } else {
-            regularChatsArray.push(chatData);
-          }
+        // Формируем данные чата
+        const chatData = {
+          id: chatId,
+          ...chat,
+          otherUserId: otherUserId,
+          otherUserInfo: otherUserInfo,
+          isPinned: isPinned
+        };
+        
+        if (isPinned) {
+          pinnedChatsArray.push(chatData);
+        } else {
+          regularChatsArray.push(chatData);
         }
+      } catch (error) {
+        console.error(`Ошибка обработки чата ${chatId}:`, error);
+        continue;
       }
     }
     
+    // Сортируем по времени последнего сообщения
     const sortByTime = (a, b) => {
       const timeA = a.lastMessageTime?.toDate ? a.lastMessageTime.toDate() : new Date(a.lastMessageTime || 0);
       const timeB = b.lastMessageTime?.toDate ? b.lastMessageTime.toDate() : new Date(b.lastMessageTime || 0);

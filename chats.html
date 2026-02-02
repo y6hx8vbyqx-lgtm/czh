@@ -1321,6 +1321,11 @@ async function openChat(userId, username, chatId = null) {
   setTimeout(() => {
     document.getElementById('chatInput').focus();
   }, 100);
+  
+  // Помечаем чат как прочитанный
+  if (currentChatId) {
+    await markChatAsRead(currentChatId);
+  }
 }
 
 function closeChat() {
@@ -1331,8 +1336,32 @@ function closeChat() {
     chatMessagesListener = null;
   }
   
+  // Очищаем данные о чате
+  currentChatUserId = null;
+  currentChatUsername = null;
+  currentChatId = null;
+  
   // Обновляем список чатов
   loadChatsList();
+}
+
+async function markChatAsRead(chatId) {
+  try {
+    const chatRef = db.collection('chats').doc(chatId);
+    const chatDoc = await chatRef.get();
+    
+    if (chatDoc.exists) {
+      const chatData = chatDoc.data();
+      if (chatData.unreadFor && chatData.unreadFor.includes(currentUser.uid)) {
+        const updatedUnreadFor = chatData.unreadFor.filter(id => id !== currentUser.uid);
+        await chatRef.update({
+          unreadFor: updatedUnreadFor
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Ошибка при отметке чата как прочитанного:", error);
+  }
 }
 
 function updateBlockButtons(isCurrentlyBlocked) {
@@ -1387,6 +1416,14 @@ async function toggleBlockUser() {
     console.error("Ошибка при блокировке пользователя:", error);
     showNotification("Ошибка: " + error.message);
   }
+}
+
+// Открытие профиля из чата
+function openProfileFromChat() {
+  if (!currentChatUserId) return;
+  
+  // Переходим на страницу ленты с параметром для открытия профиля
+  window.location.href = `feed.html?openProfile=${currentChatUserId}`;
 }
 
 // ==================== СООБЩЕНИЯ ====================
@@ -1832,7 +1869,7 @@ function updateMessageReactions(messageId, reactions) {
   
   // Удаляем контейнер если нет реакций
   if (Object.keys(reactions).length === 0 && reactionsContainer.parentNode) {
-    reactionsContainer.parentNode.removeChild(reactionsContainer);
+    reactionsContainer.parentNode.removeChild(reactionContainer);
   }
 }
 
@@ -1983,6 +2020,33 @@ function logout() {
   }
 }
 
+// ==================== ФУНКЦИЯ ДЛЯ АВТОМАТИЧЕСКОГО ОТКРЫТИЯ ЧАТА ====================
+
+async function checkForAutoOpenChat() {
+  // Проверяем sessionStorage на наличие данных о чате, который нужно открыть
+  const openChatData = sessionStorage.getItem('openChatWith');
+  
+  if (openChatData) {
+    try {
+      const data = JSON.parse(openChatData);
+      const { userId, username } = data;
+      
+      // Очищаем sessionStorage
+      sessionStorage.removeItem('openChatWith');
+      
+      // Открываем чат с пользователем
+      if (userId && username) {
+        // Ждем немного, чтобы страница полностью загрузилась
+        setTimeout(() => {
+          openChat(userId, username);
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Ошибка при обработке данных для открытия чата:", error);
+    }
+  }
+}
+
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
 auth.onAuthStateChanged(async (user) => {
@@ -1997,6 +2061,9 @@ auth.onAuthStateChanged(async (user) => {
   await loadUserData();
   await loadAdminUsers();
   await loadChatsList();
+  
+  // Проверяем, нужно ли автоматически открыть чат
+  await checkForAutoOpenChat();
   
   // Обновляем время
   setInterval(() => {

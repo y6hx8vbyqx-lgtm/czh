@@ -417,6 +417,7 @@ body{
   position: relative;
   animation: fade 0.3s ease;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .message:hover {
   background: rgba(255,255,255,0.03);
@@ -509,6 +510,42 @@ body{
 }
 .reaction-count {
   font-size: 11px;
+}
+
+/* Панель реакций */
+.reactions-panel {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s;
+  pointer-events: none;
+}
+.reactions-panel.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.reaction-emoji {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 4px;
+  border-radius: 12px;
+}
+.reaction-emoji:hover {
+  transform: scale(1.2);
+  background: rgba(255,255,255,0.1);
+}
+.reaction-emoji.heart:hover {
+  color: var(--heart);
 }
 
 .message-date-divider {
@@ -769,6 +806,14 @@ body{
     padding: 16px;
   }
   
+  /* Для мобильных - нажатие вместо ховера */
+  .message {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .message:active {
+    background: rgba(255,255,255,0.05);
+  }
+  
   .no-chats {
     padding: 100px 20px;
   }
@@ -910,6 +955,7 @@ let chatMessagesListener = null;
 let usersCache = new Map();
 let pinnedChats = [];
 let replyingToMessage = null;
+let selectedMessageForReaction = null;
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
 
@@ -1412,12 +1458,10 @@ function addMessageToUI(msg) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
   messageDiv.setAttribute('data-message-id', msg.id);
+  messageDiv.setAttribute('data-sender-id', msg.senderId);
   
-  // Обработчик для контекстного меню
-  messageDiv.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    showMessageContextMenu(e, msg.id, msg);
-  });
+  // Добавляем обработчик для всех устройств
+  setupMessageClickHandler(messageDiv, msg);
   
   const readStatus = msg.read === true ? '✓✓' : '✓';
   
@@ -1435,9 +1479,34 @@ function addMessageToUI(msg) {
     `;
   }
   
+  // Добавляем реакции если есть
+  let reactionsHTML = '';
+  if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+    const reactionGroups = {};
+    Object.entries(msg.reactions).forEach(([userId, emoji]) => {
+      if (!reactionGroups[emoji]) {
+        reactionGroups[emoji] = [];
+      }
+      reactionGroups[emoji].push(userId);
+    });
+    
+    reactionsHTML = '<div class="message-reactions">';
+    Object.entries(reactionGroups).forEach(([emoji, users]) => {
+      const isLikedByMe = users.includes(currentUser.uid);
+      reactionsHTML += `
+        <div class="reaction ${isLikedByMe ? 'liked' : ''}" onclick="event.stopPropagation(); addReactionToMessage('${msg.id}', '${emoji}')">
+          <span>${emoji}</span>
+          <span class="reaction-count">${users.length}</span>
+        </div>
+      `;
+    });
+    reactionsHTML += '</div>';
+  }
+  
   messageDiv.innerHTML = `
     ${replyHTML}
     <div class="message-text">${msg.text || ''}</div>
+    ${reactionsHTML}
     <div class="message-time">
       ${messageTime}
       ${isOutgoing ? `<span class="message-status">${readStatus}</span>` : ''}
@@ -1445,6 +1514,46 @@ function addMessageToUI(msg) {
   `;
   
   chatMessages.appendChild(messageDiv);
+}
+
+function setupMessageClickHandler(messageDiv, msg) {
+  // Для мобильных: длинное нажатие или обычное нажатие
+  if ('ontouchstart' in window) {
+    let longPressTimer;
+    let isLongPress = false;
+    
+    messageDiv.addEventListener('touchstart', (e) => {
+      isLongPress = false;
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        showMessageContextMenu(e, msg.id, msg);
+      }, 500);
+    });
+    
+    messageDiv.addEventListener('touchend', (e) => {
+      clearTimeout(longPressTimer);
+      if (!isLongPress) {
+        // Короткое нажатие - показываем панель реакций
+        showReactionsPanel(e, msg.id, msg);
+      }
+    });
+    
+    messageDiv.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer);
+    });
+  } else {
+    // Для десктопа: правый клик или обычный клик
+    messageDiv.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showMessageContextMenu(e, msg.id, msg);
+    });
+    
+    messageDiv.addEventListener('click', (e) => {
+      if (e.button === 0) { // Левый клик
+        showReactionsPanel(e, msg.id, msg);
+      }
+    });
+  }
 }
 
 function setupChatMessagesListener() {
@@ -1468,6 +1577,13 @@ function setupChatMessagesListener() {
               const chatMessages = document.getElementById('chatMessages');
               chatMessages.scrollTop = chatMessages.scrollHeight;
             }, 100);
+          }
+        } else if (change.type === 'modified') {
+          // Обновляем реакции если они изменились
+          const msg = change.doc.data();
+          const existingMessage = document.querySelector(`[data-message-id="${change.doc.id}"]`);
+          if (existingMessage && msg.reactions) {
+            updateMessageReactions(change.doc.id, msg.reactions);
           }
         }
       });
@@ -1557,6 +1673,169 @@ async function sendMessage() {
   }
 }
 
+// ==================== РЕАКЦИИ НА СООБЩЕНИЯ ====================
+
+function showReactionsPanel(event, messageId, messageData) {
+  // Определяем координаты
+  let x, y;
+  if (event.type.includes('touch')) {
+    const touch = event.touches[0] || event.changedTouches[0];
+    x = touch.clientX;
+    y = touch.clientY;
+  } else {
+    x = event.clientX;
+    y = event.clientY;
+  }
+  
+  // Сохраняем выбранное сообщение
+  selectedMessageForReaction = { id: messageId, ...messageData };
+  
+  // Показываем панель реакций
+  const panel = document.getElementById('reactionsPanel');
+  panel.style.left = Math.min(x - 100, window.innerWidth - 220) + 'px';
+  panel.style.top = Math.min(y - 60, window.innerHeight - 80) + 'px';
+  panel.classList.add('show');
+  
+  // Закрываем при клике вне панели
+  setTimeout(() => {
+    const closePanel = (e) => {
+      if (!panel.contains(e.target)) {
+        panel.classList.remove('show');
+        document.removeEventListener('click', closePanel);
+        document.removeEventListener('touchstart', closePanel);
+      }
+    };
+    document.addEventListener('click', closePanel);
+    document.addEventListener('touchstart', closePanel);
+  }, 10);
+}
+
+async function addReaction(emoji) {
+  if (!selectedMessageForReaction || !currentChatId) return;
+  
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .doc(selectedMessageForReaction.id);
+    
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    
+    // Проверяем, есть ли уже реакция от пользователя
+    const userReaction = currentReactions[currentUser.uid];
+    
+    if (userReaction === emoji) {
+      // Убираем реакцию если уже стоит
+      delete currentReactions[currentUser.uid];
+      showNotification("Реакция убрана");
+    } else {
+      // Добавляем/меняем реакцию
+      currentReactions[currentUser.uid] = emoji;
+      showNotification(`${emoji} Добавлено`);
+    }
+    
+    // Обновляем в базе данных
+    await messageRef.update({
+      reactions: currentReactions
+    });
+    
+    // Обновляем UI
+    updateMessageReactions(selectedMessageForReaction.id, currentReactions);
+    
+    // Закрываем панель
+    document.getElementById('reactionsPanel').classList.remove('show');
+    
+  } catch (error) {
+    console.error("Ошибка при добавлении реакции:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+async function addReactionToMessage(messageId, emoji) {
+  if (!currentChatId) return;
+  
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .doc(messageId);
+    
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    
+    const userReaction = currentReactions[currentUser.uid];
+    
+    if (userReaction === emoji) {
+      delete currentReactions[currentUser.uid];
+      showNotification("Реакция убрана");
+    } else {
+      currentReactions[currentUser.uid] = emoji;
+      showNotification(`${emoji} Добавлено`);
+    }
+    
+    await messageRef.update({
+      reactions: currentReactions
+    });
+    
+    updateMessageReactions(messageId, currentReactions);
+    
+  } catch (error) {
+    console.error("Ошибка при добавлении реакции:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+function updateMessageReactions(messageId, reactions) {
+  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  if (!messageElement) return;
+  
+  // Находим или создаем контейнер реакций
+  let reactionsContainer = messageElement.querySelector('.message-reactions');
+  
+  if (!reactionsContainer) {
+    reactionsContainer = document.createElement('div');
+    reactionsContainer.className = 'message-reactions';
+    
+    const timeElement = messageElement.querySelector('.message-time');
+    messageElement.insertBefore(reactionsContainer, timeElement);
+  }
+  
+  // Очищаем и заполняем заново
+  reactionsContainer.innerHTML = '';
+  
+  // Группируем реакции по эмодзи
+  const reactionGroups = {};
+  Object.entries(reactions).forEach(([userId, emoji]) => {
+    if (!reactionGroups[emoji]) {
+      reactionGroups[emoji] = [];
+    }
+    reactionGroups[emoji].push(userId);
+  });
+  
+  // Создаем элементы реакций
+  Object.entries(reactionGroups).forEach(([emoji, users]) => {
+    const isLikedByMe = users.includes(currentUser.uid);
+    
+    const reactionElement = document.createElement('div');
+    reactionElement.className = `reaction ${isLikedByMe ? 'liked' : ''}`;
+    reactionElement.onclick = (e) => {
+      e.stopPropagation();
+      addReactionToMessage(messageId, emoji);
+    };
+    
+    reactionElement.innerHTML = `
+      <span>${emoji}</span>
+      <span class="reaction-count">${users.length}</span>
+    `;
+    
+    reactionsContainer.appendChild(reactionElement);
+  });
+  
+  // Удаляем контейнер если нет реакций
+  if (Object.keys(reactions).length === 0 && reactionsContainer.parentNode) {
+    reactionsContainer.parentNode.removeChild(reactionsContainer);
+  }
+}
+
 // ==================== ОТВЕТ НА СООБЩЕНИЯ ====================
 
 function replyToMessage(messageId, messageData) {
@@ -1595,10 +1874,20 @@ function cancelReply() {
 
 function showMessageContextMenu(event, messageId, messageData) {
   event.preventDefault();
+  event.stopPropagation();
   
   const menu = document.getElementById('messageContextMenu');
-  const x = event.clientX;
-  const y = event.clientY;
+  
+  // Определяем координаты
+  let x, y;
+  if (event.type.includes('touch')) {
+    const touch = event.touches[0] || event.changedTouches[0];
+    x = touch.clientX;
+    y = touch.clientY;
+  } else {
+    x = event.clientX;
+    y = event.clientY;
+  }
   
   menu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
   menu.style.top = Math.min(y, window.innerHeight - 150) + 'px';
@@ -1614,9 +1903,11 @@ function showMessageContextMenu(event, messageId, messageData) {
       if (!menu.contains(e.target)) {
         menu.classList.remove('show');
         document.removeEventListener('click', closeMenu);
+        document.removeEventListener('touchstart', closeMenu);
       }
     };
     document.addEventListener('click', closeMenu);
+    document.addEventListener('touchstart', closeMenu);
   }, 10);
 }
 
@@ -1630,10 +1921,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Реакция на сообщение
+  // Добавить сердечко
   document.getElementById('contextReactionBtn').addEventListener('click', () => {
     document.getElementById('messageContextMenu').classList.remove('show');
-    showNotification('Реакции скоро будут добавлены');
+    if (window.currentContextMessageId && window.currentContextMessageData) {
+      addReactionToMessage(window.currentContextMessageId, '❤️');
+    }
   });
   
   // Удалить сообщение

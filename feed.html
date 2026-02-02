@@ -307,6 +307,7 @@ body{
 }
 .liked{color:#ff2d55}
 .viewed{color:var(--views)}
+.reposted{color:#64d2ff}
 .trash{
   margin-left:auto;
   background:none;border:none;
@@ -483,6 +484,9 @@ body{
 .views-stat{
   color:var(--views);
 }
+.reposts-stat{
+  color:#64d2ff;
+}
 
 /* Описание профиля */
 .profile-bio{
@@ -530,6 +534,64 @@ body{
 }
 .bio-word-counter.error{
   color:#ff453a;
+}
+
+/* Табы профиля (посты/репосты) */
+.profile-tabs {
+  display: flex;
+  background: var(--card);
+  border-radius: 18px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.profile-tab {
+  flex: 1;
+  text-align: center;
+  padding: 14px;
+  background: none;
+  border: none;
+  color: var(--sub);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s;
+  position: relative;
+  z-index: 1;
+}
+.profile-tab.active {
+  color: #fff;
+}
+.profile-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 18px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+.profile-tab-slider.to-reposts {
+  transform: translateX(100%);
+}
+
+.profile-posts-container {
+  position: relative;
+  min-height: 200px;
+}
+.profile-posts-content {
+  position: relative;
+  transition: opacity 0.3s;
+}
+.profile-posts-content.hidden {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 /* Уведомление */
@@ -675,6 +737,19 @@ body{
 .comment-delete-btn:hover{
   background:rgba(255,69,58,0.1);
 }
+
+/* Стили для репостов */
+.repost-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--sub);
+  font-size: 14px;
+}
+.repost-icon {
+  color: #64d2ff;
+}
 </style>
 </head>
 
@@ -816,11 +891,11 @@ body{
             <div class="profile-stat-label">просмотров</div>
           </div>
           <div class="profile-stat">
-            <div class="profile-stat-value" style="color:#5ac8fa">
-              <span>👥</span>
-              <span id="profileSubscribersCount">0</span>
+            <div class="profile-stat-value reposts-stat">
+              <span>🔄</span>
+              <span id="profileRepostsCount">0</span>
             </div>
-            <div class="profile-stat-label">подписчиков</div>
+            <div class="profile-stat-label">репостов</div>
           </div>
         </div>
       </div>
@@ -836,7 +911,21 @@ body{
       <div class="bio-word-counter" id="profileBioWordCounter" style="display:none"></div>
     </div>
     
-    <div id="profilePosts"></div>
+    <!-- Табы постов/репостов -->
+    <div class="profile-tabs">
+      <div class="profile-tab-slider" id="profileTabSlider"></div>
+      <button class="profile-tab active" onclick="switchProfileTab('posts')">Посты</button>
+      <button class="profile-tab" onclick="switchProfileTab('reposts')">Репосты</button>
+    </div>
+    
+    <div class="profile-posts-container">
+      <div class="profile-posts-content" id="profilePostsContent">
+        <div id="profilePosts"></div>
+      </div>
+      <div class="profile-posts-content hidden" id="profileRepostsContent">
+        <div id="profileReposts"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -861,6 +950,7 @@ let currentFeed = 'all';
 let subscriptions = new Set();
 let adminUsers = new Set();
 let blockedUsers = new Set();
+let currentProfileTab = 'posts';
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -954,11 +1044,19 @@ async function loadUserData() {
         lastLogin: new Date(),
         subscribers: [],
         bio: "",
-        blockedUsers: []
+        blockedUsers: [],
+        reposts: []
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
       userData = snap.data();
+      // Инициализируем репосты если их нет
+      if (!userData.reposts) {
+        userData.reposts = [];
+        await db.collection("users").doc(currentUser.uid).update({
+          reposts: []
+        });
+      }
     }
     
     // Обновляем время последнего входа
@@ -1170,10 +1268,11 @@ function displayPosts(posts) {
     
     if (postDate) lastPostDate = postDate;
     
-    // Проверяем лайк и подписку
+    // Проверяем лайк, подписку и репост
     const liked = post.likedBy?.includes(currentUser.uid);
     const isSubscribed = subscriptions.has(post.userId);
     const isAdmin = adminUsers.has(post.userId);
+    const isReposted = userData.reposts?.includes(postId) || false;
     
     // Форматируем время
     let timeAgo = "только что";
@@ -1191,6 +1290,12 @@ function displayPosts(posts) {
     // Создаем HTML для поста
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
+      ${post.repostedBy ? `
+        <div class="repost-info">
+          <span class="repost-icon">🔄</span>
+          <span>Репостнул <strong>@${post.repostedBy}</strong></span>
+        </div>
+      ` : ''}
       <div class="post-header">
         <div class="avatar">${post.username?.[0]||"A"}</div>
         <div class="post-user-info">
@@ -1216,6 +1321,9 @@ function displayPosts(posts) {
         </button>
         <button class="action" onclick="openComments('${postId}')">
           💬 ${post.commentsCount || 0}
+        </button>
+        <button class="action ${isReposted ? "reposted" : ""}" onclick="toggleRepost('${postId}')">
+          🔄 <span id="reposts-${postId}">${post.reposts || 0}</span>
         </button>
         <button class="action viewed" title="Просмотры">
           👁️ ${post.views || 0}
@@ -1256,7 +1364,9 @@ async function createPost() {
       createdAt: new Date(),
       likes: 0,
       views: 0,
+      reposts: 0,
       likedBy: [],
+      repostedBy: [],
       commentsCount: 0
     });
     
@@ -1276,6 +1386,21 @@ async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
+    // Удаляем пост из всех репостов пользователей
+    const usersWithRepost = await db.collection("users")
+      .where("reposts", "array-contains", postId)
+      .get();
+    
+    const batch = db.batch();
+    usersWithRepost.forEach(doc => {
+      batch.update(doc.ref, {
+        reposts: firebase.firestore.FieldValue.arrayRemove(postId)
+      });
+    });
+    
+    await batch.commit();
+    
+    // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();
     showNotification("Пост удален!");
     
@@ -1338,6 +1463,59 @@ async function toggleLike(id) {
   }
 }
 
+// Репост поста
+async function toggleRepost(id) {
+  const post = postsCache.get(id);
+  if (!post) return;
+  
+  const isReposted = userData.reposts?.includes(id) || false;
+  
+  try {
+    // Обновляем счетчик репостов в посте
+    await db.collection("posts").doc(id).update({
+      reposts: firebase.firestore.FieldValue.increment(isReposted ? -1 : 1),
+      repostedBy: isReposted
+        ? firebase.firestore.FieldValue.arrayRemove(userData.username)
+        : firebase.firestore.FieldValue.arrayUnion(userData.username)
+    });
+    
+    // Обновляем список репостов пользователя
+    await db.collection("users").doc(currentUser.uid).update({
+      reposts: isReposted
+        ? firebase.firestore.FieldValue.arrayRemove(id)
+        : firebase.firestore.FieldValue.arrayUnion(id)
+    });
+    
+    // Обновляем локальные данные
+    if (isReposted) {
+      userData.reposts = userData.reposts.filter(postId => postId !== id);
+    } else {
+      if (!userData.reposts) userData.reposts = [];
+      userData.reposts.push(id);
+    }
+    
+    // Обновляем кэш
+    post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
+    
+    // Обновляем отображение
+    const repostButton = document.querySelector(`#post-${id} .action:nth-child(3)`);
+    const repostsSpan = document.getElementById(`reposts-${id}`);
+    if (repostButton && repostsSpan) {
+      repostButton.classList.toggle('reposted', !isReposted);
+      repostButton.innerHTML = `🔄 <span id="reposts-${id}">${post.reposts}</span>`;
+    }
+    
+    showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
+    
+    // Перезагружаем посты чтобы отобразить репост в ленте других пользователей
+    loadPosts();
+    
+  } catch (error) {
+    console.error("Ошибка при репосте:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
 // ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
 
 // Открытие профиля
@@ -1345,10 +1523,14 @@ async function openProfile(uid, name) {
   if (!uid || !name) return;
   
   currentProfileUserId = uid;
+  currentProfileTab = 'posts';
   document.getElementById("profileSheet").classList.add("show");
   
   document.getElementById("profileName").textContent = "@" + name;
   document.getElementById("profileAvatar").textContent = name?.[0] || "A";
+  
+  // Сбрасываем табы к постам
+  switchProfileTab('posts');
   
   // Настраиваем кнопки
   const changeNameBtn = document.getElementById("changeNameBtn");
@@ -1361,6 +1543,7 @@ async function openProfile(uid, name) {
   updateProfileSubscribeButton(uid);
   updateProfileChatButton(uid);
   await updateProfileSubscribersCount(uid);
+  await updateProfileRepostsCount(uid);
   await loadUserBio(uid);
   
   document.getElementById("profilePosts").innerHTML = `
@@ -1368,13 +1551,44 @@ async function openProfile(uid, name) {
       Загрузка постов...
     </div>`;
   
+  document.getElementById("profileReposts").innerHTML = `
+    <div style="text-align:center;color:var(--sub);padding:40px 0;">
+      Загрузка репостов...
+    </div>`;
+  
   await refreshProfilePosts(uid);
+  await refreshProfileReposts(uid);
 }
 
 // Закрытие профиля
 function closeProfile() {
   currentProfileUserId = null;
   document.getElementById("profileSheet").classList.remove("show");
+}
+
+// Переключение таба в профиле
+function switchProfileTab(tab) {
+  currentProfileTab = tab;
+  
+  const postsTab = document.querySelector('.profile-tab:nth-child(2)');
+  const repostsTab = document.querySelector('.profile-tab:nth-child(3)');
+  const slider = document.getElementById('profileTabSlider');
+  const postsContent = document.getElementById('profilePostsContent');
+  const repostsContent = document.getElementById('profileRepostsContent');
+  
+  if (tab === 'posts') {
+    postsTab.classList.add('active');
+    repostsTab.classList.remove('active');
+    slider.classList.remove('to-reposts');
+    postsContent.classList.remove('hidden');
+    repostsContent.classList.add('hidden');
+  } else {
+    postsTab.classList.remove('active');
+    repostsTab.classList.add('active');
+    slider.classList.add('to-reposts');
+    postsContent.classList.add('hidden');
+    repostsContent.classList.remove('hidden');
+  }
 }
 
 // Обновление кнопки подписки в профиле
@@ -1471,6 +1685,20 @@ async function updateProfileSubscribersCount(userId) {
     }
   } catch (error) {
     console.error("Ошибка получения количества подписчиков:", error);
+  }
+}
+
+// Обновление количества репостов
+async function updateProfileRepostsCount(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      const count = (user.reposts || []).length;
+      document.getElementById('profileRepostsCount').textContent = count;
+    }
+  } catch (error) {
+    console.error("Ошибка получения количества репостов:", error);
   }
 }
 
@@ -1637,6 +1865,7 @@ async function refreshProfilePosts(uid) {
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
             <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
+            <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
           </div>
           ${canDelete ? 
             `<button class="trash" style="position:absolute;top:16px;right:16px;" 
@@ -1652,6 +1881,132 @@ async function refreshProfilePosts(uid) {
         ${error.message.includes("index") ? 
           "Пожалуйста, создайте индекс в Firebase Console" : 
           "Ошибка при загрузке постов"}
+      </div>`;
+  }
+}
+
+// Обновление репостов в профиле
+async function refreshProfileReposts(uid) {
+  const profileReposts = document.getElementById("profileReposts");
+  
+  if (!profileReposts) return;
+  
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      profileReposts.innerHTML = `
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          Пользователь не найден
+        </div>`;
+      return;
+    }
+    
+    const user = userDoc.data();
+    const repostIds = user.reposts || [];
+    
+    if (repostIds.length === 0) {
+      profileReposts.innerHTML = `
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          У пользователя пока нет репостов
+        </div>`;
+      return;
+    }
+    
+    profileReposts.innerHTML = "<div style='text-align:center;color:var(--sub);padding:20px 0;'>Загрузка репостов...</div>";
+    
+    // Загружаем все репостнутые посты
+    const postsPromises = repostIds.map(postId => 
+      db.collection("posts").doc(postId).get().then(doc => {
+        if (doc.exists) {
+          return { id: doc.id, ...doc.data() };
+        }
+        return null;
+      }).catch(() => null)
+    );
+    
+    const posts = await Promise.all(postsPromises);
+    const validPosts = posts.filter(post => post !== null);
+    
+    // Сортируем по дате создания (новые первыми)
+    validPosts.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    
+    if (validPosts.length === 0) {
+      profileReposts.innerHTML = `
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          Нет доступных репостов
+        </div>`;
+      return;
+    }
+    
+    profileReposts.innerHTML = "";
+    
+    validPosts.forEach(post => {
+      const isAdmin = adminUsers.has(post.userId);
+      const liked = post.likedBy?.includes(currentUser.uid);
+      const isReposted = userData.reposts?.includes(post.id) || false;
+      
+      let timeAgo = "только что";
+      let fullDateTime = "";
+      
+      try {
+        if (post.createdAt) {
+          const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+          timeAgo = formatTimeAgo(postDate);
+          fullDateTime = formatFullDateTime(postDate);
+        }
+      } catch (dateError) {
+        console.log("Ошибка форматирования даты:", dateError);
+      }
+      
+      profileReposts.innerHTML += `
+        <div class="post fade" id="repost-${post.id}">
+          <div class="repost-info">
+            <span class="repost-icon">🔄</span>
+            <span>Репостнул <strong>@${user.username}</strong></span>
+          </div>
+          <div class="post-header">
+            <div class="avatar">${post.username?.[0]||"A"}</div>
+            <div class="post-user-info">
+              <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
+                @${post.username}
+                ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+              </div>
+              <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+            </div>
+            ${post.userId !== currentUser.uid ? 
+              `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
+                      onclick="event.stopPropagation(); toggleSubscribe('${post.userId}', '${post.username}')"
+                      style="margin-right:8px">
+                ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
+              </button>` : ''}
+          </div>
+          <div class="post-text">${post.text}</div>
+          <div class="post-actions">
+            <button class="action ${liked ? "liked" : ""}" onclick="event.stopPropagation(); toggleLike('${post.id}')">
+              ${liked ? "❤️" : "🤍"} <span id="repost-likes-${post.id}">${post.likes || 0}</span>
+            </button>
+            <button class="action" onclick="event.stopPropagation(); openComments('${post.id}')">
+              💬 ${post.commentsCount || 0}
+            </button>
+            <button class="action ${isReposted ? "reposted" : ""}" onclick="event.stopPropagation(); toggleRepost('${post.id}')">
+              🔄 <span id="repost-reposts-${post.id}">${post.reposts || 0}</span>
+            </button>
+            <button class="action viewed" title="Просмотры">
+              👁️ ${post.views || 0}
+            </button>
+          </div>
+        </div>`;
+    });
+    
+  } catch (error) {
+    console.error("Ошибка при загрузке репостов профиля:", error);
+    profileReposts.innerHTML = `
+      <div style="text-align:center;color:var(--danger);padding:40px 0;">
+        Ошибка при загрузке репостов: ${error.message}
       </div>`;
   }
 }
@@ -1743,6 +2098,21 @@ async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
+    // Удаляем пост из всех репостов пользователей
+    const usersWithRepost = await db.collection("users")
+      .where("reposts", "array-contains", postId)
+      .get();
+    
+    const batch = db.batch();
+    usersWithRepost.forEach(doc => {
+      batch.update(doc.ref, {
+        reposts: firebase.firestore.FieldValue.arrayRemove(postId)
+      });
+    });
+    
+    await batch.commit();
+    
+    // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();
     
     if (viewedPosts[postId]) {

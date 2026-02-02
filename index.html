@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - czhmass.com</title>
 
-    <!-- 🔧 PWA ОБЯЗАТЕЛЬНЫЕ ТЕГИ -->
+    <!-- 🔧 ОБЯЗАТЕЛЬНЫЕ ТЕГИ ДЛЯ PWA -->
     <meta name="theme-color" content="#24292e">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <!-- КОНЕЦ PWA ТЕГОВ -->
 
-    <!-- Ваши старые скрипты Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
     <style>
-        /* Весь ваш оригинальный стиль остается здесь без изменений */
+        /* ВЕСЬ ВАШ ОРИГИНАЛЬНЫЙ CSS-КОД НАЧИНАЕТСЯ ЗДЕСЬ */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
         }
+
         body {
             background: #000000;
             color: #ffffff;
@@ -32,45 +32,335 @@
             overflow-x: hidden;
             padding-top: 10px;
         }
-        /* ... и так далее, ВЕСЬ ваш CSS-код ... */
 
-        /* Стили для навигации */
-        .app-nav {
+        /* iOS Динамический островок */
+        .dynamic-island {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 35px;
+            background: rgba(40, 40, 40, 0.95);
+            border-radius: 20px;
             display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 15px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             z-index: 1000;
         }
-        .nav-link {
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            font-size: 12px;
-            text-align: center;
-            padding: 8px;
-            border-radius: 10px;
-            transition: all 0.2s;
-            flex: 1;
-            margin: 0 5px;
-        }
-        .nav-link:hover,
-        .nav-link.active {
+
+        .island-time {
+            font-size: 15px;
+            font-weight: 600;
             color: white;
-            background: rgba(255, 255, 255, 0.1);
         }
-        .nav-icon {
+
+        /* Основной контейнер */
+        .container {
+            padding: 140px 20px 60px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* Форма входа/регистрации */
+        .auth-card {
+            background: rgba(28, 28, 30, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
             display: block;
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+            font-weight: 500;
         }
-        #app {
-            min-height: 100vh;
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .input-field.error {
+            border-color: #ff3b30;
+        }
+
+        .error-message {
+            color: #ff3b30;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .checkbox {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .checkbox-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Кнопки */
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Переключатель форм */
+        .form-switch {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .switch-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .switch-link {
+            color: #667eea;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .switch-link:hover {
+            color: #764ba2;
+        }
+
+        /* Сообщения */
+        .message {
+            padding: 14px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+            font-size: 14px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .success {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            border-color: rgba(52, 199, 89, 0.3);
+        }
+
+        .error {
+            background: rgba(255, 59, 48, 0.15);
+            color: #ff3b30;
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+
+        .info {
+            background: rgba(0, 122, 255, 0.15);
+            color: #007aff;
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        /* Индикатор загрузки */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Адаптивность для мобильных */
+        @media (max-width: 768px) {
+            .container {
+                padding: 130px 15px 40px;
+            }
+
+            .dynamic-island {
+                width: 110px;
+                height: 32px;
+                top: 10px;
+            }
+
+            .auth-card {
+                padding: 25px;
+            }
+
+            .logo {
+                font-size: 32px;
+            }
+
+            .form-title {
+                font-size: 22px;
+            }
+
+            .btn {
+                padding: 16px;
+                font-size: 15px;
+            }
+
+            .input-field {
+                padding: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 120px 12px 30px;
+            }
+
+            .auth-card {
+                padding: 20px;
+            }
+
+            .logo {
+                font-size: 28px;
+            }
+
+            .form-title {
+                font-size: 20px;
+                margin-bottom: 25px;
+            }
+
+            .btn {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 110px 10px 20px;
+            }
+
+            .dynamic-island {
+                width: 100px;
+                height: 30px;
+                font-size: 13px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
@@ -80,100 +370,89 @@
         <span class="island-time" id="currentTime">--:--</span>
     </div>
 
-    <!-- Контейнер для динамического контента (для роутера) -->
-    <div id="app">
-        <!-- Здесь будет загружаться feed.html, chats.html и другие страницы -->
-        <div class="container">
-            <div class="header">
-                <div class="logo">czhmass</div>
-                <div class="subtitle">Анонимная социальная сеть.<br>Ваша приватность — наш приоритет.</div>
-            </div>
-
-            <!-- Форма входа -->
-            <div class="auth-card" id="loginForm">
-                <h2 class="form-title">Вход в аккаунт</h2>
-                <div class="form-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" id="loginEmail" class="input-field" placeholder="your@email.com">
-                    <div class="error-message" id="loginEmailError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="input-label">Пароль</label>
-                    <input type="password" id="loginPassword" class="input-field" placeholder="••••••••">
-                    <div class="error-message" id="loginPasswordError"></div>
-                </div>
-                <button class="btn btn-primary" onclick="login()" id="loginButton">
-                    Войти в аккаунт
-                </button>
-                <div class="form-switch">
-                    <div class="switch-text">Нет аккаунта?</div>
-                    <button class="switch-link" onclick="showRegisterForm()">
-                        Создать новый аккаунт
-                    </button>
-                </div>
-                <div class="loading" id="loginLoading">Вход...</div>
-            </div>
-
-            <!-- Форма регистрации -->
-            <div class="auth-card" id="registerForm" style="display: none;">
-                <h2 class="form-title">Создать аккаунт</h2>
-                <div class="form-group">
-                    <label class="input-label">Имя пользователя</label>
-                    <input type="text" id="registerUsername" class="input-field" placeholder="Придумайте имя" maxlength="20">
-                    <div class="error-message" id="usernameError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" id="registerEmail" class="input-field" placeholder="your@email.com">
-                    <div class="error-message" id="emailError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="input-label">Пароль</label>
-                    <input type="password" id="registerPassword" class="input-field" placeholder="Минимум 6 символов">
-                    <div class="error-message" id="passwordError"></div>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="termsCheckbox" class="checkbox">
-                    <label for="termsCheckbox" class="checkbox-label">
-                        Я согласен с условиями использования и политикой конфиденциальности
-                    </label>
-                </div>
-                <button class="btn btn-primary" onclick="register()" id="registerButton">
-                    Создать аккаунт
-                </button>
-                <div class="form-switch">
-                    <div class="switch-text">Уже есть аккаунт?</div>
-                    <button class="switch-link" onclick="showLoginForm()">
-                        Войти в существующий
-                    </button>
-                </div>
-                <div class="loading" id="registerLoading">Регистрация...</div>
-            </div>
-
-            <!-- Сообщения -->
-            <div id="message" class="message"></div>
+    <!-- Основной контейнер -->
+    <div class="container">
+        <div class="header">
+            <div class="logo">czhmass</div>
+            <div class="subtitle">Анонимная социальная сеть.<br>Ваша приватность — наш приоритет.</div>
         </div>
-    </div>
 
-    <!-- Навигация по приложению -->
-    <nav class="app-nav">
-        <a href="/" class="nav-link" data-page="home">
-            <span class="nav-icon">🏠</span>
-            Главная
-        </a>
-        <a href="/feed" class="nav-link" data-page="feed">
-            <span class="nav-icon">📰</span>
-            Лента
-        </a>
-        <a href="/chats" class="nav-link" data-page="chats">
-            <span class="nav-icon">💬</span>
-            Чаты
-        </a>
-        <a href="/profile" class="nav-link" data-page="profile">
-            <span class="nav-icon">👤</span>
-            Профиль
-        </a>
-    </nav>
+        <!-- Форма входа -->
+        <div class="auth-card" id="loginForm">
+            <h2 class="form-title">Вход в аккаунт</h2>
+
+            <div class="form-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="loginEmail" class="input-field" placeholder="your@email.com">
+                <div class="error-message" id="loginEmailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Пароль</label>
+                <input type="password" id="loginPassword" class="input-field" placeholder="••••••••">
+                <div class="error-message" id="loginPasswordError"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="login()" id="loginButton">
+                Войти в аккаунт
+            </button>
+
+            <div class="form-switch">
+                <div class="switch-text">Нет аккаунта?</div>
+                <button class="switch-link" onclick="showRegisterForm()">
+                    Создать новый аккаунт
+                </button>
+            </div>
+
+            <div class="loading" id="loginLoading">Вход...</div>
+        </div>
+
+        <!-- Форма регистрации (скрыта по умолчанию) -->
+        <div class="auth-card" id="registerForm" style="display: none;">
+            <h2 class="form-title">Создать аккаунт</h2>
+
+            <div class="form-group">
+                <label class="input-label">Имя пользователя</label>
+                <input type="text" id="registerUsername" class="input-field" placeholder="Придумайте имя" maxlength="20">
+                <div class="error-message" id="usernameError"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="registerEmail" class="input-field" placeholder="your@email.com">
+                <div class="error-message" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="input-label">Пароль</label>
+                <input type="password" id="registerPassword" class="input-field" placeholder="Минимум 6 символов">
+                <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="termsCheckbox" class="checkbox">
+                <label for="termsCheckbox" class="checkbox-label">
+                    Я согласен с условиями использования и политикой конфиденциальности
+                </label>
+            </div>
+
+            <button class="btn btn-primary" onclick="register()" id="registerButton">
+                Создать аккаунт
+            </button>
+
+            <div class="form-switch">
+                <div class="switch-text">Уже есть аккаунт?</div>
+                <button class="switch-link" onclick="showLoginForm()">
+                    Войти в существующий
+                </button>
+            </div>
+
+            <div class="loading" id="registerLoading">Регистрация...</div>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="message" class="message"></div>
+    </div>
 
     <script>
         // ===== ИНИЦИАЛИЗАЦИЯ PWA =====
@@ -189,7 +468,7 @@
             });
         }
 
-        // ===== FIREBASE КОНФИГ (ваш оригинальный код) =====
+        // ===== FIREBASE КОНФИГ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
             authDomain: "czhmass.firebaseapp.com",
@@ -199,16 +478,18 @@
             appId: "1:1064257019843:web:65488b45be2f86838ca776"
         };
 
-        // ===== ИНИЦИАЛИЗАЦИЯ FIREBASE (ваш код) =====
+        // ===== ИНИЦИАЛИЗАЦИЯ FIREBASE =====
         let db, auth;
+
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
             console.log('✅ Firebase инициализирован');
         }
+
         db = firebase.firestore();
         auth = firebase.auth();
 
-        // ===== ВАШИ ФУНКЦИИ ДЛЯ ФОРМ (остаются без изменений) =====
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
@@ -216,57 +497,16 @@
             messageDiv.style.display = 'block';
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
+
         function clearErrors() {
             const errors = document.querySelectorAll('.error-message');
             errors.forEach(error => {
                 error.style.display = 'none';
                 error.textContent = '';
             });
+
             const inputs = document.querySelectorAll('.input-field');
-            inputs.forEach(input => input.classList.remove('error'));
-        }
-        function showLoginForm() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            clearErrors();
-        }
-        function showRegisterForm() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-            clearErrors();
-        }
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            const inputElement = document.getElementById(elementId.replace('Error', ''));
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            inputElement.classList.add('error');
-        }
-
-        // ===== ФУНКЦИИ АВТОРИЗАЦИИ (ваш код) =====
-        async function login() {
-            // ... (весь ваш код функции login() остается здесь)
-        }
-        async function register() {
-            // ... (весь ваш код функции register() остается здесь)
-        }
-
-        // ===== ДОПОЛНИТЕЛЬНО: Часы в Dynamic Island =====
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('currentTime').textContent = timeString;
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
+            inputs.forEach
     </script>
-
-    <!-- 📁 Подключение роутера (создайте этот файл позже) -->
-    <!-- <script src="/router.js"></script> -->
 </body>
 </html>

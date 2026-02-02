@@ -481,8 +481,8 @@ body{
 .posts-stat{
   color:#5ac8fa;
 }
-.views-stat{
-  color:var(--views);
+.subscribers-stat{
+  color:#ff9500;
 }
 .reposts-stat{
   color:#64d2ff;
@@ -884,11 +884,11 @@ body{
             <div class="profile-stat-label">лайков</div>
           </div>
           <div class="profile-stat">
-            <div class="profile-stat-value views-stat">
-              <span>👁️</span>
-              <span id="profileViewsCount">0</span>
+            <div class="profile-stat-value subscribers-stat">
+              <span>👥</span>
+              <span id="profileSubscribersCount">0</span>
             </div>
-            <div class="profile-stat-label">просмотров</div>
+            <div class="profile-stat-label">подписчиков</div>
           </div>
           <div class="profile-stat">
             <div class="profile-stat-value reposts-stat">
@@ -1863,7 +1863,6 @@ async function refreshProfilePosts(uid) {
   const profilePosts = document.getElementById("profilePosts");
   const profilePostsCount = document.getElementById("profilePostsCount");
   const profileLikesCount = document.getElementById("profileLikesCount");
-  const profileViewsCount = document.getElementById("profileViewsCount");
   
   if (!profilePosts) return;
   
@@ -1873,9 +1872,6 @@ async function refreshProfilePosts(uid) {
     
     const likesCount = await getUserLikesCount(uid);
     profileLikesCount.textContent = likesCount;
-    
-    const viewsCount = await getUserViewsCount(uid);
-    profileViewsCount.textContent = viewsCount;
     
     profilePosts.innerHTML = "";
     
@@ -1912,7 +1908,6 @@ async function refreshProfilePosts(uid) {
             <span>${timeAgo}</span>
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
-            <span style="color:var(--views);margin-left:10px;">👁️ ${post.views || 0}</span>
             <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
           </div>
           ${canDelete ? 
@@ -2092,26 +2087,6 @@ async function getUserLikesCount(uid) {
   }
 }
 
-// Получение количества просмотров пользователя
-async function getUserViewsCount(uid) {
-  try {
-    const snap = await db.collection("posts")
-      .where("userId", "==", uid)
-      .get();
-    
-    let totalViews = 0;
-    snap.forEach(doc => {
-      const post = doc.data();
-      totalViews += (post.views || 0);
-    });
-    
-    return totalViews;
-  } catch (error) {
-    console.error("Ошибка при получении просмотров пользователя:", error);
-    return 0;
-  }
-}
-
 // Получение постов пользователя
 async function getUserPosts(uid) {
   try {
@@ -2175,11 +2150,9 @@ async function deletePostFromProfile(postId, userId) {
     
     const postsCount = await getUserPostsCount(userId);
     const likesCount = await getUserLikesCount(userId);
-    const viewsCount = await getUserViewsCount(userId);
     
     document.getElementById("profilePostsCount").textContent = postsCount;
     document.getElementById("profileLikesCount").textContent = likesCount;
-    document.getElementById("profileViewsCount").textContent = viewsCount;
     
     loadPosts();
     showNotification("Пост удален из профиля!");

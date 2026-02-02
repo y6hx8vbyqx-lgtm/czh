@@ -515,6 +515,29 @@ body{
   color: var(--heart);
 }
 
+/* Мобильные кнопки действий для сообщений */
+.mobile-message-actions {
+  display: none;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.mobile-action-btn {
+  background: rgba(28,28,30,0.8);
+  border: none;
+  color: var(--sub);
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
 /* Реакции на сообщения */
 .message-reactions {
   display: flex;
@@ -840,10 +863,19 @@ body{
     padding: 16px;
   }
   
+  /* Скрываем обычные кнопки действий на мобильных */
   .message-actions {
-    opacity: 1 !important;
-    top: 4px;
-    right: 4px;
+    display: none !important;
+  }
+  
+  /* Показываем мобильные кнопки действий */
+  .mobile-message-actions {
+    display: flex;
+  }
+  
+  /* Убираем ховер-эффекты на тач-устройствах */
+  .message:hover {
+    background: transparent;
   }
   
   .no-chats {
@@ -990,8 +1022,10 @@ let contextMenuChatId = null;
 let contextMenuIsPinned = false;
 let contextMenuMessageId = null;
 let lastMessageId = null;
-let replyingToMessage = null; // Сообщение, на которое отвечаем
-let selectedMessageForReaction = null; // Сообщение для реакции
+let replyingToMessage = null;
+let selectedMessageForReaction = null;
+let selectedMessageForMobile = null; // Выбранное сообщение на мобильных
+let isMobile = window.innerWidth <= 768;
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
 
@@ -1271,7 +1305,7 @@ async function loadChatsList() {
     chatsList.innerHTML = chatsHTML;
     
     // Добавляем обработчики для мобильных
-    if (window.innerWidth <= 768) {
+    if (isMobile) {
       const chatItems = document.querySelectorAll('.chat-item');
       chatItems.forEach(item => {
         let longPressTimer;
@@ -1314,7 +1348,7 @@ async function loadChatsList() {
 // ==================== УПРАВЛЕНИЕ КНОПКАМИ НА ДЕСКТОПЕ ====================
 
 function showChatActions(chatItem) {
-  if (window.innerWidth > 768) {
+  if (!isMobile) {
     const actions = chatItem.querySelector('.chat-actions');
     if (actions) {
       actions.style.opacity = '1';
@@ -1323,7 +1357,7 @@ function showChatActions(chatItem) {
 }
 
 function hideChatActions(chatItem) {
-  if (window.innerWidth > 768) {
+  if (!isMobile) {
     const actions = chatItem.querySelector('.chat-actions');
     if (actions) {
       actions.style.opacity = '0';
@@ -1458,6 +1492,11 @@ function replyToMessage(messageId, messageData) {
   
   // Фокусируемся на поле ввода
   document.getElementById('chatInput').focus();
+  
+  // На мобильных скрываем кнопки действий
+  if (isMobile && selectedMessageForMobile) {
+    hideMobileMessageActions();
+  }
 }
 
 function cancelReply() {
@@ -1485,9 +1524,11 @@ async function addReaction(emoji) {
     if (userReaction === emoji) {
       // Убираем реакцию
       delete currentReactions[currentUser.uid];
+      showNotification("Реакция убрана");
     } else {
       // Добавляем/изменяем реакцию
       currentReactions[currentUser.uid] = emoji;
+      showNotification(`${emoji} Добавлено`);
     }
     
     // Обновляем сообщение
@@ -1540,6 +1581,11 @@ async function toggleHeartReaction(messageId) {
     // Обновляем UI сообщения
     updateMessageReactions(messageId, currentReactions);
     
+    // На мобильных скрываем кнопки действий
+    if (isMobile && selectedMessageForMobile) {
+      hideMobileMessageActions();
+    }
+    
   } catch (error) {
     console.error("Ошибка при добавлении сердечка:", error);
     showNotification("Ошибка: " + error.message);
@@ -1581,7 +1627,10 @@ function updateMessageReactions(messageId, reactions) {
     const reactionElement = document.createElement('div');
     reactionElement.className = `reaction ${isLikedByMe ? 'liked' : ''}`;
     reactionElement.setAttribute('data-emoji', emoji);
-    reactionElement.onclick = () => addReaction(emoji);
+    reactionElement.onclick = (e) => {
+      e.stopPropagation();
+      addReaction(emoji);
+    };
     
     reactionElement.innerHTML = `
       <span>${emoji}</span>
@@ -1590,6 +1639,102 @@ function updateMessageReactions(messageId, reactions) {
     
     reactionsContainer.appendChild(reactionElement);
   });
+}
+
+// ==================== УПРАВЛЕНИЕ СООБЩЕНИЯМИ НА МОБИЛЬНЫХ ====================
+
+function showMobileMessageActions(messageElement, messageId, messageData) {
+  // Закрываем предыдущие открытые кнопки
+  hideMobileMessageActions();
+  
+  // Устанавливаем текущее выбранное сообщение
+  selectedMessageForMobile = { id: messageId, ...messageData };
+  
+  // Добавляем класс для выделения
+  messageElement.classList.add('mobile-actions-visible');
+  
+  // Создаем мобильные кнопки действий
+  const isOutgoing = messageData.senderId === currentUser.uid;
+  const mobileActions = document.createElement('div');
+  mobileActions.className = 'mobile-message-actions';
+  
+  mobileActions.innerHTML = `
+    <button class="mobile-action-btn" onclick="replyToMessage('${messageId}', ${JSON.stringify(messageData).replace(/'/g, "\\'")})" title="Ответить">
+      ↩️
+    </button>
+    <button class="mobile-action-btn" onclick="toggleHeartReaction('${messageId}')" title="Сердечко">
+      ❤️
+    </button>
+    ${isOutgoing ? `
+      <button class="mobile-action-btn" onclick="showDeleteMessageConfirm('${messageId}')" title="Удалить">
+        🗑️
+      </button>
+    ` : ''}
+  `;
+  
+  // Вставляем перед временем сообщения
+  const timeElement = messageElement.querySelector('.message-time');
+  messageElement.insertBefore(mobileActions, timeElement);
+  
+  // Добавляем обработчик для закрытия при клике снаружи
+  setTimeout(() => {
+    const closeHandler = (e) => {
+      if (!messageElement.contains(e.target)) {
+        hideMobileMessageActions();
+      }
+    };
+    document.addEventListener('click', closeHandler);
+    document.addEventListener('touchstart', closeHandler);
+    
+    // Сохраняем обработчик для удаления
+    messageElement._closeHandler = closeHandler;
+  }, 10);
+}
+
+function hideMobileMessageActions() {
+  if (selectedMessageForMobile) {
+    const messageElement = document.querySelector(`[data-message-id="${selectedMessageForMobile.id}"]`);
+    if (messageElement) {
+      messageElement.classList.remove('mobile-actions-visible');
+      
+      // Удаляем мобильные кнопки действий
+      const mobileActions = messageElement.querySelector('.mobile-message-actions');
+      if (mobileActions) {
+        mobileActions.remove();
+      }
+      
+      // Удаляем обработчик закрытия
+      if (messageElement._closeHandler) {
+        document.removeEventListener('click', messageElement._closeHandler);
+        document.removeEventListener('touchstart', messageElement._closeHandler);
+        delete messageElement._closeHandler;
+      }
+    }
+    selectedMessageForMobile = null;
+  }
+}
+
+function handleMessageClick(event, messageId, messageData) {
+  // Если это клик по кнопке действия - пропускаем
+  if (event.target.closest('.message-action-btn') || 
+      event.target.closest('.mobile-action-btn') ||
+      event.target.closest('.reaction')) {
+    return;
+  }
+  
+  // На мобильных показываем/скрываем кнопки действий
+  if (isMobile) {
+    const messageElement = event.currentTarget;
+    
+    // Если уже открыты кнопки для этого сообщения - закрываем их
+    if (selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
+      hideMobileMessageActions();
+      return;
+    }
+    
+    // Показываем кнопки для текущего сообщения
+    showMobileMessageActions(messageElement, messageId, messageData);
+  }
 }
 
 // ==================== ЗАКРЕПЛЕНИЕ ЧАТОВ ====================
@@ -1759,6 +1904,11 @@ async function deleteMessage(messageId) {
     
     showNotification("Сообщение удалено");
     
+    // На мобильных сбрасываем выбранное сообщение
+    if (isMobile && selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
+      hideMobileMessageActions();
+    }
+    
     // Обновляем список чатов
     loadChatsList();
     
@@ -1795,14 +1945,15 @@ async function openChat(userId, username, chatId = null) {
   if (!chatId) {
     const chatsSnap = await db.collection('chats').get();
     
-    chatsSnap.forEach(doc => {
+    for (const doc of chatsSnap.docs) {
       const chat = doc.data();
       if (chat.participants && 
           chat.participants.includes(currentUser.uid) && 
           chat.participants.includes(userId)) {
         chatId = doc.id;
+        break;
       }
-    });
+    }
   }
   
   currentChatId = chatId;
@@ -1821,6 +1972,9 @@ async function openChat(userId, username, chatId = null) {
   
   // Сбрасываем ответ на сообщение
   cancelReply();
+  
+  // Сбрасываем выбранное сообщение на мобильных
+  hideMobileMessageActions();
   
   // Сбрасываем последнее сообщение
   lastMessageId = null;
@@ -1858,6 +2012,9 @@ function closeChat() {
   currentChatId = null;
   lastMessageId = null;
   replyingToMessage = null;
+  
+  // Сбрасываем выбранное сообщение на мобильных
+  hideMobileMessageActions();
   
   loadChatsList();
 }
@@ -2012,6 +2169,7 @@ function addMessageToUI(msg, isNew = true) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'} ${msg.replyTo ? 'message-replied' : ''}`;
   messageDiv.setAttribute('data-message-id', msg.id);
+  messageDiv.onclick = (e) => handleMessageClick(e, msg.id, msg);
   
   // Проверяем, есть ли ответ на другое сообщение
   let replyHTML = '';
@@ -2036,25 +2194,27 @@ function addMessageToUI(msg, isNew = true) {
       ${messageTime}
       ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
     </div>
-    <div class="message-actions">
-      <button class="message-action-btn reply-btn" 
-              onclick="event.stopPropagation(); replyToMessage('${msg.id}', ${JSON.stringify(msg).replace(/'/g, "\\'")})"
-              title="Ответить">
-        ↩️
-      </button>
-      <button class="message-action-btn heart-btn" 
-              onclick="event.stopPropagation(); toggleHeartReaction('${msg.id}')"
-              title="Сердечко">
-        ❤️
-      </button>
-      ${isOutgoing ? `
-        <button class="message-action-btn delete-message-btn" 
-                onclick="event.stopPropagation(); showDeleteMessageConfirm('${msg.id}')"
-                title="Удалить сообщение">
-          🗑️
+    ${!isMobile ? `
+      <div class="message-actions">
+        <button class="message-action-btn reply-btn" 
+                onclick="event.stopPropagation(); replyToMessage('${msg.id}', ${JSON.stringify(msg).replace(/'/g, "\\'")})"
+                title="Ответить">
+          ↩️
         </button>
-      ` : ''}
-    </div>
+        <button class="message-action-btn heart-btn" 
+                onclick="event.stopPropagation(); toggleHeartReaction('${msg.id}')"
+                title="Сердечко">
+          ❤️
+        </button>
+        ${isOutgoing ? `
+          <button class="message-action-btn delete-message-btn" 
+                  onclick="event.stopPropagation(); showDeleteMessageConfirm('${msg.id}')"
+                  title="Удалить сообщение">
+            🗑️
+          </button>
+        ` : ''}
+      </div>
+    ` : ''}
   `;
   
   // Для новых сообщений проверяем дату и добавляем разделитель если нужно
@@ -2095,8 +2255,8 @@ function addMessageToUI(msg, isNew = true) {
     updateMessageReactions(msg.id, msg.reactions);
   }
   
-  // Добавляем обработчики для мобильных
-  if (window.innerWidth <= 768) {
+  // Добавляем обработчики для контекстного меню на мобильных
+  if (isMobile) {
     let longPressTimer;
     
     messageDiv.addEventListener('touchstart', (e) => {
@@ -2118,7 +2278,7 @@ function addMessageToUI(msg, isNew = true) {
     let tapTimer;
     
     messageDiv.addEventListener('click', (e) => {
-      if (e.target.closest('.message-action-btn')) return;
+      if (e.target.closest('.mobile-action-btn')) return;
       
       tapCount++;
       if (tapCount === 1) {
@@ -2133,8 +2293,8 @@ function addMessageToUI(msg, isNew = true) {
     });
   }
   
-  // Добавляем обработчик клика для панели реакций (на десктопе)
-  if (window.innerWidth > 768) {
+  // Добавляем обработчик контекстного меню для десктопа
+  if (!isMobile) {
     messageDiv.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       showReactionsPanel(e, msg.id, msg);
@@ -2324,7 +2484,7 @@ async function markMessageAsRead(messageId) {
       });
     
     // Обновляем статус в UI
-    const messageElements = document.querySelectorAll('.message-incoming .message-status');
+    const messageElements = document.querySelectorAll('.message-outgoing .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
         el.textContent = '✓✓';
@@ -2360,7 +2520,7 @@ async function markChatAsRead(chatId) {
     }
     
     // Обновляем UI
-    const messageElements = document.querySelectorAll('.message-incoming .message-status');
+    const messageElements = document.querySelectorAll('.message-outgoing .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
         el.textContent = '✓✓';
@@ -2548,6 +2708,21 @@ window.addEventListener('load', () => {
     } catch(e) {
       console.error('Ошибка восстановления чата:', e);
     }
+  }
+});
+
+// Обновляем размер окна при ресайзе
+window.addEventListener('resize', () => {
+  isMobile = window.innerWidth <= 768;
+});
+
+// Закрываем контекстные меню при клике на сообщение
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.context-menu') && !e.target.closest('.reactions-panel')) {
+    const menus = document.querySelectorAll('.context-menu.show, .reactions-panel.show');
+    menus.forEach(menu => {
+      menu.classList.remove('show');
+    });
   }
 });
 </script>

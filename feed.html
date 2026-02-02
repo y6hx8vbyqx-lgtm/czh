@@ -28,9 +28,68 @@ body{
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  overflow-x:hidden;
+  position:relative;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+
+/* Снежинки */
+#snowflakes-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.snowflake {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  opacity: 0;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.snowflake-small {
+  width: 4px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.snowflake-medium {
+  width: 6px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.snowflake-large {
+  width: 8px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
 
 .dynamic-island{
   position:fixed;top:12px;left:50%;transform:translateX(-50%);
@@ -107,6 +166,8 @@ body{
   max-width:480px;
   margin:auto;
   padding:130px 14px 100px;
+  position:relative;
+  z-index:2;
 }
 
 .create{
@@ -755,6 +816,9 @@ body{
 
 <body>
 
+<!-- Контейнер для снежинок -->
+<div id="snowflakes-container"></div>
+
 <div class="dynamic-island" id="time"></div>
 
 <div class="navbar">
@@ -955,6 +1019,88 @@ let currentProfileTab = 'posts';
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
+// ==================== ФУНКЦИЯ ДЛЯ СНЕЖИНОК ====================
+function createSnowflakes() {
+  const container = document.getElementById('snowflakes-container');
+  if (!container) return;
+  
+  // Количество снежинок (не слишком много, чтобы не мешать)
+  const snowflakeCount = 30;
+  
+  for (let i = 0; i < snowflakeCount; i++) {
+    setTimeout(() => {
+      const snowflake = document.createElement('div');
+      
+      // Размер снежинки
+      const size = Math.random() * 3 + 2; // 2-5px
+      const sizeClass = size < 3 ? 'snowflake-small' : 
+                       size < 4 ? 'snowflake-medium' : 'snowflake-large';
+      
+      snowflake.className = `snowflake ${sizeClass}`;
+      
+      // Позиционирование
+      snowflake.style.left = `${Math.random() * 100}%`;
+      snowflake.style.top = `${-10 - Math.random() * 20}%`;
+      
+      // Случайная прозрачность
+      snowflake.style.opacity = Math.random() * 0.4 + 0.3; // 0.3-0.7
+      
+      // Случайная скорость падения (медленно)
+      const duration = Math.random() * 20 + 25; // 25-45 секунд
+      snowflake.style.animationDuration = `${duration}s`;
+      
+      // Случайная задержка начала анимации
+      snowflake.style.animationDelay = `${Math.random() * 5}s`;
+      
+      container.appendChild(snowflake);
+      
+      // Удаляем снежинку после завершения анимации и создаем новую
+      setTimeout(() => {
+        if (snowflake.parentNode) {
+          snowflake.remove();
+          // Создаем новую снежинку через случайное время
+          setTimeout(() => {
+            if (container.children.length < snowflakeCount) {
+              createSingleSnowflake();
+            }
+          }, Math.random() * 5000);
+        }
+      }, duration * 1000);
+    }, Math.random() * 3000);
+  }
+  
+  // Функция для создания одной снежинки
+  function createSingleSnowflake() {
+    const snowflake = document.createElement('div');
+    
+    const size = Math.random() * 3 + 2;
+    const sizeClass = size < 3 ? 'snowflake-small' : 
+                     size < 4 ? 'snowflake-medium' : 'snowflake-large';
+    
+    snowflake.className = `snowflake ${sizeClass}`;
+    snowflake.style.left = `${Math.random() * 100}%`;
+    snowflake.style.top = `${-10 - Math.random() * 20}%`;
+    snowflake.style.opacity = Math.random() * 0.4 + 0.3;
+    
+    const duration = Math.random() * 20 + 25;
+    snowflake.style.animationDuration = `${duration}s`;
+    snowflake.style.animationDelay = `${Math.random() * 5}s`;
+    
+    container.appendChild(snowflake);
+    
+    setTimeout(() => {
+      if (snowflake.parentNode) {
+        snowflake.remove();
+        setTimeout(() => {
+          if (container.children.length < snowflakeCount) {
+            createSingleSnowflake();
+          }
+        }, Math.random() * 5000);
+      }
+    }, duration * 1000);
+  }
+}
+
 // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
 
 // Инициализация при загрузке страницы
@@ -968,6 +1114,9 @@ auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   
   try {
+    // Создаем снежинки
+    createSnowflakes();
+    
     // Загружаем данные пользователя
     await loadUserData();
     

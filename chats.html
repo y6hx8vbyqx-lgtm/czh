@@ -988,7 +988,7 @@ let replyingToMessage = null;
 let selectedMessageForReaction = null;
 let isMobile = window.innerWidth <= 768;
 
-// ==================== ОНЛАЙН СТАТУС ====================
+// ==================== ОНЛАЙН СТАТУС (ИСПРАВЛЕНО) ====================
 
 async function setupUserPresence() {
   if (!currentUser) return;
@@ -996,11 +996,12 @@ async function setupUserPresence() {
   const userStatusRef = db.collection('status').doc(currentUser.uid);
   const isOnlineRef = db.collection('status').doc(currentUser.uid);
   
-  // Создаем онлайн статус
+  // Устанавливаем онлайн статус
   await isOnlineRef.set({
     state: 'online',
     lastChanged: firebase.firestore.FieldValue.serverTimestamp(),
-    uid: currentUser.uid
+    uid: currentUser.uid,
+    username: userData?.username || 'user'
   });
   
   // Отслеживаем соединение
@@ -1012,14 +1013,16 @@ async function setupUserPresence() {
       userStatusRef.set({
         state: 'online',
         lastChanged: firebase.firestore.FieldValue.serverTimestamp(),
-        uid: currentUser.uid
+        uid: currentUser.uid,
+        username: userData?.username || 'user'
       });
       
       // При отключении устанавливаем офлайн
       userStatusRef.onDisconnect().set({
         state: 'offline',
         lastChanged: firebase.firestore.FieldValue.serverTimestamp(),
-        uid: currentUser.uid
+        uid: currentUser.uid,
+        username: userData?.username || 'user'
       });
     }
   });
@@ -1027,10 +1030,12 @@ async function setupUserPresence() {
 
 async function updateUserStatus(userId, status = 'offline') {
   try {
+    const userInfo = await getUserInfo(userId);
     await db.collection('status').doc(userId).set({
       state: status,
       lastChanged: firebase.firestore.FieldValue.serverTimestamp(),
-      uid: userId
+      uid: userId,
+      username: userInfo.username || 'user'
     });
   } catch (error) {
     console.error('Ошибка обновления статуса:', error);
@@ -1049,8 +1054,8 @@ async function checkUserOnlineStatus(userId) {
     const now = new Date();
     const diff = now - lastChanged;
     
-    // Если статус был обновлен менее 30 секунд назад - считаем онлайн
-    return status.state === 'online' && diff < 30000;
+    // Увеличен таймаут с 30 до 60 секунд для надежности
+    return status.state === 'online' && diff < 60000;
   } catch (error) {
     console.error('Ошибка проверки статуса:', error);
     return false;
@@ -1066,16 +1071,17 @@ async function setupOnlineStatusListener(userId) {
   }
   
   userOnlineStatusListener = db.collection('status').doc(userId)
-    .onSnapshot((doc) => {
+    .onSnapshot(async (doc) => {
       if (doc.exists) {
         const status = doc.data();
         const lastChanged = status.lastChanged?.toDate ? status.lastChanged.toDate() : new Date();
         const now = new Date();
         const diff = now - lastChanged;
-        const isOnline = status.state === 'online' && diff < 30000;
+        const isOnline = status.state === 'online' && diff < 60000;
         
         updateUserStatusUI(isOnline);
       } else {
+        // Если документа нет, пользователь офлайн
         updateUserStatusUI(false);
       }
     }, (error) => {
@@ -1091,9 +1097,11 @@ function updateUserStatusUI(isOnline) {
   if (isOnline) {
     statusElement.textContent = 'онлайн';
     statusElement.className = 'chat-header-time online';
+    statusElement.style.color = 'var(--online)';
   } else {
     statusElement.textContent = 'не в сети';
     statusElement.className = 'chat-header-time offline';
+    statusElement.style.color = 'var(--offline)';
   }
 }
 
@@ -1432,28 +1440,47 @@ function showChatContextMenu(event, chatId, isPinned) {
   }, 10);
 }
 
-// ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ СООБЩЕНИЙ ====================
+// ==================== КОНТЕКСТНОЕ МЕНЮ ДЛЯ СООБЩЕНИЙ (ИСПРАВЛЕНО ДЛЯ МОБИЛЬНЫХ) ====================
 
 function showMessageContextMenu(event, messageId, messageData) {
   event.preventDefault();
   event.stopPropagation();
+  
+  // Убираем любую активную анимацию нажатия
+  if (event.target.closest('.message')) {
+    event.target.closest('.message').style.opacity = '1';
+    event.target.closest('.message').style.transform = 'scale(1)';
+  }
   
   contextMenuMessageId = messageId;
   selectedMessageForReaction = messageData;
   
   const menu = document.getElementById('messageContextMenu');
   
-  const x = event.clientX || (event.touches && event.touches[0].clientX) || 0;
-  const y = event.clientY || (event.touches && event.touches[0].clientY) || 0;
+  // Для мобильных устройств позиционируем меню выше пальца
+  let x, y;
+  if (event.type.includes('touch')) {
+    x = event.touches[0].clientX;
+    y = event.touches[0].clientY - 100; // Поднимаем меню выше пальца
+  } else {
+    x = event.clientX;
+    y = event.clientY;
+  }
   
   menu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
   menu.style.top = Math.min(y, window.innerHeight - 150) + 'px';
   menu.classList.add('show');
   
+  // Предотвращаем скролл при открытом меню на мобильных
+  if (isMobile) {
+    document.body.style.overflow = 'hidden';
+  }
+  
   setTimeout(() => {
     const closeMenu = (e) => {
       if (!menu.contains(e.target)) {
         menu.classList.remove('show');
+        document.body.style.overflow = '';
         document.removeEventListener('click', closeMenu);
         document.removeEventListener('touchstart', closeMenu);
       }
@@ -1930,7 +1957,7 @@ async function toggleBlockUser() {
   }
 }
 
-// ==================== СООБЩЕНИЯ ====================
+// ==================== СООБЩЕНИЯ (ИСПРАВЛЕНА ЛОГИКА ПРОЧТЕНИЯ) ====================
 
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
@@ -1962,11 +1989,11 @@ async function loadChatMessages() {
     const messages = [];
     messagesSnap.forEach(doc => {
       const messageData = doc.data();
+      // ВАЖНО: Сохраняем оригинальное значение read из базы данных
       messages.push({ 
         id: doc.id, 
         ...messageData,
-        // Корректное определение прочитанности
-        read: messageData.read === true
+        read: messageData.read || false // Не меняем значение!
       });
     });
     
@@ -2021,33 +2048,48 @@ function addMessageToUI(msg, isNew = true) {
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'} ${msg.replyTo ? 'message-replied' : ''}`;
   messageDiv.setAttribute('data-message-id', msg.id);
   
-  // Обработчики для всех устройств
+  // Улучшенная обработка событий для всех устройств
   if (isMobile) {
-    // На мобильных: долгое нажатие - контекстное меню
+    // Для мобильных: долгое нажатие - контекстное меню
     let longPressTimer;
+    let hasLongPress = false;
     
     messageDiv.addEventListener('touchstart', (e) => {
+      hasLongPress = false;
       longPressTimer = setTimeout(() => {
+        hasLongPress = true;
         showMessageContextMenu(e, msg.id, msg);
-      }, 500);
+        // Добавляем визуальную обратную связь
+        messageDiv.style.backgroundColor = isOutgoing ? 
+          'rgba(102, 126, 234, 0.2)' : 
+          'rgba(28, 28, 30, 0.3)';
+      }, 500); // 500ms для долгого нажатия
     });
     
     messageDiv.addEventListener('touchend', () => {
       clearTimeout(longPressTimer);
+      // Возвращаем нормальный фон если не было долгого нажатия
+      if (!hasLongPress) {
+        messageDiv.style.backgroundColor = '';
+      }
     });
     
     messageDiv.addEventListener('touchmove', () => {
       clearTimeout(longPressTimer);
+      hasLongPress = false;
     });
     
+    // Обычное нажатие для скролла
     messageDiv.addEventListener('click', (e) => {
-      // Обычный клик - ничего не делаем
+      if (!hasLongPress) {
+        // Ничего не делаем при обычном клике
+      }
     });
   } else {
-    // На ПК: правая кнопка - ответ, левая - контекстное меню
+    // На ПК: правая кнопка - контекстное меню, левая - ничего
     messageDiv.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      replyToMessage(msg.id, msg);
+      showMessageContextMenu(e, msg.id, msg);
     });
     
     messageDiv.addEventListener('click', (e) => {
@@ -2072,12 +2114,15 @@ function addMessageToUI(msg, isNew = true) {
     `;
   }
   
+  // ВАЖНО: Используем оригинальное значение read из базы данных
+  const readStatus = msg.read === true ? '✓✓' : '✓';
+  
   messageDiv.innerHTML = `
     ${replyHTML}
     <div class="message-text">${msg.text}</div>
     <div class="message-time">
       ${messageTime}
-      ${isOutgoing ? `<span class="message-status">${msg.read ? '✓✓' : '✓'}</span>` : ''}
+      ${isOutgoing ? `<span class="message-status">${readStatus}</span>` : ''}
     </div>
   `;
   
@@ -2121,7 +2166,7 @@ function addMessageToUI(msg, isNew = true) {
   }
 }
 
-// Слушатель сообщений с фиксом статуса прочтения
+// Исправленный слушатель сообщений
 function setupChatMessagesListener() {
   if (chatMessagesListener || !currentChatId) return;
   
@@ -2148,15 +2193,13 @@ function setupChatMessagesListener() {
         
         if (change.type === 'added') {
           const msg = change.doc.data();
+          const msgElement = document.querySelector(`[data-message-id="${msgId}"]`);
           
-          const isOutgoing = msg.senderId === currentUser.uid;
-          const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
-          const timeDiff = new Date() - msgDate;
-          
-          if (!isOutgoing || timeDiff < 2000) {
+          if (!msgElement) {
             addMessageToUI({ id: msgId, ...msg }, true);
             
-            if (!isOutgoing) {
+            // Помечаем как прочитанное только если это входящее сообщение
+            if (msg.senderId !== currentUser.uid) {
               markMessageAsRead(msgId);
             }
           }
@@ -2168,9 +2211,12 @@ function setupChatMessagesListener() {
               updateMessageReactions(msgId, msg.reactions);
             }
             // Обновляем статус прочтения если это наше сообщение
-            if (msg.senderId === currentUser.uid && messageElement.querySelector('.message-status')) {
+            if (msg.senderId === currentUser.uid) {
               const statusElement = messageElement.querySelector('.message-status');
-              statusElement.textContent = msg.read ? '✓✓' : '✓';
+              if (statusElement) {
+                // Используем значение из базы данных
+                statusElement.textContent = msg.read === true ? '✓✓' : '✓';
+              }
             }
           }
         } else if (change.type === 'removed') {
@@ -2215,7 +2261,7 @@ async function sendMessage() {
     text: text,
     senderId: currentUser.uid,
     timestamp: new Date(),
-    read: false // Всегда false при отправке
+    read: false // Начинаем с false
   };
   
   if (replyingToMessage) {
@@ -2319,15 +2365,6 @@ async function markChatAsRead(chatId) {
     if (!messagesSnap.empty) {
       await batch.commit();
     }
-    
-    // Обновляем UI всех входящих сообщений
-    const incomingMessages = document.querySelectorAll('.message-incoming');
-    incomingMessages.forEach(message => {
-      const statusElement = message.querySelector('.message-status');
-      if (statusElement) {
-        statusElement.textContent = '✓✓';
-      }
-    });
     
   } catch (error) {
     console.error('Ошибка пометки чата как прочитанного:', error);
@@ -2466,6 +2503,18 @@ document.addEventListener('click', (e) => {
     menus.forEach(menu => {
       menu.classList.remove('show');
     });
+    document.body.style.overflow = '';
+  }
+});
+
+// Обработка касаний для закрытия меню
+document.addEventListener('touchstart', (e) => {
+  if (!e.target.closest('.context-menu') && !e.target.closest('.reactions-panel')) {
+    const menus = document.querySelectorAll('.context-menu.show, .reactions-panel.show');
+    menus.forEach(menu => {
+      menu.classList.remove('show');
+    });
+    document.body.style.overflow = '';
   }
 });
 
@@ -2532,11 +2581,8 @@ window.addEventListener('resize', () => {
 // Устанавливаем статус офлайн при закрытии страницы
 window.addEventListener('beforeunload', () => {
   if (currentUser) {
-    // Синхронный запрос для установки статуса офлайн
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://us-central1-czhmass.cloudfunctions.net/setOfflineStatus', false);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify({ userId: currentUser.uid }));
+    // Асинхронно устанавливаем статус офлайн
+    updateUserStatus(currentUser.uid, 'offline');
   }
 });
 </script>

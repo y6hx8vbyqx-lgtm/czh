@@ -5,19 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - czhmass.com</title>
 
-    <!-- 🔧 ОБЯЗАТЕЛЬНЫЕ ТЕГИ ДЛЯ PWA -->
+    <!-- 🔧 PWA ТЕГИ -->
     <meta name="theme-color" content="#24292e">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
-    <!-- КОНЕЦ PWA ТЕГОВ -->
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
     <style>
-        /* ВЕСЬ ВАШ ОРИГИНАЛЬНЫЙ CSS-КОД НАЧИНАЕТСЯ ЗДЕСЬ */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -506,7 +504,208 @@
             });
 
             const inputs = document.querySelectorAll('.input-field');
-            inputs.forEach
+            inputs.forEach(input => input.classList.remove('error'));
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            clearErrors();
+        }
+
+        function showRegisterForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            clearErrors();
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            const inputElement = document.getElementById(elementId.replace('Error', ''));
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            inputElement.classList.add('error');
+        }
+
+        // ===== ФУНКЦИИ АВТОРИЗАЦИИ =====
+        async function login() {
+            clearErrors();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginButton = document.getElementById('loginButton');
+            const loading = document.getElementById('loginLoading');
+
+            // Валидация
+            if (!email) {
+                showError('loginEmailError', 'Введите email');
+                return;
+            }
+            if (!validateEmail(email)) {
+                showError('loginEmailError', 'Некорректный email');
+                return;
+            }
+            if (!password) {
+                showError('loginPasswordError', 'Введите пароль');
+                return;
+            }
+            if (password.length < 6) {
+                showError('loginPasswordError', 'Пароль должен быть не менее 6 символов');
+                return;
+            }
+
+            // Блокируем кнопку и показываем загрузку
+            loginButton.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                // Вход через Firebase
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                showMessage(`Добро пожаловать, ${user.email}!`, 'success');
+                console.log('✅ Пользователь вошел:', user.uid);
+                
+                // Перенаправление на главную страницу после входа
+                setTimeout(() => {
+                    window.location.href = '/feed.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('❌ Ошибка входа:', error);
+                
+                let errorMessage = 'Ошибка входа';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Пользователь не найден';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Неверный пароль';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Некорректный email';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'Аккаунт заблокирован';
+                        break;
+                }
+                
+                showMessage(errorMessage, 'error');
+            } finally {
+                // Разблокируем кнопку и скрываем загрузку
+                loginButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function register() {
+            clearErrors();
+            
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            const registerButton = document.getElementById('registerButton');
+            const loading = document.getElementById('registerLoading');
+
+            // Валидация
+            if (!username) {
+                showError('usernameError', 'Введите имя пользователя');
+                return;
+            }
+            if (username.length < 3) {
+                showError('usernameError', 'Имя должно быть не менее 3 символов');
+                return;
+            }
+            if (!email) {
+                showError('emailError', 'Введите email');
+                return;
+            }
+            if (!validateEmail(email)) {
+                showError('emailError', 'Некорректный email');
+                return;
+            }
+            if (!password) {
+                showError('passwordError', 'Введите пароль');
+                return;
+            }
+            if (password.length < 6) {
+                showError('passwordError', 'Пароль должен быть не менее 6 символов');
+                return;
+            }
+            if (!termsCheckbox.checked) {
+                showMessage('Примите условия использования', 'error');
+                return;
+            }
+
+            // Блокируем кнопку и показываем загрузку
+            registerButton.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                // Создание пользователя в Firebase
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Сохраняем дополнительную информацию в Firestore
+                await db.collection('users').doc(user.uid).set({
+                    username: username,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showMessage(`Аккаунт создан! Добро пожаловать, ${username}!`, 'success');
+                console.log('✅ Пользователь создан:', user.uid);
+                
+                // Перенаправление после регистрации
+                setTimeout(() => {
+                    window.location.href = '/feed.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('❌ Ошибка регистрации:', error);
+                
+                let errorMessage = 'Ошибка регистрации';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Email уже используется';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Пароль слишком слабый';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Некорректный email';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Регистрация временно отключена';
+                        break;
+                }
+                
+                showMessage(errorMessage, 'error');
+            } finally {
+                // Разблокируем кнопку и скрываем загрузку
+                registerButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ В DYNAMIC ISLAND =====
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Запускаем часы
+        setInterval(updateTime, 1000);
+        updateTime();
     </script>
 </body>
 </html>

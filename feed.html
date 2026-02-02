@@ -753,6 +753,57 @@ body{
   color: #64d2ff;
 }
 
+/* Стиль для отправленного поста в чате */
+.shared-post-preview {
+  background: rgba(28,28,30,0.8);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 8px;
+  border-left: 3px solid #667eea;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.shared-post-preview:hover {
+  background: rgba(28,28,30,0.9);
+}
+.shared-post-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.shared-post-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+.shared-post-username {
+  font-size: 13px;
+  font-weight: 600;
+}
+.shared-post-text {
+  font-size: 14px;
+  line-height: 1.3;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.shared-post-link {
+  font-size: 11px;
+  color: #5ac8fa;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.shared-post-link:hover {
+  text-decoration: underline;
+}
+
 /* Модальное окно для выбора чата */
 .chat-selection-modal .modal {
   max-width: 500px;
@@ -1209,7 +1260,7 @@ async function loadPosts() {
           чтобы видеть их посты здесь!
         </div>`;
     } else {
-      // Загружаем все посты
+      // Загружаем все посты (ИСПРАВЛЕНО: не фильтруем по подпискам)
       await loadAllPosts();
     }
     
@@ -1222,7 +1273,7 @@ async function loadPosts() {
   }
 }
 
-// Загрузка всех постов
+// Загрузка всех постов (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 async function loadAllPosts() {
   const feed = document.getElementById("feed");
   
@@ -1240,7 +1291,7 @@ async function loadAllPosts() {
     const posts = [];
     snap.forEach(doc => {
       const postData = doc.data();
-      // Фильтруем посты от заблокированных пользователей
+      // Фильтруем только посты от заблокированных пользователей
       if (!blockedUsers.has(postData.userId)) {
         posts.push({ id: doc.id, ...postData });
       }
@@ -1255,7 +1306,30 @@ async function loadAllPosts() {
     
   } catch (error) {
     console.error("Ошибка при загрузке всех постов:", error);
-    throw error;
+    // Если ошибка индекса, пробуем другой запрос
+    try {
+      const snap = await db.collection("posts")
+        .get();
+      
+      const posts = [];
+      snap.forEach(doc => {
+        const postData = doc.data();
+        if (!blockedUsers.has(postData.userId)) {
+          posts.push({ id: doc.id, ...postData });
+        }
+      });
+      
+      // Сортируем локально по дате
+      posts.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      
+      displayPosts(posts.slice(0, 100));
+    } catch (fallbackError) {
+      throw error; // Бросаем оригинальную ошибку
+    }
   }
 }
 
@@ -1734,7 +1808,7 @@ async function loadActiveChatsForSharing() {
   }
 }
 
-// Отправка поста в выбранный чат
+// Отправка поста в выбранный чат (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 async function sendPostToChat(userId, username, chatId = null) {
   if (!postToShare) return;
   
@@ -1761,24 +1835,37 @@ async function sendPostToChat(userId, username, chatId = null) {
         }
       }
       
-      // Если чата нет, создаем его (но не добавляем сообщение)
+      // Если чата нет, создаем его
       if (!targetChatId) {
-        showNotification("Сначала начните общение с пользователем!");
-        return;
+        const newChatRef = await db.collection('chats').add({
+          participants: [currentUser.uid, userId],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          unreadFor: [userId]
+        });
+        targetChatId = newChatRef.id;
       }
     }
     
-    // Создаем сообщение с постом
-    const messageText = `📢 Поделился постом от @${post.username}:\n\n"${post.text}"\n\n🔗 Оригинальный пост: ${window.location.origin}/feed.html?post=${postToShare}`;
-    
+    // Создаем сообщение с превью поста (ИСПРАВЛЕНО)
     const messageData = {
-      text: messageText,
+      text: `📢 Поделился постом от @${post.username}`,
       senderId: currentUser.uid,
       timestamp: new Date(),
       read: false,
       isPostShare: true,
       sharedPostId: postToShare,
-      sharedPostAuthor: post.username
+      sharedPostData: {
+        postId: postToShare,
+        userId: post.userId,
+        username: post.username,
+        text: post.text,
+        likes: post.likes || 0,
+        views: post.views || 0,
+        comments: post.commentsCount || 0,
+        reposts: post.reposts || 0,
+        createdAt: post.createdAt
+      }
     };
     
     // Добавляем сообщение в чат

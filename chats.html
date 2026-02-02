@@ -385,6 +385,11 @@ body{
   color: var(--sub);
   line-height: 1.3;
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .reply-icon {
   color: var(--reply);
@@ -401,7 +406,8 @@ body{
   flex-direction: column;
   gap: 8px;
   position: relative;
-  min-height: 0; /* Важно для flex */
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 .message {
   max-width: 75%;
@@ -413,6 +419,10 @@ body{
   animation: fade 0.3s ease;
   cursor: pointer;
   transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.message:active {
+  background: transparent !important;
 }
 .message:hover {
   background: rgba(255,255,255,0.03);
@@ -521,6 +531,8 @@ body{
   gap: 8px;
   margin-top: 8px;
   justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .mobile-action-btn {
@@ -639,7 +651,7 @@ body{
   gap: 10px;
   align-items: flex-end;
   position: relative;
-  flex-shrink: 0; /* Важно - не сжимается */
+  flex-shrink: 0;
   z-index: 10;
 }
 .reply-container {
@@ -806,6 +818,11 @@ body{
   color: var(--heart);
 }
 
+/* Сообщение с открытыми действиями на мобильных */
+.message.mobile-actions-visible {
+  padding-bottom: 8px;
+}
+
 @media (max-width: 768px) {
   .dynamic-island {
     top: 8px;
@@ -868,14 +885,20 @@ body{
     display: none !important;
   }
   
-  /* Показываем мобильные кнопки действий */
-  .mobile-message-actions {
+  /* Показываем мобильные кнопки действий когда нужно */
+  .message.mobile-actions-visible .mobile-message-actions {
     display: flex;
   }
   
   /* Убираем ховер-эффекты на тач-устройствах */
   .message:hover {
-    background: transparent;
+    background: transparent !important;
+  }
+  
+  /* Убираем выделение при нажатии */
+  .message:active {
+    background: transparent !important;
+    opacity: 0.9;
   }
   
   .no-chats {
@@ -1024,7 +1047,7 @@ let contextMenuMessageId = null;
 let lastMessageId = null;
 let replyingToMessage = null;
 let selectedMessageForReaction = null;
-let selectedMessageForMobile = null; // Выбранное сообщение на мобильных
+let selectedMessageForMobile = null;
 let isMobile = window.innerWidth <= 768;
 
 // ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
@@ -1178,7 +1201,6 @@ async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
   
   try {
-    // Получаем все чаты
     const chatsSnap = await db.collection('chats').get();
     
     if (chatsSnap.empty) {
@@ -1194,7 +1216,6 @@ async function loadChatsList() {
       return;
     }
     
-    // Собираем чаты текущего пользователя
     const userChats = [];
     const pinnedChatsArray = [];
     const regularChatsArray = [];
@@ -1202,7 +1223,6 @@ async function loadChatsList() {
     for (const doc of chatsSnap.docs) {
       const chat = doc.data();
       
-      // Проверяем участвует ли пользователь в чате
       if (chat.participants && chat.participants.includes(currentUser.uid)) {
         const otherUserId = chat.participants.find(id => id !== currentUser.uid);
         
@@ -1227,7 +1247,6 @@ async function loadChatsList() {
       }
     }
     
-    // Сортируем по времени последнего сообщения
     const sortByTime = (a, b) => {
       const timeA = a.lastMessageTime?.toDate ? a.lastMessageTime.toDate() : new Date(a.lastMessageTime || 0);
       const timeB = b.lastMessageTime?.toDate ? b.lastMessageTime.toDate() : new Date(b.lastMessageTime || 0);
@@ -1251,7 +1270,6 @@ async function loadChatsList() {
       return;
     }
     
-    // Формируем список
     let chatsHTML = '';
     
     for (const chat of sortedChats) {
@@ -1304,7 +1322,6 @@ async function loadChatsList() {
     
     chatsList.innerHTML = chatsHTML;
     
-    // Добавляем обработчики для мобильных
     if (isMobile) {
       const chatItems = document.querySelectorAll('.chat-item');
       chatItems.forEach(item => {
@@ -1326,10 +1343,8 @@ async function loadChatsList() {
           clearTimeout(longPressTimer);
         });
         
-        // Показываем кнопки при нажатии на мобильных
         item.addEventListener('click', (e) => {
           if (!e.target.closest('.action-btn')) {
-            // Клик не по кнопке действия - показываем/скрываем кнопки
             item.classList.toggle('mobile-actions-visible');
           }
         });
@@ -1379,7 +1394,6 @@ function showChatContextMenu(event, chatId, isPinned) {
   
   pinText.textContent = isPinned ? 'Открепить чат' : 'Закрепить чат';
   
-  // Позиционируем меню
   const touch = event.touches ? event.touches[0] : event;
   const x = Math.min(touch.clientX, window.innerWidth - 200);
   const y = Math.min(touch.clientY, window.innerHeight - 150);
@@ -1388,7 +1402,6 @@ function showChatContextMenu(event, chatId, isPinned) {
   menu.style.top = y + 'px';
   menu.classList.add('show');
   
-  // Закрываем меню при клике снаружи
   setTimeout(() => {
     const closeMenu = (e) => {
       if (!menu.contains(e.target)) {
@@ -1413,7 +1426,6 @@ function showMessageContextMenu(event, messageId, messageData) {
   
   const menu = document.getElementById('messageContextMenu');
   
-  // Позиционируем меню
   const touch = event.touches ? event.touches[0] : event;
   const x = Math.min(touch.clientX, window.innerWidth - 200);
   const y = Math.min(touch.clientY, window.innerHeight - 150);
@@ -1422,7 +1434,6 @@ function showMessageContextMenu(event, messageId, messageData) {
   menu.style.top = y + 'px';
   menu.classList.add('show');
   
-  // Закрываем меню при клике снаружи
   setTimeout(() => {
     const closeMenu = (e) => {
       if (!menu.contains(e.target)) {
@@ -1446,7 +1457,6 @@ function showReactionsPanel(event, messageId, messageData) {
   
   const panel = document.getElementById('reactionsPanel');
   
-  // Позиционируем панель
   const rect = event.target.getBoundingClientRect();
   const x = Math.min(rect.left, window.innerWidth - 250);
   const y = rect.top - 60;
@@ -1455,7 +1465,6 @@ function showReactionsPanel(event, messageId, messageData) {
   panel.style.top = y + 'px';
   panel.classList.add('show');
   
-  // Закрываем панель при клике снаружи
   setTimeout(() => {
     const closePanel = (e) => {
       if (!panel.contains(e.target)) {
@@ -1472,6 +1481,8 @@ function showReactionsPanel(event, messageId, messageData) {
 // ==================== ОТВЕТ НА СООБЩЕНИЯ ====================
 
 function replyToMessage(messageId, messageData) {
+  console.log('replyToMessage вызван:', messageId, messageData);
+  
   const senderInfo = messageData.senderId === currentUser.uid ? 
     { username: 'Вы' } : 
     { username: currentChatUsername };
@@ -1484,24 +1495,38 @@ function replyToMessage(messageId, messageData) {
   };
   
   // Показываем превью ответа
-  document.getElementById('replyContainer').style.display = 'block';
-  document.getElementById('replySender').textContent = senderInfo.username;
-  document.getElementById('replyText').textContent = messageData.text.length > 50 ? 
-    messageData.text.substring(0, 47) + '...' : 
-    messageData.text;
+  const replyContainer = document.getElementById('replyContainer');
+  const replySender = document.getElementById('replySender');
+  const replyText = document.getElementById('replyText');
+  
+  if (replyContainer && replySender && replyText) {
+    replyContainer.style.display = 'block';
+    replySender.textContent = senderInfo.username;
+    replyText.textContent = messageData.text.length > 50 ? 
+      messageData.text.substring(0, 47) + '...' : 
+      messageData.text;
+  }
   
   // Фокусируемся на поле ввода
-  document.getElementById('chatInput').focus();
+  const chatInput = document.getElementById('chatInput');
+  if (chatInput) {
+    chatInput.focus();
+  }
   
   // На мобильных скрываем кнопки действий
   if (isMobile && selectedMessageForMobile) {
     hideMobileMessageActions();
   }
+  
+  showNotification('Отвечаете на сообщение');
 }
 
 function cancelReply() {
   replyingToMessage = null;
-  document.getElementById('replyContainer').style.display = 'none';
+  const replyContainer = document.getElementById('replyContainer');
+  if (replyContainer) {
+    replyContainer.style.display = 'none';
+  }
 }
 
 // ==================== РЕАКЦИИ НА СООБЩЕНИЯ ====================
@@ -1514,32 +1539,24 @@ async function addReaction(emoji) {
       .collection('messages')
       .doc(selectedMessageForReaction.id);
     
-    // Получаем текущие реакции
     const messageDoc = await messageRef.get();
     const currentReactions = messageDoc.data()?.reactions || {};
     
-    // Проверяем, есть ли уже реакция от этого пользователя
     const userReaction = currentReactions[currentUser.uid];
     
     if (userReaction === emoji) {
-      // Убираем реакцию
       delete currentReactions[currentUser.uid];
       showNotification("Реакция убрана");
     } else {
-      // Добавляем/изменяем реакцию
       currentReactions[currentUser.uid] = emoji;
       showNotification(`${emoji} Добавлено`);
     }
     
-    // Обновляем сообщение
     await messageRef.update({
       reactions: currentReactions
     });
     
-    // Закрываем панель реакций
     document.getElementById('reactionsPanel').classList.remove('show');
-    
-    // Обновляем UI сообщения
     updateMessageReactions(selectedMessageForReaction.id, currentReactions);
     
   } catch (error) {
@@ -1556,32 +1573,25 @@ async function toggleHeartReaction(messageId) {
       .collection('messages')
       .doc(messageId);
     
-    // Получаем текущие реакции
     const messageDoc = await messageRef.get();
     const currentReactions = messageDoc.data()?.reactions || {};
     
-    // Проверяем, есть ли уже сердечко от этого пользователя
     const userReaction = currentReactions[currentUser.uid];
     
     if (userReaction === '❤️') {
-      // Убираем сердечко
       delete currentReactions[currentUser.uid];
       showNotification("Реакция убрана");
     } else {
-      // Добавляем сердечко
       currentReactions[currentUser.uid] = '❤️';
       showNotification("❤️ Добавлено");
     }
     
-    // Обновляем сообщение
     await messageRef.update({
       reactions: currentReactions
     });
     
-    // Обновляем UI сообщения
     updateMessageReactions(messageId, currentReactions);
     
-    // На мобильных скрываем кнопки действий
     if (isMobile && selectedMessageForMobile) {
       hideMobileMessageActions();
     }
@@ -1596,22 +1606,18 @@ function updateMessageReactions(messageId, reactions) {
   const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
   if (!messageElement) return;
   
-  // Находим или создаем контейнер реакций
   let reactionsContainer = messageElement.querySelector('.message-reactions');
   
   if (!reactionsContainer) {
     reactionsContainer = document.createElement('div');
     reactionsContainer.className = 'message-reactions';
     
-    // Вставляем перед временем сообщения
     const timeElement = messageElement.querySelector('.message-time');
     messageElement.insertBefore(reactionsContainer, timeElement);
   }
   
-  // Очищаем контейнер
   reactionsContainer.innerHTML = '';
   
-  // Группируем реакции по эмодзи
   const reactionGroups = {};
   Object.entries(reactions).forEach(([userId, emoji]) => {
     if (!reactionGroups[emoji]) {
@@ -1620,7 +1626,6 @@ function updateMessageReactions(messageId, reactions) {
     reactionGroups[emoji].push(userId);
   });
   
-  // Добавляем реакции в UI
   Object.entries(reactionGroups).forEach(([emoji, users]) => {
     const isLikedByMe = users.includes(currentUser.uid);
     
@@ -1644,16 +1649,11 @@ function updateMessageReactions(messageId, reactions) {
 // ==================== УПРАВЛЕНИЕ СООБЩЕНИЯМИ НА МОБИЛЬНЫХ ====================
 
 function showMobileMessageActions(messageElement, messageId, messageData) {
-  // Закрываем предыдущие открытые кнопки
   hideMobileMessageActions();
   
-  // Устанавливаем текущее выбранное сообщение
   selectedMessageForMobile = { id: messageId, ...messageData };
-  
-  // Добавляем класс для выделения
   messageElement.classList.add('mobile-actions-visible');
   
-  // Создаем мобильные кнопки действий
   const isOutgoing = messageData.senderId === currentUser.uid;
   const mobileActions = document.createElement('div');
   mobileActions.className = 'mobile-message-actions';
@@ -1672,11 +1672,9 @@ function showMobileMessageActions(messageElement, messageId, messageData) {
     ` : ''}
   `;
   
-  // Вставляем перед временем сообщения
   const timeElement = messageElement.querySelector('.message-time');
   messageElement.insertBefore(mobileActions, timeElement);
   
-  // Добавляем обработчик для закрытия при клике снаружи
   setTimeout(() => {
     const closeHandler = (e) => {
       if (!messageElement.contains(e.target)) {
@@ -1686,7 +1684,6 @@ function showMobileMessageActions(messageElement, messageId, messageData) {
     document.addEventListener('click', closeHandler);
     document.addEventListener('touchstart', closeHandler);
     
-    // Сохраняем обработчик для удаления
     messageElement._closeHandler = closeHandler;
   }, 10);
 }
@@ -1697,13 +1694,11 @@ function hideMobileMessageActions() {
     if (messageElement) {
       messageElement.classList.remove('mobile-actions-visible');
       
-      // Удаляем мобильные кнопки действий
       const mobileActions = messageElement.querySelector('.mobile-message-actions');
       if (mobileActions) {
         mobileActions.remove();
       }
       
-      // Удаляем обработчик закрытия
       if (messageElement._closeHandler) {
         document.removeEventListener('click', messageElement._closeHandler);
         document.removeEventListener('touchstart', messageElement._closeHandler);
@@ -1715,24 +1710,20 @@ function hideMobileMessageActions() {
 }
 
 function handleMessageClick(event, messageId, messageData) {
-  // Если это клик по кнопке действия - пропускаем
   if (event.target.closest('.message-action-btn') || 
       event.target.closest('.mobile-action-btn') ||
       event.target.closest('.reaction')) {
     return;
   }
   
-  // На мобильных показываем/скрываем кнопки действий
   if (isMobile) {
     const messageElement = event.currentTarget;
     
-    // Если уже открыты кнопки для этого сообщения - закрываем их
     if (selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
       hideMobileMessageActions();
       return;
     }
     
-    // Показываем кнопки для текущего сообщения
     showMobileMessageActions(messageElement, messageId, messageData);
   }
 }
@@ -1744,14 +1735,12 @@ async function togglePinChat(chatId) {
     const isCurrentlyPinned = pinnedChats.has(chatId);
     
     if (isCurrentlyPinned) {
-      // Открепляем
       pinnedChats.delete(chatId);
       await db.collection("users").doc(currentUser.uid).update({
         pinnedChats: firebase.firestore.FieldValue.arrayRemove(chatId)
       });
       showNotification("Чат откреплен");
     } else {
-      // Закрепляем
       pinnedChats.add(chatId);
       await db.collection("users").doc(currentUser.uid).update({
         pinnedChats: firebase.firestore.FieldValue.arrayUnion(chatId)
@@ -1759,7 +1748,6 @@ async function togglePinChat(chatId) {
       showNotification("Чат закреплен");
     }
     
-    // Обновляем UI
     const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
     if (chatItem) {
       chatItem.setAttribute('data-is-pinned', (!isCurrentlyPinned).toString());
@@ -1769,7 +1757,6 @@ async function togglePinChat(chatId) {
       const usernameElement = chatItem.querySelector('.chat-user');
       
       if (!isCurrentlyPinned) {
-        // Добавляем значок закрепления
         let pinIndicator = usernameElement.querySelector('.pin-indicator');
         if (!pinIndicator) {
           pinIndicator = document.createElement('span');
@@ -1783,7 +1770,6 @@ async function togglePinChat(chatId) {
           pinBtn.title = 'Открепить чат';
         }
       } else {
-        // Удаляем значок закрепления
         const pinIndicator = usernameElement.querySelector('.pin-indicator');
         if (pinIndicator) pinIndicator.remove();
         if (pinBtn) {
@@ -1793,7 +1779,6 @@ async function togglePinChat(chatId) {
       }
     }
     
-    // Перезагружаем список чатов для правильной сортировки
     setTimeout(() => {
       loadChatsList();
     }, 300);
@@ -1814,7 +1799,6 @@ function showDeleteConfirm(chatId, username) {
 
 async function deleteChat(chatId) {
   try {
-    // Удаляем все сообщения чата
     const messagesSnap = await db.collection('chats').doc(chatId)
       .collection('messages').get();
     
@@ -1823,12 +1807,10 @@ async function deleteChat(chatId) {
       batch.delete(doc.ref);
     });
     
-    // Удаляем сам чат
     batch.delete(db.collection('chats').doc(chatId));
     
     await batch.commit();
     
-    // Удаляем из закрепленных, если есть
     if (pinnedChats.has(chatId)) {
       pinnedChats.delete(chatId);
       await db.collection("users").doc(currentUser.uid).update({
@@ -1838,12 +1820,10 @@ async function deleteChat(chatId) {
     
     showNotification("Чат удален");
     
-    // Если это текущий открытый чат - закрываем его
     if (currentChatId === chatId) {
       closeChat();
     }
     
-    // Обновляем список чатов
     setTimeout(() => {
       loadChatsList();
     }, 300);
@@ -1866,19 +1846,16 @@ async function deleteMessage(messageId) {
   try {
     if (!currentChatId || !messageId) return;
     
-    // Удаляем сообщение
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .doc(messageId)
       .delete();
     
-    // Удаляем сообщение из UI
     const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
     if (messageElement) {
       messageElement.remove();
     }
     
-    // Обновляем последнее сообщение в чате
     const messagesSnap = await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .orderBy('timestamp', 'desc')
@@ -1886,14 +1863,12 @@ async function deleteMessage(messageId) {
       .get();
     
     if (messagesSnap.empty) {
-      // Если нет сообщений
       await db.collection('chats').doc(currentChatId).update({
         lastMessage: 'Нет сообщений',
         lastSender: '',
         lastMessageTime: firebase.firestore.FieldValue.delete()
       });
     } else {
-      // Обновляем последнее сообщение
       const lastMsg = messagesSnap.docs[0].data();
       await db.collection('chats').doc(currentChatId).update({
         lastMessage: lastMsg.text,
@@ -1904,12 +1879,10 @@ async function deleteMessage(messageId) {
     
     showNotification("Сообщение удалено");
     
-    // На мобильных сбрасываем выбранное сообщение
     if (isMobile && selectedMessageForMobile && selectedMessageForMobile.id === messageId) {
       hideMobileMessageActions();
     }
     
-    // Обновляем список чатов
     loadChatsList();
     
   } catch (error) {
@@ -1921,19 +1894,16 @@ async function deleteMessage(messageId) {
 // ==================== ОКНО ЧАТА ====================
 
 function handleChatClick(event, userId, username, chatId) {
-  // Проверяем, была ли нажата кнопка действия
   if (event.target.closest('.action-btn') || event.target.closest('.chat-actions')) {
     return;
   }
   
-  // На мобильных закрываем кнопки если они открыты
   const chatItem = event.currentTarget;
   if (chatItem.classList.contains('mobile-actions-visible')) {
     chatItem.classList.remove('mobile-actions-visible');
     return;
   }
   
-  // Открываем чат как обычно
   openChat(userId, username, chatId);
 }
 
@@ -1941,7 +1911,6 @@ async function openChat(userId, username, chatId = null) {
   currentChatUserId = userId;
   currentChatUsername = username;
   
-  // Находим ID чата если не передан
   if (!chatId) {
     const chatsSnap = await db.collection('chats').get();
     
@@ -1958,39 +1927,25 @@ async function openChat(userId, username, chatId = null) {
   
   currentChatId = chatId;
   
-  // Обновляем UI чата
   document.getElementById('chatUserAvatar').textContent = username?.[0]?.toUpperCase() || 'U';
   document.getElementById('chatUserName').textContent = '@' + username;
   document.getElementById('chatUserStatus').textContent = 'онлайн';
   
-  // Проверяем блокировку
   const isBlocked = blockedUsers.has(userId);
   updateBlockButtons(isBlocked);
   
-  // Открываем окно чата
   document.getElementById('chatOverlay').classList.add('show');
-  
-  // Сбрасываем ответ на сообщение
   cancelReply();
-  
-  // Сбрасываем выбранное сообщение на мобильных
   hideMobileMessageActions();
-  
-  // Сбрасываем последнее сообщение
   lastMessageId = null;
   
-  // Загружаем сообщения
   await loadChatMessages();
-  
-  // Настраиваем слушатель новых сообщений
   setupChatMessagesListener();
   
-  // Помечаем сообщения как прочитанные
   if (currentChatId) {
     await markChatAsRead(currentChatId);
   }
   
-  // Фокусируемся на поле ввода с небольшой задержкой
   setTimeout(() => {
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
@@ -2012,10 +1967,7 @@ function closeChat() {
   currentChatId = null;
   lastMessageId = null;
   replyingToMessage = null;
-  
-  // Сбрасываем выбранное сообщение на мобильных
   hideMobileMessageActions();
-  
   loadChatsList();
 }
 
@@ -2050,14 +2002,12 @@ async function toggleBlockUser() {
     const isBlocked = currentBlocked.includes(currentChatUserId);
     
     if (isBlocked) {
-      // Разблокировать
       await db.collection("users").doc(currentUser.uid).update({
         blockedUsers: firebase.firestore.FieldValue.arrayRemove(currentChatUserId)
       });
       blockedUsers.delete(currentChatUserId);
       showNotification(`Вы разблокировали @${currentChatUsername}`);
     } else {
-      // Заблокировать
       await db.collection("users").doc(currentUser.uid).update({
         blockedUsers: firebase.firestore.FieldValue.arrayUnion(currentChatUserId)
       });
@@ -2114,7 +2064,6 @@ async function loadChatMessages() {
       messages.push({ id: doc.id, ...doc.data() });
     });
     
-    // Отображаем сообщения
     chatMessages.innerHTML = '';
     let lastDate = null;
     
@@ -2122,7 +2071,6 @@ async function loadChatMessages() {
       const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
       const currentDate = formatMessageDate(msgDate);
       
-      // Добавляем разделитель даты только если дата изменилась
       if (currentDate !== lastDate) {
         const dateDivider = document.createElement('div');
         dateDivider.className = 'message-date-divider';
@@ -2134,7 +2082,6 @@ async function loadChatMessages() {
       addMessageToUI(msg, false);
     });
     
-    // Прокрутка вниз
     setTimeout(() => {
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }, 100);
@@ -2153,7 +2100,6 @@ function addMessageToUI(msg, isNew = true) {
   const noMessages = chatMessages.querySelector('.no-messages');
   const loader = chatMessages.querySelector('.loader');
   
-  // Убираем загрузчик или сообщение "нет сообщений"
   if (noMessages) noMessages.remove();
   if (loader) loader.remove();
   
@@ -2165,13 +2111,11 @@ function addMessageToUI(msg, isNew = true) {
     { username: 'Вы' } : 
     { username: currentChatUsername };
   
-  // Создаем элемент сообщения
   const messageDiv = document.createElement('div');
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'} ${msg.replyTo ? 'message-replied' : ''}`;
   messageDiv.setAttribute('data-message-id', msg.id);
   messageDiv.onclick = (e) => handleMessageClick(e, msg.id, msg);
   
-  // Проверяем, есть ли ответ на другое сообщение
   let replyHTML = '';
   if (msg.replyTo) {
     const replySender = msg.replyTo.senderId === currentUser.uid ? 'Вы' : currentChatUsername;
@@ -2217,12 +2161,10 @@ function addMessageToUI(msg, isNew = true) {
     ` : ''}
   `;
   
-  // Для новых сообщений проверяем дату и добавляем разделитель если нужно
   if (isNew) {
     const allElements = chatMessages.children;
     let lastMessageDateDivider = null;
     
-    // Ищем последний разделитель даты
     for (let i = allElements.length - 1; i >= 0; i--) {
       const element = allElements[i];
       if (element.classList.contains('message-date-divider')) {
@@ -2231,7 +2173,6 @@ function addMessageToUI(msg, isNew = true) {
       }
     }
     
-    // Проверяем, нужен ли новый разделитель даты
     let needsDateDivider = false;
     if (!lastMessageDateDivider) {
       needsDateDivider = true;
@@ -2239,7 +2180,6 @@ function addMessageToUI(msg, isNew = true) {
       needsDateDivider = true;
     }
     
-    // Добавляем разделитель даты если нужно
     if (needsDateDivider) {
       const dateDivider = document.createElement('div');
       dateDivider.className = 'message-date-divider';
@@ -2250,12 +2190,10 @@ function addMessageToUI(msg, isNew = true) {
   
   chatMessages.appendChild(messageDiv);
   
-  // Добавляем реакции если есть
   if (msg.reactions && Object.keys(msg.reactions).length > 0) {
     updateMessageReactions(msg.id, msg.reactions);
   }
   
-  // Добавляем обработчики для контекстного меню на мобильных
   if (isMobile) {
     let longPressTimer;
     
@@ -2273,7 +2211,6 @@ function addMessageToUI(msg, isNew = true) {
       clearTimeout(longPressTimer);
     });
     
-    // Двойной тап для сердечка
     let tapCount = 0;
     let tapTimer;
     
@@ -2293,7 +2230,6 @@ function addMessageToUI(msg, isNew = true) {
     });
   }
   
-  // Добавляем обработчик контекстного меню для десктопа
   if (!isMobile) {
     messageDiv.addEventListener('contextmenu', (e) => {
       e.preventDefault();
@@ -2301,7 +2237,6 @@ function addMessageToUI(msg, isNew = true) {
     });
   }
   
-  // Прокручиваем вниз для новых сообщений
   if (isNew) {
     setTimeout(() => {
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -2320,7 +2255,6 @@ function setupChatMessagesListener() {
     .collection('messages')
     .orderBy('timestamp', 'asc')
     .onSnapshot((snapshot) => {
-      // Для первого загрузки игнорируем (уже загружено в loadChatMessages)
       if (isFirstLoad) {
         isFirstLoad = false;
         return;
@@ -2329,7 +2263,6 @@ function setupChatMessagesListener() {
       snapshot.docChanges().forEach((change) => {
         const msgId = change.doc.id;
         
-        // Проверяем, не обрабатывали ли мы уже это сообщение
         if (processedMessages.has(msgId)) {
           return;
         }
@@ -2339,29 +2272,24 @@ function setupChatMessagesListener() {
         if (change.type === 'added') {
           const msg = change.doc.data();
           
-          // Проверяем, не наше ли это только что отправленное сообщение
           const isOutgoing = msg.senderId === currentUser.uid;
           const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
           const timeDiff = new Date() - msgDate;
           
-          // Игнорируем сообщения старше 2 секунд (чтобы не дублировать уже загруженные)
           if (!isOutgoing || timeDiff < 2000) {
             addMessageToUI({ id: msgId, ...msg }, true);
             
-            // Помечаем как прочитанное если это входящее
             if (!isOutgoing) {
               markMessageAsRead(msgId);
             }
           }
         } else if (change.type === 'modified') {
-          // Обновляем реакции если сообщение было изменено
           const msg = change.doc.data();
           const messageElement = document.querySelector(`[data-message-id="${msgId}"]`);
           if (messageElement && msg.reactions) {
             updateMessageReactions(msgId, msg.reactions);
           }
         } else if (change.type === 'removed') {
-          // Удаляем сообщение из UI если оно было удалено
           const messageElement = document.querySelector(`[data-message-id="${msgId}"]`);
           if (messageElement) {
             messageElement.remove();
@@ -2369,7 +2297,6 @@ function setupChatMessagesListener() {
         }
       });
       
-      // Очищаем старые ID (чтобы не копить слишком много)
       if (processedMessages.size > 100) {
         const ids = Array.from(processedMessages);
         processedMessages = new Set(ids.slice(-50));
@@ -2395,7 +2322,6 @@ async function sendMessage() {
     return;
   }
   
-  // Блокируем кнопку отправки
   const sendBtn = document.getElementById('chatSendBtn');
   const originalText = sendBtn.innerHTML;
   sendBtn.innerHTML = '⏳';
@@ -2408,20 +2334,20 @@ async function sendMessage() {
     read: false
   };
   
-  // Добавляем информацию об ответе если есть
+  // ВАЖНО: Добавляем информацию об ответе
   if (replyingToMessage) {
     messageData.replyTo = {
       messageId: replyingToMessage.id,
       senderId: replyingToMessage.senderId,
       text: replyingToMessage.text
     };
+    console.log('Отправляем ответ на сообщение:', replyingToMessage);
   }
   
   try {
     let chatId = currentChatId;
     
     if (!chatId) {
-      // Создаем новый чат
       const newChatRef = await db.collection('chats').add({
         participants: [currentUser.uid, currentChatUserId],
         lastMessage: text,
@@ -2435,7 +2361,6 @@ async function sendMessage() {
       chatId = newChatRef.id;
       currentChatId = chatId;
     } else {
-      // Обновляем существующий чат
       await db.collection('chats').doc(chatId).update({
         lastMessage: text,
         lastSender: currentUser.uid,
@@ -2445,28 +2370,25 @@ async function sendMessage() {
       });
     }
     
-    // Добавляем сообщение
+    // Отправляем сообщение
     await db.collection('chats').doc(chatId)
       .collection('messages')
       .add(messageData);
     
-    // Очищаем поле ввода и сбрасываем ответ
+    // Очищаем поле ввода
     chatInput.value = '';
     chatInput.style.height = 'auto';
+    
+    // Сбрасываем ответ после отправки
     cancelReply();
     
-    // Разблокируем кнопку отправки
     sendBtn.innerHTML = originalText;
     sendBtn.disabled = false;
-    
-    // Обновляем список чатов
     loadChatsList();
     
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error);
     showNotification('Ошибка отправки: ' + error.message);
-    
-    // Разблокируем кнопку отправки в случае ошибки
     sendBtn.innerHTML = originalText;
     sendBtn.disabled = false;
   }
@@ -2483,7 +2405,6 @@ async function markMessageAsRead(messageId) {
         read: true
       });
     
-    // Обновляем статус в UI
     const messageElements = document.querySelectorAll('.message-outgoing .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
@@ -2498,12 +2419,10 @@ async function markMessageAsRead(messageId) {
 
 async function markChatAsRead(chatId) {
   try {
-    // Обновляем статус чата
     await db.collection('chats').doc(chatId).update({
       unreadFor: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
     });
     
-    // Помечаем все входящие сообщения как прочитанные
     const messagesSnap = await db.collection('chats').doc(chatId)
       .collection('messages')
       .where('senderId', '==', currentChatUserId)
@@ -2519,7 +2438,6 @@ async function markChatAsRead(chatId) {
       await batch.commit();
     }
     
-    // Обновляем UI
     const messageElements = document.querySelectorAll('.message-outgoing .message-status');
     messageElements.forEach(el => {
       if (el.textContent === '✓') {
@@ -2569,7 +2487,6 @@ function logout() {
 
 // Инициализация контекстных меню
 document.addEventListener('DOMContentLoaded', () => {
-  // Меню для чатов
   const contextMenu = document.getElementById('contextMenu');
   const contextPinBtn = document.getElementById('contextPinBtn');
   const contextDeleteBtn = document.getElementById('contextDeleteBtn');
@@ -2593,7 +2510,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Меню для сообщений
   const messageContextMenu = document.getElementById('messageContextMenu');
   const contextReplyBtn = document.getElementById('contextReplyBtn');
   const contextReactionBtn = document.getElementById('contextReactionBtn');
@@ -2632,7 +2548,6 @@ document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
     sendMessage();
   }
   
-  // Отмена ответа на сообщение по Escape
   if (e.key === 'Escape' && replyingToMessage) {
     cancelReply();
   }
@@ -2672,7 +2587,6 @@ auth.onAuthStateChanged(async (user) => {
   await loadChatsList();
   await checkOpenChatOnLoad();
   
-  // Обновляем время
   setInterval(() => {
     const timeElement = document.getElementById('time');
     if (timeElement) {
@@ -2684,7 +2598,6 @@ auth.onAuthStateChanged(async (user) => {
   }, 1000);
 });
 
-// Проверка возврата из профиля
 window.addEventListener('load', () => {
   const returnToChat = sessionStorage.getItem('returnToChat');
   if (returnToChat) {
@@ -2711,12 +2624,10 @@ window.addEventListener('load', () => {
   }
 });
 
-// Обновляем размер окна при ресайзе
 window.addEventListener('resize', () => {
   isMobile = window.innerWidth <= 768;
 });
 
-// Закрываем контекстные меню при клике на сообщение
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.context-menu') && !e.target.closest('.reactions-panel')) {
     const menus = document.querySelectorAll('.context-menu.show, .reactions-panel.show');

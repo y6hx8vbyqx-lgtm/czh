@@ -522,6 +522,61 @@ body{
   color: var(--bg);
 }
 
+/* Стили для репостов */
+.repost-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--sub);
+  font-size: 14px;
+}
+.repost-icon {
+  color: #64d2ff;
+}
+.repost-users-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.repost-user-link {
+  color: var(--hashtag);
+  cursor: pointer;
+  font-weight: 600;
+}
+.repost-user-link:hover {
+  opacity: 0.7;
+}
+.show-more-reposts-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.show-more-reposts-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.hide-reposts-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+.hide-reposts-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .sheet{
   position:fixed;
   inset:0;
@@ -893,19 +948,6 @@ body{
 }
 .comment-delete-btn:hover{
   background:rgba(255,69,58,0.1);
-}
-
-/* Стили для репостов */
-.repost-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: var(--sub);
-  font-size: 14px;
-}
-.repost-icon {
-  color: #64d2ff;
 }
 </style>
 </head>
@@ -1813,34 +1855,38 @@ async function displayPosts(posts, isHashtagFeed = false) {
     const postId = postData.id;
     const post = postData;
     
-    // Определяем, кто репостнул пост и видим ли мы это
-    let repostedBy = null;
+    // Собираем всех репостнувших пользователей (включая себя и подписок)
+    const allRepostingUsers = [];
     
     if (post.repostedBy && post.repostedBy.length > 0) {
-      // Проверяем сначала свои собственные репосты
-      if (post.repostedBy.includes(userData.username)) {
-        repostedBy = userData.username;
-      } else {
-        // Ищем репосты от пользователей из подписок
-        for (const username of post.repostedBy) {
-          // Пропускаем свой собственный username
-          if (username === userData.username) continue;
-          
-          // Получаем userId по username
-          const userId = await getUserIdByUsername(username);
-          
-          // Проверяем, подписан ли текущий пользователь на этого пользователя
-          if (userId && subscriptions.has(userId)) {
-            repostedBy = username;
-            break; // Берем первого найденного из подписок
+      // Для каждого репостнувшего находим userId и проверяем подписку
+      for (const username of post.repostedBy) {
+        // Получаем userId по username
+        const userId = await getUserIdByUsername(username);
+        
+        if (userId) {
+          // Проверяем, является ли это нашим репостом или репостом из подписок
+          if (userId === currentUser.uid || subscriptions.has(userId)) {
+            allRepostingUsers.push({
+              username: username,
+              userId: userId,
+              isCurrentUser: userId === currentUser.uid
+            });
           }
         }
       }
     }
     
+    // Сортируем: сначала свои репосты, затем по алфавиту
+    allRepostingUsers.sort((a, b) => {
+      if (a.isCurrentUser && !b.isCurrentUser) return -1;
+      if (!a.isCurrentUser && b.isCurrentUser) return 1;
+      return a.username.localeCompare(b.username);
+    });
+    
     return {
       ...post,
-      repostedByDisplay: repostedBy
+      repostingUsers: allRepostingUsers
     };
   }));
   
@@ -1893,15 +1939,31 @@ async function displayPosts(posts, isHashtagFeed = false) {
     // Обрабатываем хештеги в тексте
     const processedText = updateHashtagsInPost(post);
     
+    // Генерируем HTML для репост-информации
+    let repostHTML = '';
+    if (post.repostingUsers && post.repostingUsers.length > 0) {
+      // Берем первого пользователя для основного отображения
+      const mainUser = post.repostingUsers[0];
+      const otherUsersCount = post.repostingUsers.length - 1;
+      
+      repostHTML = `
+        <div class="repost-info" id="repost-info-${postId}">
+          <span class="repost-icon">🔄</span>
+          <span>Репостнул <strong class="repost-user-link" onclick="openProfileFromRepost('${mainUser.userId}', '${mainUser.username}')">@${mainUser.username}</strong></span>
+          ${otherUsersCount > 0 ? `
+            <span> и </span>
+            <button class="show-more-reposts-btn" onclick="toggleRepostUsers('${postId}', true)">
+              ${otherUsersCount} ${getOtherUsersText(otherUsersCount)}
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }
+    
     // Создаем HTML для поста
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
-      ${post.repostedByDisplay ? `
-        <div class="repost-info">
-          <span class="repost-icon">🔄</span>
-          <span>Репостнул <strong>@${post.repostedByDisplay}</strong></span>
-        </div>
-      ` : ''}
+      ${repostHTML}
       <div class="post-header">
         <div class="avatar">${post.username?.[0]||"A"}</div>
         <div class="post-user-info">
@@ -1942,6 +2004,63 @@ async function displayPosts(posts, isHashtagFeed = false) {
   setTimeout(setupViewTracking, 500);
   // Проверяем нужно ли прокрутить к посту
   setTimeout(checkPostToScroll, 100);
+}
+
+// Функция для склонения "других"
+function getOtherUsersText(count) {
+  if (count === 1) return 'другой';
+  if (count >= 2 && count <= 4) return 'других';
+  return 'других';
+}
+
+// Переключение отображения всех репостнувших пользователей
+function toggleRepostUsers(postId, showAll = false) {
+  const post = postsCache.get(postId);
+  if (!post || !post.repostingUsers || post.repostingUsers.length <= 1) return;
+  
+  const repostInfoElement = document.getElementById(`repost-info-${postId}`);
+  if (!repostInfoElement) return;
+  
+  if (showAll) {
+    // Показываем всех пользователей
+    let usersHTML = '';
+    post.repostingUsers.forEach((user, index) => {
+      usersHTML += `
+        <span class="repost-user-link" onclick="openProfileFromRepost('${user.userId}', '${user.username}')">
+          @${user.username}
+        </span>
+        ${index < post.repostingUsers.length - 1 ? ', ' : ''}
+      `;
+    });
+    
+    repostInfoElement.innerHTML = `
+      <span class="repost-icon">🔄</span>
+      <span>Репостнули ${usersHTML}</span>
+      <button class="hide-reposts-btn" onclick="toggleRepostUsers('${postId}', false)">
+        скрыть
+      </button>
+    `;
+  } else {
+    // Возвращаем к компактному виду
+    const mainUser = post.repostingUsers[0];
+    const otherUsersCount = post.repostingUsers.length - 1;
+    
+    repostInfoElement.innerHTML = `
+      <span class="repost-icon">🔄</span>
+      <span>Репостнул <strong class="repost-user-link" onclick="openProfileFromRepost('${mainUser.userId}', '${mainUser.username}')">@${mainUser.username}</strong></span>
+      ${otherUsersCount > 0 ? `
+        <span> и </span>
+        <button class="show-more-reposts-btn" onclick="toggleRepostUsers('${postId}', true)">
+          ${otherUsersCount} ${getOtherUsersText(otherUsersCount)}
+        </button>
+      ` : ''}
+    `;
+  }
+}
+
+// Открытие профиля из репоста
+async function openProfileFromRepost(userId, username) {
+  await openProfile(userId, username);
 }
 
 // Создание поста

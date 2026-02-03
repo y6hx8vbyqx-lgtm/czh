@@ -21,6 +21,7 @@
   --danger:#ff453a;
   --success:#30d158;
   --views:#8e8e93;
+  --hashtag:#5ac8fa;
 }
 *{box-sizing:border-box}
 body{
@@ -288,6 +289,100 @@ body{
   color:var(--sub);
   padding:20px 0;
   font-size:14px;
+}
+
+/* Хештеги в посте */
+.hashtag {
+  color: var(--hashtag);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.hashtag:hover {
+  opacity: 0.7;
+}
+
+/* Кнопка назад к хештегам */
+.back-to-hashtags-btn {
+  width: 100%;
+  background: var(--card);
+  border: none;
+  border-radius: 16px;
+  padding: 12px 16px;
+  color: var(--hashtag);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+.back-to-hashtags-btn:hover {
+  background: rgba(90, 200, 250, 0.1);
+}
+
+/* Лента хештега */
+.hashtag-header {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.hashtag-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--hashtag);
+  margin-bottom: 8px;
+}
+.hashtag-count {
+  color: var(--sub);
+  font-size: 14px;
+}
+
+/* Список хештегов */
+.hashtags-list {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.hashtag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.hashtag-item:hover {
+  background: rgba(90, 200, 250, 0.1);
+}
+.hashtag-item:last-child {
+  margin-bottom: 0;
+}
+.hashtag-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--hashtag);
+}
+.hashtag-item-count {
+  color: var(--sub);
+  font-size: 14px;
+  background: rgba(90, 200, 250, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.no-hashtags {
+  text-align: center;
+  color: var(--sub);
+  padding: 40px 0;
+  font-size: 16px;
 }
 
 .post{
@@ -833,36 +928,53 @@ body{
 
 <!-- Таб бар для переключения ленты -->
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchFeed('all')">
+  <button class="tab-btn active" onclick="switchTab('all')">
     <div>
       <div>📄</div>
       <div class="tab-label">Все посты</div>
     </div>
   </button>
-  <button class="tab-btn" onclick="switchFeed('subscriptions')">
+  <button class="tab-btn" onclick="switchTab('subscriptions')">
     <div>
       <div>👥</div>
       <div class="tab-label">Подписки</div>
+    </div>
+  </button>
+  <button class="tab-btn" onclick="switchTab('hashtags')">
+    <div>
+      <div>🏷️</div>
+      <div class="tab-label">Хештеги</div>
     </div>
   </button>
 </div>
 
 <div class="container">
 
-  <div class="create">
-    <textarea id="postText" placeholder="Что у вас нового? Пишите анонимно..." maxlength="500"></textarea>
-    <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
-    <button onclick="createPost()">Опубликовать</button>
+  <!-- Контейнер для кнопки "К хештегам" (показывается только в ленте хештега) -->
+  <div id="hashtagHeader" style="display:none">
+    <button class="back-to-hashtags-btn" onclick="backToHashtags()">
+      ← К хештегам
+    </button>
   </div>
 
-  <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
-  <div class="search">
-    <div class="search-icon">🔍</div>
-    <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
-    <div class="search-results" id="searchResults"></div>
-  </div>
+  <div id="mainContent">
 
-  <div id="feed"></div>
+    <div class="create">
+      <textarea id="postText" placeholder="Что у вас нового? Можно использовать #хештеги..." maxlength="500"></textarea>
+      <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
+      <button onclick="createPost()">Опубликовать</button>
+    </div>
+
+    <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
+    <div class="search">
+      <div class="search-icon">🔍</div>
+      <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div id="feed"></div>
+
+  </div>
 
 </div>
 
@@ -1010,11 +1122,13 @@ let postsCache = new Map();
 let currentPostId = null;
 let currentProfileUserId = null;
 let searchTimeout = null;
-let currentFeed = 'all';
+let currentTab = 'all';
 let subscriptions = new Set();
 let adminUsers = new Set();
 let blockedUsers = new Set();
 let currentProfileTab = 'posts';
+let currentHashtag = null;
+let hashtagsCache = new Map();
 
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
@@ -1098,6 +1212,252 @@ function createSnowflakes() {
         }, Math.random() * 5000);
       }
     }, duration * 1000);
+  }
+}
+
+// ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
+
+// Извлечение хештегов из текста
+function extractHashtags(text) {
+  if (!text) return [];
+  
+  // Регулярное выражение для поиска хештегов
+  const hashtagRegex = /#([а-яА-ЯёЁa-zA-Z0-9_]+)/g;
+  const matches = text.match(hashtagRegex);
+  
+  if (!matches) return [];
+  
+  // Убираем символ # и приводим к нижнему регистру
+  return matches.map(tag => tag.substring(1).toLowerCase());
+}
+
+// Обновление хештегов в посте
+function updateHashtagsInPost(post) {
+  const hashtags = extractHashtags(post.text);
+  if (hashtags.length === 0) return post.text;
+  
+  let processedText = post.text;
+  
+  hashtags.forEach(tag => {
+    const regex = new RegExp(`#${tag}`, 'gi');
+    processedText = processedText.replace(regex, 
+      `<span class="hashtag" onclick="openHashtagFeed('${tag}')">#${tag}</span>`
+    );
+  });
+  
+  return processedText;
+}
+
+// Загрузка всех хештегов
+async function loadAllHashtags() {
+  const feed = document.getElementById("feed");
+  feed.innerHTML = `
+    <div class="hashtags-list">
+      <div style="text-align:center;color:var(--sub);padding:20px 0;">
+        Загрузка хештегов...
+      </div>
+    </div>
+  `;
+  
+  try {
+    // Получаем все посты
+    const postsSnap = await db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .limit(500)
+      .get();
+    
+    if (postsSnap.empty) {
+      feed.innerHTML = `
+        <div class="hashtags-list">
+          <div class="no-hashtags">
+            Пока нет хештегов
+          </div>
+        </div>
+      `;
+      return;
+    }
+    
+    // Собираем все хештеги
+    const hashtagCounts = {};
+    
+    postsSnap.forEach(doc => {
+      const post = doc.data();
+      const hashtags = extractHashtags(post.text);
+      
+      hashtags.forEach(tag => {
+        if (hashtagCounts[tag]) {
+          hashtagCounts[tag]++;
+        } else {
+          hashtagCounts[tag] = 1;
+        }
+      });
+    });
+    
+    // Сортируем по количеству использований
+    const sortedHashtags = Object.entries(hashtagCounts)
+      .sort((a, b) => b[1] - a[1]);
+    
+    // Сохраняем в кэш
+    hashtagsCache.clear();
+    sortedHashtags.forEach(([tag, count]) => {
+      hashtagsCache.set(tag, count);
+    });
+    
+    if (sortedHashtags.length === 0) {
+      feed.innerHTML = `
+        <div class="hashtags-list">
+          <div class="no-hashtags">
+            Пока нет хештегов
+          </div>
+        </div>
+      `;
+      return;
+    }
+    
+    // Отображаем хештеги
+    let hashtagsHTML = '<div class="hashtags-list">';
+    
+    sortedHashtags.forEach(([tag, count]) => {
+      hashtagsHTML += `
+        <div class="hashtag-item" onclick="openHashtagFeed('${tag}')">
+          <div class="hashtag-item-name">#${tag}</div>
+          <div class="hashtag-item-count">${count}</div>
+        </div>
+      `;
+    });
+    
+    hashtagsHTML += '</div>';
+    feed.innerHTML = hashtagsHTML;
+    
+  } catch (error) {
+    console.error("Ошибка при загрузке хештегов:", error);
+    feed.innerHTML = `
+      <div class="hashtags-list">
+        <div class="no-hashtags" style="color:var(--danger);">
+          Ошибка при загрузке хештегов
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Открытие ленты хештега
+async function openHashtagFeed(hashtag) {
+  currentHashtag = hashtag.toLowerCase();
+  
+  // Показываем кнопку "К хештегам"
+  document.getElementById('hashtagHeader').style.display = 'block';
+  
+  // Скрываем блок создания поста и поиска
+  document.querySelector('.create').style.display = 'none';
+  document.querySelector('.search').style.display = 'none';
+  
+  // Обновляем заголовок
+  const feed = document.getElementById("feed");
+  feed.innerHTML = `
+    <div class="hashtag-header">
+      <div class="hashtag-name">#${hashtag}</div>
+      <div class="hashtag-count">Загрузка постов...</div>
+    </div>
+  `;
+  
+  try {
+    // Получаем все посты
+    const postsSnap = await db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .limit(100)
+      .get();
+    
+    if (postsSnap.empty) {
+      feed.innerHTML = `
+        <div class="hashtag-header">
+          <div class="hashtag-name">#${hashtag}</div>
+          <div class="hashtag-count">0 постов</div>
+        </div>
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          Нет постов с этим хештегом
+        </div>
+      `;
+      return;
+    }
+    
+    // Фильтруем посты по хештегу
+    const filteredPosts = [];
+    let postCount = 0;
+    
+    postsSnap.forEach(doc => {
+      const post = doc.data();
+      const postId = doc.id;
+      const hashtags = extractHashtags(post.text);
+      
+      if (hashtags.includes(currentHashtag)) {
+        filteredPosts.push({ id: postId, ...post });
+        postCount++;
+      }
+    });
+    
+    // Обновляем заголовок
+    const header = document.querySelector('.hashtag-header');
+    if (header) {
+      header.innerHTML = `
+        <div class="hashtag-name">#${hashtag}</div>
+        <div class="hashtag-count">${postCount} ${declinePosts(postCount)}</div>
+      `;
+    }
+    
+    if (filteredPosts.length === 0) {
+      feed.innerHTML = `
+        <div class="hashtag-header">
+          <div class="hashtag-name">#${hashtag}</div>
+          <div class="hashtag-count">0 постов</div>
+        </div>
+        <div style="text-align:center;color:var(--sub);padding:40px 0;">
+          Нет постов с этим хештегом
+        </div>
+      `;
+      return;
+    }
+    
+    // Отображаем посты
+    displayPosts(filteredPosts, true);
+    
+  } catch (error) {
+    console.error("Ошибка при загрузке постов хештега:", error);
+    feed.innerHTML = `
+      <div class="hashtag-header">
+        <div class="hashtag-name">#${hashtag}</div>
+        <div class="hashtag-count">Ошибка</div>
+      </div>
+      <div style="text-align:center;color:var(--danger);padding:40px 0;">
+        Ошибка при загрузке постов
+      </div>
+    `;
+  }
+}
+
+// Возврат к списку хештегов
+function backToHashtags() {
+  currentHashtag = null;
+  
+  // Скрываем кнопку "К хештегам"
+  document.getElementById('hashtagHeader').style.display = 'none';
+  
+  // Показываем блок создания поста и поиска
+  document.querySelector('.create').style.display = 'block';
+  document.querySelector('.search').style.display = 'block';
+  
+  // Загружаем хештеги
+  loadAllHashtags();
+}
+
+// Склонение слова "пост"
+function declinePosts(count) {
+  if (count % 10 === 1 && count % 100 !== 11) {
+    return 'пост';
+  } else if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
+    return 'поста';
+  } else {
+    return 'постов';
   }
 }
 
@@ -1274,16 +1634,45 @@ async function loadBlockedUsers() {
 
 // ==================== ФУНКЦИИ ДЛЯ ПОСТОВ ====================
 
+// Переключение табов
+function switchTab(tab) {
+  currentTab = tab;
+  
+  // Обновляем активные кнопки
+  const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
+  const subsTab = document.querySelector('.tab-bar .tab-btn:nth-child(2)');
+  const hashtagsTab = document.querySelector('.tab-bar .tab-btn:nth-child(3)');
+  
+  allTab.classList.toggle('active', tab === 'all');
+  subsTab.classList.toggle('active', tab === 'subscriptions');
+  hashtagsTab.classList.toggle('active', tab === 'hashtags');
+  
+  // Если возвращаемся из ленты хештега
+  if (currentHashtag) {
+    currentHashtag = null;
+    document.getElementById('hashtagHeader').style.display = 'none';
+    document.querySelector('.create').style.display = 'block';
+    document.querySelector('.search').style.display = 'block';
+  }
+  
+  // Загружаем контент
+  if (tab === 'hashtags') {
+    loadAllHashtags();
+  } else {
+    loadPosts();
+  }
+}
+
 // Загрузка постов
 async function loadPosts() {
   const feed = document.getElementById("feed");
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
   
   try {
-    if (currentFeed === 'subscriptions' && subscriptions.size > 0) {
+    if (currentTab === 'subscriptions' && subscriptions.size > 0) {
       // Загружаем посты только от подписок
       await loadSubscriptionPosts();
-    } else if (currentFeed === 'subscriptions') {
+    } else if (currentTab === 'subscriptions') {
       // Нет подписок
       feed.innerHTML = `
         <div style='text-align:center;color:var(--sub);padding:40px 0;'>
@@ -1384,9 +1773,20 @@ async function loadSubscriptionPosts() {
 }
 
 // Отображение постов
-async function displayPosts(posts) {
+async function displayPosts(posts, isHashtagFeed = false) {
   const feed = document.getElementById("feed");
-  feed.innerHTML = "";
+  
+  if (!isHashtagFeed) {
+    feed.innerHTML = "";
+  } else {
+    // Для ленты хештега очищаем только посты после заголовка
+    const header = document.querySelector('.hashtag-header');
+    if (header) {
+      feed.innerHTML = header.outerHTML;
+    } else {
+      feed.innerHTML = "";
+    }
+  }
   
   let lastPostDate = null;
   
@@ -1435,7 +1835,7 @@ async function displayPosts(posts) {
     }
     
     // Добавляем разделитель даты если нужно
-    if (lastPostDate && postDate) {
+    if (lastPostDate && postDate && !isHashtagFeed) {
       const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
       if (dividerLabel) {
         feed.innerHTML += `
@@ -1467,6 +1867,9 @@ async function displayPosts(posts) {
       console.log("Ошибка форматирования даты:", dateError);
     }
     
+    // Обрабатываем хештеги в тексте
+    const processedText = updateHashtagsInPost(post);
+    
     // Создаем HTML для поста
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
@@ -1494,7 +1897,7 @@ async function displayPosts(posts) {
         ${(post.userId === currentUser.uid || userData?.isAdmin) ?
           `<button class="trash" onclick="deletePost('${postId}', '${post.userId}')">🗑</button>` : ""}
       </div>
-      <div class="post-text">${post.text}</div>
+      <div class="post-text">${processedText}</div>
       <div class="post-actions">
         <button class="action ${liked ? "liked" : ""}" onclick="toggleLike('${postId}')">
           ${liked ? "❤️" : "🤍"} <span id="likes-${postId}">${post.likes || 0}</span>
@@ -1553,7 +1956,13 @@ async function createPost() {
     postText.value = "";
     updateWordCounter('postText', 'postWordCounter', 50);
     showNotification("Пост опубликован!");
-    loadPosts();
+    
+    // Если находимся в ленте хештегов, возвращаемся к списку хештегов
+    if (currentTab === 'hashtags') {
+      loadAllHashtags();
+    } else {
+      loadPosts();
+    }
     
   } catch (error) {
     console.error("Ошибка при создании поста:", error);
@@ -1590,7 +1999,12 @@ async function deletePost(postId, postUserId) {
       localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
     }
     
-    loadPosts();
+    // Обновляем ленту в зависимости от текущего таба
+    if (currentTab === 'hashtags') {
+      loadAllHashtags();
+    } else {
+      loadPosts();
+    }
     
     // Обновляем профиль если открыт
     if (currentProfileUserId === postUserId) {
@@ -1704,7 +2118,11 @@ async function toggleRepost(id) {
     
     // Перезагружаем посты чтобы отобразить/скрыть надпись о репосте
     setTimeout(() => {
-      loadPosts();
+      if (currentTab === 'hashtags') {
+        loadAllHashtags();
+      } else {
+        loadPosts();
+      }
     }, 500);
     
   } catch (error) {
@@ -1859,7 +2277,7 @@ async function toggleSubscribe(userId, username) {
     }
     
     // Перезагружаем посты, если мы в ленте подписок
-    if (currentFeed === 'subscriptions') {
+    if (currentTab === 'subscriptions') {
       loadPosts();
     }
     
@@ -2050,9 +2468,11 @@ async function refreshProfilePosts(uid) {
         console.log("Ошибка форматирования даты:", dateError);
       }
       
+      const processedText = updateHashtagsInPost(post);
+      
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
-          <div class="post-text">${post.text}</div>
+          <div class="post-text">${processedText}</div>
           <div class="post-time" title="${fullDateTime}">
             <span>${timeAgo}</span>
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
@@ -2154,6 +2574,8 @@ async function refreshProfileReposts(uid) {
         console.log("Ошибка форматирования даты:", dateError);
       }
       
+      const processedText = updateHashtagsInPost(post);
+      
       profileReposts.innerHTML += `
         <div class="post fade" id="repost-${post.id}">
           <div class="repost-info">
@@ -2176,7 +2598,7 @@ async function refreshProfileReposts(uid) {
                 ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
               </button>` : ''}
           </div>
-          <div class="post-text">${post.text}</div>
+          <div class="post-text">${processedText}</div>
           <div class="post-actions">
             <button class="action ${liked ? "liked" : ""}" onclick="event.stopPropagation(); toggleLike('${post.id}')">
               ${liked ? "❤️" : "🤍"} <span id="repost-likes-${post.id}">${post.likes || 0}</span>
@@ -2664,26 +3086,6 @@ function showNotification(message, duration = 3000) {
   setTimeout(() => {
     notification.classList.remove('show');
   }, duration);
-}
-
-// Переключение ленты
-function switchFeed(feedType) {
-  currentFeed = feedType;
-  
-  // Обновляем активную кнопку
-  const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
-  const subsTab = document.querySelector('.tab-bar .tab-btn:nth-child(2)');
-  
-  if (feedType === 'all') {
-    allTab.classList.add('active');
-    subsTab.classList.remove('active');
-  } else {
-    allTab.classList.remove('active');
-    subsTab.classList.add('active');
-  }
-  
-  // Загружаем посты
-  loadPosts();
 }
 
 // Проверка нужно ли прокрутить к посту

@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
 <style>
+/* Стили остаются без изменений */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -1632,6 +1633,23 @@ async function loadBlockedUsers() {
   }
 }
 
+// Вспомогательная функция для получения userId по username
+async function getUserIdByUsername(username) {
+  try {
+    const userSnap = await db.collection("users")
+      .where("username", "==", username)
+      .limit(1)
+      .get();
+    
+    if (!userSnap.empty) {
+      return userSnap.docs[0].id;
+    }
+  } catch (error) {
+    console.error("Ошибка поиска userId по username:", username, error);
+  }
+  return null;
+}
+
 // ==================== ФУНКЦИИ ДЛЯ ПОСТОВ ====================
 
 // Переключение табов
@@ -1797,21 +1815,26 @@ async function displayPosts(posts, isHashtagFeed = false) {
     
     // Определяем, кто репостнул пост и видим ли мы это
     let repostedBy = null;
+    
     if (post.repostedBy && post.repostedBy.length > 0) {
-      // Проверяем, подписан ли текущий пользователь на тех, кто репостнул
-      const repostingUsers = post.repostedBy.filter(username => {
-        // Находим ID пользователя по имени
-        const repostingUser = Array.from(subscriptions).find(subId => {
-          // Здесь нужно получить username подписанного пользователя
-          // Для упрощения проверяем только своих репостов
-          return username === userData.username;
-        });
-        return repostingUser || username === userData.username;
-      });
-      
-      if (repostingUsers.length > 0) {
-        // Берем последнего репостнувшего из тех, на кого мы подписаны
-        repostedBy = repostingUsers[repostingUsers.length - 1];
+      // Проверяем сначала свои собственные репосты
+      if (post.repostedBy.includes(userData.username)) {
+        repostedBy = userData.username;
+      } else {
+        // Ищем репосты от пользователей из подписок
+        for (const username of post.repostedBy) {
+          // Пропускаем свой собственный username
+          if (username === userData.username) continue;
+          
+          // Получаем userId по username
+          const userId = await getUserIdByUsername(username);
+          
+          // Проверяем, подписан ли текущий пользователь на этого пользователя
+          if (userId && subscriptions.has(userId)) {
+            repostedBy = username;
+            break; // Берем первого найденного из подписок
+          }
+        }
       }
     }
     

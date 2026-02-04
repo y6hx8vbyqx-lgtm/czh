@@ -23,6 +23,7 @@
   --success:#30d158;
   --views:#8e8e93;
   --hashtag:#5ac8fa;
+  --pin:#ffcc00;
 }
 *{box-sizing:border-box}
 body{
@@ -473,6 +474,74 @@ body{
   padding:0;
 }
 
+/* Кнопка закрепления репоста */
+.pin-btn {
+  background: none;
+  border: none;
+  color: var(--pin);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+.pin-btn:hover {
+  background: rgba(255, 204, 0, 0.1);
+}
+.pin-btn.pinned {
+  color: #fff;
+  background: var(--pin);
+}
+.pin-btn.pinned:hover {
+  background: rgba(255, 204, 0, 0.8);
+}
+.pin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Метка закрепленного репоста */
+.pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--pin);
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: rgba(255, 204, 0, 0.1);
+}
+
+/* Разделитель закрепленных и обычных репостов */
+.reposts-divider {
+  text-align: center;
+  padding: 16px;
+  color: var(--sub);
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  margin: 20px 0;
+}
+.reposts-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 1;
+}
+.reposts-divider span {
+  position: relative;
+  z-index: 2;
+  background: var(--card);
+  padding: 0 16px;
+}
+
 /* Кнопка подписки */
 .subscribe-btn{
   background:var(--accent);
@@ -698,6 +767,9 @@ body{
 }
 .reposts-stat{
   color:#64d2ff;
+}
+.pinned-stat {
+  color: var(--pin);
 }
 
 /* Описание профиля */
@@ -1115,6 +1187,13 @@ body{
               <span id="profileRepostsCount">0</span>
             </div>
             <div class="profile-stat-label">репостов</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value pinned-stat">
+              <span>📌</span>
+              <span id="profilePinnedCount">0</span>
+            </div>
+            <div class="profile-stat-label">закреплено</div>
           </div>
         </div>
       </div>
@@ -1597,7 +1676,8 @@ async function loadUserData() {
         subscribers: [],
         bio: "",
         blockedUsers: [],
-        reposts: []
+        reposts: [],
+        pinnedReposts: [] // Добавляем поле для закрепленных репостов
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -1607,6 +1687,13 @@ async function loadUserData() {
         userData.reposts = [];
         await db.collection("users").doc(currentUser.uid).update({
           reposts: []
+        });
+      }
+      // Инициализируем закрепленные репосты если их нет
+      if (!userData.pinnedReposts) {
+        userData.pinnedReposts = [];
+        await db.collection("users").doc(currentUser.uid).update({
+          pinnedReposts: []
         });
       }
     }
@@ -2131,6 +2218,20 @@ async function deletePost(postId, postUserId) {
     
     await batch.commit();
     
+    // Удаляем пост из закрепленных репостов пользователей
+    const usersWithPinnedRepost = await db.collection("users")
+      .where("pinnedReposts", "array-contains", postId)
+      .get();
+    
+    const batch2 = db.batch();
+    usersWithPinnedRepost.forEach(doc => {
+      batch2.update(doc.ref, {
+        pinnedReposts: firebase.firestore.FieldValue.arrayRemove(postId)
+      });
+    });
+    
+    await batch2.commit();
+    
     // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();
     showNotification("Пост удален!");
@@ -2151,6 +2252,7 @@ async function deletePost(postId, postUserId) {
     // Обновляем профиль если открыт
     if (currentProfileUserId === postUserId) {
       await refreshProfilePosts(postUserId);
+      await refreshProfileReposts(postUserId);
     }
     
   } catch (error) {
@@ -2239,6 +2341,10 @@ async function toggleRepost(id) {
     // Обновляем локальные данные
     if (isReposted) {
       userData.reposts = userData.reposts.filter(postId => postId !== id);
+      // Если пост был закреплен, убираем его из закрепленных
+      if (userData.pinnedReposts?.includes(id)) {
+        await togglePinRepost(id, false);
+      }
     } else {
       if (!userData.reposts) userData.reposts = [];
       userData.reposts.push(id);
@@ -2273,6 +2379,55 @@ async function toggleRepost(id) {
   }
 }
 
+// ==================== ФУНКЦИИ ДЛЯ ЗАКРЕПЛЕНИЯ РЕПОСТОВ ====================
+
+// Закрепление/открепление репоста
+async function togglePinRepost(postId, forcePin = null) {
+  if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
+  
+  const isCurrentlyPinned = userData.pinnedReposts?.includes(postId) || false;
+  const shouldPin = forcePin !== null ? forcePin : !isCurrentlyPinned;
+  
+  try {
+    // Проверяем количество закрепленных репостов
+    const pinnedCount = userData.pinnedReposts?.length || 0;
+    const maxPinnedReposts = 3;
+    
+    if (shouldPin && pinnedCount >= maxPinnedReposts && !isCurrentlyPinned) {
+      showNotification(`Можно закрепить не более ${maxPinnedReposts} репостов!`);
+      return;
+    }
+    
+    // Обновляем список закрепленных репостов
+    await db.collection("users").doc(currentUser.uid).update({
+      pinnedReposts: shouldPin
+        ? firebase.firestore.FieldValue.arrayUnion(postId)
+        : firebase.firestore.FieldValue.arrayRemove(postId)
+    });
+    
+    // Обновляем локальные данные
+    if (shouldPin) {
+      if (!userData.pinnedReposts) userData.pinnedReposts = [];
+      userData.pinnedReposts.push(postId);
+    } else {
+      userData.pinnedReposts = userData.pinnedReposts?.filter(id => id !== postId) || [];
+    }
+    
+    // Обновляем количество закрепленных репостов в профиле
+    const newPinnedCount = userData.pinnedReposts?.length || 0;
+    document.getElementById('profilePinnedCount').textContent = newPinnedCount;
+    
+    showNotification(shouldPin ? "Репост закреплен!" : "Репост откреплен");
+    
+    // Обновляем отображение репостов в профиле
+    await refreshProfileReposts(currentProfileUserId);
+    
+  } catch (error) {
+    console.error("Ошибка при закреплении репоста:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
 // ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
 
 // Открытие профиля
@@ -2301,6 +2456,7 @@ async function openProfile(uid, name) {
   updateProfileChatButton(uid);
   await updateProfileSubscribersCount(uid);
   await updateProfileRepostsCount(uid);
+  await updateProfilePinnedCount(uid);
   await loadUserBio(uid);
   
   document.getElementById("profilePosts").innerHTML = `
@@ -2456,6 +2612,20 @@ async function updateProfileRepostsCount(userId) {
     }
   } catch (error) {
     console.error("Ошибка получения количества репостов:", error);
+  }
+}
+
+// Обновление количества закрепленных репостов
+async function updateProfilePinnedCount(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      const count = (user.pinnedReposts || []).length;
+      document.getElementById('profilePinnedCount').textContent = count;
+    }
+  } catch (error) {
+    console.error("Ошибка получения количества закрепленных репостов:", error);
   }
 }
 
@@ -2657,6 +2827,7 @@ async function refreshProfileReposts(uid) {
     
     const user = userDoc.data();
     const repostIds = user.reposts || [];
+    const pinnedRepostIds = user.pinnedReposts || [];
     
     if (repostIds.length === 0) {
       profileReposts.innerHTML = `
@@ -2672,7 +2843,10 @@ async function refreshProfileReposts(uid) {
     const postsPromises = repostIds.map(postId => 
       db.collection("posts").doc(postId).get().then(doc => {
         if (doc.exists) {
-          return { id: doc.id, ...doc.data() };
+          const post = { id: doc.id, ...doc.data() };
+          // Добавляем информацию о закреплении
+          post.isPinned = pinnedRepostIds.includes(postId);
+          return post;
         }
         return null;
       }).catch(() => null)
@@ -2681,8 +2855,19 @@ async function refreshProfileReposts(uid) {
     const posts = await Promise.all(postsPromises);
     const validPosts = posts.filter(post => post !== null);
     
-    // Сортируем по дате создания (новые первыми)
-    validPosts.sort((a, b) => {
+    // Разделяем на закрепленные и обычные репосты
+    const pinnedPosts = validPosts.filter(post => post.isPinned);
+    const regularPosts = validPosts.filter(post => !post.isPinned);
+    
+    // Сортируем закрепленные посты (новые первыми)
+    pinnedPosts.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    
+    // Сортируем обычные репосты по дате создания (новые первыми)
+    regularPosts.sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
       return dateB - dateA;
@@ -2698,10 +2883,91 @@ async function refreshProfileReposts(uid) {
     
     profileReposts.innerHTML = "";
     
-    validPosts.forEach(post => {
+    // Отображаем закрепленные репосты
+    if (pinnedPosts.length > 0) {
+      pinnedPosts.forEach(post => {
+        const isAdmin = adminUsers.has(post.userId);
+        const liked = post.likedBy?.includes(currentUser.uid);
+        const isReposted = userData.reposts?.includes(post.id) || false;
+        const isOwnProfile = uid === currentUser.uid;
+        
+        let timeAgo = "только что";
+        let fullDateTime = "";
+        
+        try {
+          if (post.createdAt) {
+            const postDate = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+            timeAgo = formatTimeAgo(postDate);
+            fullDateTime = formatFullDateTime(postDate);
+          }
+        } catch (dateError) {
+          console.log("Ошибка форматирования даты:", dateError);
+        }
+        
+        const processedText = updateHashtagsInPost(post);
+        
+        profileReposts.innerHTML += `
+          <div class="post fade" id="repost-${post.id}">
+            <div class="repost-info">
+              <span class="repost-icon">🔄</span>
+              <span>Репостнул <strong>@${user.username}</strong></span>
+              <span class="pinned-badge">📌 Закреплено</span>
+              ${isOwnProfile ? `
+                <button class="pin-btn pinned" onclick="event.stopPropagation(); togglePinRepost('${post.id}')" title="Открепить">
+                  📌
+                </button>
+              ` : ''}
+            </div>
+            <div class="post-header">
+              <div class="avatar">${post.username?.[0]||"A"}</div>
+              <div class="post-user-info">
+                <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
+                  @${post.username}
+                  ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+                </div>
+                <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+              </div>
+              ${post.userId !== currentUser.uid ? 
+                `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
+                        onclick="event.stopPropagation(); toggleSubscribe('${post.userId}', '${post.username}')"
+                        style="margin-right:8px">
+                  ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
+                </button>` : ''}
+            </div>
+            <div class="post-text">${processedText}</div>
+            <div class="post-actions">
+              <button class="action ${liked ? "liked" : ""}" onclick="event.stopPropagation(); toggleLike('${post.id}')">
+                ${liked ? "❤️" : "🤍"} <span id="repost-likes-${post.id}">${post.likes || 0}</span>
+              </button>
+              <button class="action" onclick="event.stopPropagation(); openComments('${post.id}')">
+                💬 ${post.commentsCount || 0}
+              </button>
+              <button class="action ${isReposted ? "reposted" : ""}" onclick="event.stopPropagation(); toggleRepost('${post.id}')">
+                🔄 <span id="repost-reposts-${post.id}">${post.reposts || 0}</span>
+              </button>
+              <button class="action viewed" title="Просмотры">
+                👁️ ${post.views || 0}
+              </button>
+            </div>
+          </div>`;
+      });
+      
+      // Добавляем разделитель если есть и обычные репосты
+      if (regularPosts.length > 0) {
+        profileReposts.innerHTML += `
+          <div class="reposts-divider">
+            <span>Все репосты</span>
+          </div>
+        `;
+      }
+    }
+    
+    // Отображаем обычные репосты
+    regularPosts.forEach(post => {
       const isAdmin = adminUsers.has(post.userId);
       const liked = post.likedBy?.includes(currentUser.uid);
       const isReposted = userData.reposts?.includes(post.id) || false;
+      const isOwnProfile = uid === currentUser.uid;
       
       let timeAgo = "только что";
       let fullDateTime = "";
@@ -2723,6 +2989,11 @@ async function refreshProfileReposts(uid) {
           <div class="repost-info">
             <span class="repost-icon">🔄</span>
             <span>Репостнул <strong>@${user.username}</strong></span>
+            ${isOwnProfile ? `
+              <button class="pin-btn" onclick="event.stopPropagation(); togglePinRepost('${post.id}')" title="Закрепить">
+                📌
+              </button>
+            ` : ''}
           </div>
           <div class="post-header">
             <div class="avatar">${post.username?.[0]||"A"}</div>
@@ -2847,6 +3118,20 @@ async function deletePostFromProfile(postId, userId) {
     });
     
     await batch.commit();
+    
+    // Удаляем пост из закрепленных репостов пользователей
+    const usersWithPinnedRepost = await db.collection("users")
+      .where("pinnedReposts", "array-contains", postId)
+      .get();
+    
+    const batch2 = db.batch();
+    usersWithPinnedRepost.forEach(doc => {
+      batch2.update(doc.ref, {
+        pinnedReposts: firebase.firestore.FieldValue.arrayRemove(postId)
+      });
+    });
+    
+    await batch2.commit();
     
     // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();

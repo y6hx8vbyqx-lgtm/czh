@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация - czhmass.com</title>
+    <title>czhmass - Вход / Регистрация</title>
     <meta name="theme-color" content="#24292e">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icon-192.png">
@@ -50,36 +50,100 @@
         @media (max-width:768px){.container{padding:130px 15px 40px}.dynamic-island{width:110px;height:32px;top:10px}.auth-card{padding:25px}.logo{font-size:32px}.form-title{font-size:22px}.btn{padding:16px;font-size:15px}.input-field{padding:14px}}
         @media (max-width:480px){.container{padding:120px 12px 30px}.auth-card{padding:20px}.logo{font-size:28px}.form-title{font-size:20px;margin-bottom:25px}.btn{padding:15px}}
         @media (max-width:360px){.container{padding:110px 10px 20px}.dynamic-island{width:100px;height:30px;font-size:13px}.logo{font-size:24px}}
+        
+        /* Дополнительные стили для вкладок */
+        .login-tabs{display:flex;margin-bottom:25px;border-bottom:1px solid rgba(255,255,255,0.1)}
+        .login-tab{flex:1;text-align:center;padding:12px;cursor:pointer;color:rgba(255,255,255,0.5);font-weight:600;transition:all 0.2s}
+        .login-tab.active{color:#667eea;border-bottom:2px solid #667eea}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
     </style>
 </head>
 <body>
     <div class="dynamic-island"><span class="island-time" id="currentTime">--:--</span></div>
     <div class="container">
-        <div class="header"><div class="logo">czhmass</div><div class="subtitle">Анонимная социальная сеть.<br>Ваша приватность — наш приоритет.</div></div>
+        <div class="header">
+            <div class="logo">czhmass</div>
+            <div class="subtitle">Анонимная социальная сеть.<br>Ваша приватность — наш приоритет.</div>
+        </div>
+        
         <div class="auth-card" id="loginForm">
             <h2 class="form-title">Вход в аккаунт</h2>
-            <div class="form-group"><label class="input-label">Email</label><input type="email" id="loginEmail" class="input-field" placeholder="your@email.com"><div class="error-message" id="loginEmailError"></div></div>
-            <div class="form-group"><label class="input-label">Пароль</label><input type="password" id="loginPassword" class="input-field" placeholder="••••••••"><div class="error-message" id="loginPasswordError"></div></div>
+            
+            <!-- Вкладки для входа -->
+            <div class="login-tabs">
+                <div class="login-tab active" onclick="switchLoginTab('email')">Email</div>
+                <div class="login-tab" onclick="switchLoginTab('username')">Username</div>
+            </div>
+            
+            <!-- Вход по Email -->
+            <div id="loginEmailTab" class="tab-content active">
+                <div class="form-group">
+                    <label class="input-label">Email</label>
+                    <input type="email" id="loginEmail" class="input-field" placeholder="your@email.com">
+                    <div class="error-message" id="loginEmailError"></div>
+                </div>
+            </div>
+            
+            <!-- Вход по Username -->
+            <div id="loginUsernameTab" class="tab-content">
+                <div class="form-group">
+                    <label class="input-label">Имя пользователя</label>
+                    <input type="text" id="loginUsername" class="input-field" placeholder="@username">
+                    <div class="error-message" id="loginUsernameError"></div>
+                </div>
+            </div>
+            
+            <!-- Пароль общий для обоих способов -->
+            <div class="form-group">
+                <label class="input-label">Пароль</label>
+                <input type="password" id="loginPassword" class="input-field" placeholder="••••••••">
+                <div class="error-message" id="loginPasswordError"></div>
+            </div>
+            
             <button class="btn btn-primary" onclick="login()" id="loginButton">Войти в аккаунт</button>
-            <div class="form-switch"><div class="switch-text">Нет аккаунта?</div><button class="switch-link" onclick="showRegisterForm()">Создать новый аккаунт</button></div>
+            
+            <div class="form-switch">
+                <div class="switch-text">Нет аккаунта?</div>
+                <button class="switch-link" onclick="showRegisterForm()">Создать новый аккаунт</button>
+            </div>
             <div class="loading" id="loginLoading">Вход...</div>
         </div>
+        
         <div class="auth-card" id="registerForm" style="display:none">
             <h2 class="form-title">Создать аккаунт</h2>
-            <div class="form-group"><label class="input-label">Имя пользователя</label><input type="text" id="registerUsername" class="input-field" placeholder="Придумайте имя" maxlength="20"><div class="error-message" id="usernameError"></div></div>
-            <div class="form-group"><label class="input-label">Email</label><input type="email" id="registerEmail" class="input-field" placeholder="your@email.com"><div class="error-message" id="emailError"></div></div>
-            <div class="form-group"><label class="input-label">Пароль</label><input type="password" id="registerPassword" class="input-field" placeholder="Минимум 6 символов"><div class="error-message" id="passwordError"></div></div>
-            <div class="checkbox-group"><input type="checkbox" id="termsCheckbox" class="checkbox"><label for="termsCheckbox" class="checkbox-label">Я согласен с условиями использования и политикой конфиденциальности</label></div>
+            <div class="form-group">
+                <label class="input-label">Имя пользователя</label>
+                <input type="text" id="registerUsername" class="input-field" placeholder="@username" maxlength="20">
+                <div class="error-message" id="usernameError"></div>
+            </div>
+            <div class="form-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="registerEmail" class="input-field" placeholder="your@email.com">
+                <div class="error-message" id="emailError"></div>
+            </div>
+            <div class="form-group">
+                <label class="input-label">Пароль</label>
+                <input type="password" id="registerPassword" class="input-field" placeholder="Минимум 6 символов">
+                <div class="error-message" id="passwordError"></div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="termsCheckbox" class="checkbox">
+                <label for="termsCheckbox" class="checkbox-label">Я согласен с условиями использования и политикой конфиденциальности</label>
+            </div>
             <button class="btn btn-primary" onclick="register()" id="registerButton">Создать аккаунт</button>
-            <div class="form-switch"><div class="switch-text">Уже есть аккаунт?</div><button class="switch-link" onclick="showLoginForm()">Войти в существующий</button></div>
+            <div class="form-switch">
+                <div class="switch-text">Уже есть аккаунт?</div>
+                <button class="switch-link" onclick="showLoginForm()">Войти в существующий</button>
+            </div>
             <div class="loading" id="registerLoading">Регистрация...</div>
         </div>
+        
         <div id="message" class="message"></div>
     </div>
+
     <script>
-        // PWA теги уже в head - больше ничего не нужно
-        
-        // ===== FIREBASE =====
+        // ===== FIREBASE КОНФИГУРАЦИЯ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
             authDomain: "czhmass.firebaseapp.com",
@@ -97,7 +161,50 @@
         db = firebase.firestore();
         auth = firebase.auth();
         
-        // ===== ФУНКЦИИ =====
+        // Кэш для быстрого поиска username -> email
+        let usernameCache = new Map();
+        
+        // ===== ЗАГРУЗКА КЭША USERNAME =====
+        async function loadUsernameCache() {
+            try {
+                const snapshot = await db.collection('users').get();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.username) {
+                        usernameCache.set(data.username.toLowerCase(), {
+                            uid: doc.id,
+                            email: data.email
+                        });
+                    }
+                });
+                console.log(`✅ Загружено ${usernameCache.size} username в кэш`);
+            } catch (error) {
+                console.error('❌ Ошибка загрузки кэша:', error);
+            }
+        }
+        loadUsernameCache();
+        
+        // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ВХОДА =====
+        window.switchLoginTab = function(tab) {
+            const tabs = document.querySelectorAll('.login-tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'email') {
+                tabs[0].classList.add('active');
+                document.getElementById('loginEmailTab').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('loginUsernameTab').classList.add('active');
+            }
+            
+            // Очищаем ошибки
+            clearErrors();
+        }
+        
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
@@ -105,6 +212,7 @@
             messageDiv.style.display = 'block';
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
+        
         function clearErrors() {
             const errors = document.querySelectorAll('.error-message');
             errors.forEach(error => {
@@ -114,62 +222,64 @@
             const inputs = document.querySelectorAll('.input-field');
             inputs.forEach(input => input.classList.remove('error'));
         }
+        
         function showLoginForm() {
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('registerForm').style.display = 'none';
             clearErrors();
         }
+        
         function showRegisterForm() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
             clearErrors();
         }
+        
         function validateEmail(email) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return re.test(email);
         }
+        
+        function validateUsername(username) {
+            const re = /^[a-zA-Z0-9_]{3,20}$/;
+            return re.test(username);
+        }
+        
         function showError(elementId, message) {
             const errorElement = document.getElementById(elementId);
             const inputElement = document.getElementById(elementId.replace('Error', ''));
             errorElement.textContent = message;
             errorElement.style.display = 'block';
-            inputElement.classList.add('error');
+            if (inputElement) inputElement.classList.add('error');
         }
         
-        // ===== ВХОД =====
-        async function login() {
-            clearErrors();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const loginButton = document.getElementById('loginButton');
-            const loading = document.getElementById('loginLoading');
+        // ===== ПРОВЕРКА УНИКАЛЬНОСТИ USERNAME =====
+        async function isUsernameAvailable(username) {
+            const normalized = username.toLowerCase();
             
-            if (!email) { showError('loginEmailError', 'Введите email'); return; }
-            if (!validateEmail(email)) { showError('loginEmailError', 'Некорректный email'); return; }
-            if (!password) { showError('loginPasswordError', 'Введите пароль'); return; }
+            // Сначала проверяем в кэше
+            if (usernameCache.has(normalized)) {
+                return false;
+            }
             
-            loginButton.disabled = true;
-            loading.style.display = 'block';
-            
+            // Затем проверяем в Firestore
             try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                showMessage(`Добро пожаловать, ${userCredential.user.email}!`, 'success');
-                setTimeout(() => { window.location.href = '/feed.html'; }, 1500);
+                const snapshot = await db.collection('users')
+                    .where('username_lower', '==', normalized)
+                    .limit(1)
+                    .get();
+                
+                return snapshot.empty;
             } catch (error) {
-                console.error('❌ Ошибка входа:', error);
-                let errorMessage = 'Ошибка входа';
-                if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
-                else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
-                showMessage(errorMessage, 'error');
-            } finally {
-                loginButton.disabled = false;
-                loading.style.display = 'none';
+                console.error('Ошибка проверки username:', error);
+                return false;
             }
         }
         
         // ===== РЕГИСТРАЦИЯ =====
         async function register() {
             clearErrors();
+            
             const username = document.getElementById('registerUsername').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value;
@@ -177,38 +287,266 @@
             const registerButton = document.getElementById('registerButton');
             const loading = document.getElementById('registerLoading');
             
-            if (!username) { showError('usernameError', 'Введите имя'); return; }
-            if (username.length < 3) { showError('usernameError', 'Имя от 3 символов'); return; }
+            // Валидация
+            if (!username) { showError('usernameError', 'Введите имя пользователя'); return; }
+            if (!validateUsername(username)) { 
+                showError('usernameError', 'Только буквы, цифры и _, от 3 до 20 символов'); 
+                return; 
+            }
             if (!email) { showError('emailError', 'Введите email'); return; }
             if (!validateEmail(email)) { showError('emailError', 'Некорректный email'); return; }
             if (!password) { showError('passwordError', 'Введите пароль'); return; }
             if (password.length < 6) { showError('passwordError', 'Пароль от 6 символов'); return; }
-            if (!termsCheckbox.checked) { showMessage('Примите условия', 'error'); return; }
+            if (!termsCheckbox.checked) { showMessage('Примите условия использования', 'error'); return; }
             
             registerButton.disabled = true;
             loading.style.display = 'block';
             
             try {
+                // Проверяем уникальность username
+                const available = await isUsernameAvailable(username);
+                if (!available) {
+                    showError('usernameError', 'Это имя пользователя уже занято');
+                    registerButton.disabled = false;
+                    loading.style.display = 'none';
+                    return;
+                }
+                
+                // Создаем пользователя в Firebase Auth
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
+                
+                // Сохраняем профиль в Firestore
                 await db.collection('users').doc(user.uid).set({
                     username: username,
+                    username_lower: username.toLowerCase(),
                     email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    displayName: username, // Для обратной совместимости
+                    bio: '',
+                    avatar: ''
                 });
+                
+                // Обновляем кэш
+                usernameCache.set(username.toLowerCase(), {
+                    uid: user.uid,
+                    email: email
+                });
+                
+                // Сохраняем данные в localStorage для быстрого доступа
+                localStorage.setItem('czhmass_user', JSON.stringify({
+                    uid: user.uid,
+                    username: username,
+                    email: email
+                }));
+                
                 showMessage(`Аккаунт создан! Добро пожаловать, ${username}!`, 'success');
-                setTimeout(() => { window.location.href = '/feed.html'; }, 1500);
+                
+                // Перенаправляем на ленту
+                setTimeout(() => { 
+                    window.location.href = '/feed.html'; 
+                }, 1500);
+                
             } catch (error) {
                 console.error('❌ Ошибка регистрации:', error);
                 let errorMessage = 'Ошибка регистрации';
-                if (error.code === 'auth/email-already-in-use') errorMessage = 'Email уже используется';
-                else if (error.code === 'auth/weak-password') errorMessage = 'Пароль слишком слабый';
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Этот email уже используется';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'Пароль слишком слабый';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Некорректный email';
+                }
+                
                 showMessage(errorMessage, 'error');
+                
+                // Если пользователь создался, но не сохранился в Firestore
+                if (error.code === 'permission-denied' || error.code === 'unavailable') {
+                    try {
+                        await auth.currentUser?.delete();
+                    } catch (e) {}
+                }
+                
             } finally {
                 registerButton.disabled = false;
                 loading.style.display = 'none';
             }
         }
+        
+        // ===== ВХОД =====
+        async function login() {
+            clearErrors();
+            
+            const password = document.getElementById('loginPassword').value;
+            const loginButton = document.getElementById('loginButton');
+            const loading = document.getElementById('loginLoading');
+            
+            // Определяем активный таб
+            const activeTab = document.querySelector('.login-tab.active');
+            const isEmailTab = activeTab?.textContent === 'Email';
+            
+            let email;
+            let username;
+            
+            if (isEmailTab) {
+                email = document.getElementById('loginEmail').value.trim();
+            } else {
+                username = document.getElementById('loginUsername').value.trim();
+            }
+            
+            // Валидация
+            if (isEmailTab) {
+                if (!email) { showError('loginEmailError', 'Введите email'); return; }
+                if (!validateEmail(email)) { showError('loginEmailError', 'Некорректный email'); return; }
+            } else {
+                if (!username) { showError('loginUsernameError', 'Введите имя пользователя'); return; }
+            }
+            
+            if (!password) { showError('loginPasswordError', 'Введите пароль'); return; }
+            
+            loginButton.disabled = true;
+            loading.style.display = 'block';
+            
+            try {
+                // Если вход по username - конвертируем в email
+                if (!isEmailTab) {
+                    const normalized = username.toLowerCase();
+                    
+                    // Проверяем кэш
+                    const cached = usernameCache.get(normalized);
+                    
+                    if (cached?.email) {
+                        email = cached.email;
+                    } else {
+                        // Ищем в Firestore
+                        const snapshot = await db.collection('users')
+                            .where('username_lower', '==', normalized)
+                            .limit(1)
+                            .get();
+                        
+                        if (snapshot.empty) {
+                            showError('loginUsernameError', 'Пользователь не найден');
+                            loginButton.disabled = false;
+                            loading.style.display = 'none';
+                            return;
+                        }
+                        
+                        const userData = snapshot.docs[0].data();
+                        email = userData.email;
+                        
+                        // Обновляем кэш
+                        usernameCache.set(normalized, {
+                            uid: snapshot.docs[0].id,
+                            email: email
+                        });
+                    }
+                }
+                
+                // Вход в Firebase Auth
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Обновляем время последнего входа
+                await db.collection('users').doc(user.uid).update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(() => {}); // Игнорируем ошибки обновления
+                
+                // Получаем username пользователя
+                let userDoc;
+                try {
+                    userDoc = await db.collection('users').doc(user.uid).get();
+                } catch (e) {
+                    console.error('Ошибка получения профиля:', e);
+                }
+                
+                const userData = userDoc?.data() || {};
+                const displayUsername = userData.username || username || user.email?.split('@')[0];
+                
+                // Сохраняем в localStorage
+                localStorage.setItem('czhmass_user', JSON.stringify({
+                    uid: user.uid,
+                    username: displayUsername,
+                    email: user.email
+                }));
+                
+                showMessage(`Добро пожаловать, ${displayUsername}!`, 'success');
+                
+                // Перенаправляем
+                setTimeout(() => { 
+                    window.location.href = '/feed.html'; 
+                }, 1500);
+                
+            } catch (error) {
+                console.error('❌ Ошибка входа:', error);
+                let errorMessage = 'Ошибка входа';
+                
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'Пользователь не найден';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = 'Неверный пароль';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Некорректный email';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMessage = 'Слишком много попыток. Попробуйте позже';
+                }
+                
+                showMessage(errorMessage, 'error');
+                
+            } finally {
+                loginButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        // ===== ОБНОВЛЕНИЕ USERNAME =====
+        // Функция для смены username (будет вызываться из профиля)
+        window.updateUsername = async function(newUsername, userId) {
+            if (!validateUsername(newUsername)) {
+                throw new Error('Некорректное имя пользователя');
+            }
+            
+            const available = await isUsernameAvailable(newUsername);
+            if (!available) {
+                throw new Error('Имя пользователя занято');
+            }
+            
+            // Обновляем в Firestore
+            await db.collection('users').doc(userId).update({
+                username: newUsername,
+                username_lower: newUsername.toLowerCase(),
+                displayName: newUsername
+            });
+            
+            // Обновляем кэш
+            usernameCache.set(newUsername.toLowerCase(), {
+                uid: userId,
+                email: auth.currentUser?.email
+            });
+            
+            // Обновляем localStorage
+            const userData = JSON.parse(localStorage.getItem('czhmass_user') || '{}');
+            userData.username = newUsername;
+            localStorage.setItem('czhmass_user', JSON.stringify(userData));
+            
+            return true;
+        };
+        
+        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+        auth.onAuthStateChanged((user) => {
+            if (user && window.location.pathname.includes('login') || 
+                window.location.pathname === '/' || 
+                window.location.pathname.includes('register')) {
+                
+                // Если пользователь уже вошел, редирект на ленту
+                if (window.location.pathname.includes('login') || 
+                    window.location.pathname.includes('register') || 
+                    window.location.pathname === '/') {
+                    window.location.href = '/feed.html';
+                }
+            }
+        });
         
         // ===== ЧАСЫ =====
         function updateTime() {
@@ -219,6 +557,14 @@
         }
         setInterval(updateTime, 1000);
         updateTime();
+        
+        // ===== ЗАГРУЗКА ПРИ СТАРТЕ =====
+        window.addEventListener('load', () => {
+            loadUsernameCache();
+            
+            // Очищаем форму при загрузке
+            clearErrors();
+        });
     </script>
 </body>
 </html>

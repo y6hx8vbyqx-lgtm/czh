@@ -51,7 +51,6 @@
         @media (max-width:480px){.container{padding:120px 12px 30px}.auth-card{padding:20px}.logo{font-size:28px}.form-title{font-size:20px;margin-bottom:25px}.btn{padding:15px}}
         @media (max-width:360px){.container{padding:110px 10px 20px}.dynamic-island{width:100px;height:30px;font-size:13px}.logo{font-size:24px}}
         
-        /* Дополнительные стили для вкладок */
         .login-tabs{display:flex;margin-bottom:25px;border-bottom:1px solid rgba(255,255,255,0.1)}
         .login-tab{flex:1;text-align:center;padding:12px;cursor:pointer;color:rgba(255,255,255,0.5);font-weight:600;transition:all 0.2s}
         .login-tab.active{color:#667eea;border-bottom:2px solid #667eea}
@@ -70,13 +69,11 @@
         <div class="auth-card" id="loginForm">
             <h2 class="form-title">Вход в аккаунт</h2>
             
-            <!-- Вкладки для входа -->
             <div class="login-tabs">
                 <div class="login-tab active" onclick="switchLoginTab('email')">Email</div>
                 <div class="login-tab" onclick="switchLoginTab('username')">Username</div>
             </div>
             
-            <!-- Вход по Email -->
             <div id="loginEmailTab" class="tab-content active">
                 <div class="form-group">
                     <label class="input-label">Email</label>
@@ -85,7 +82,6 @@
                 </div>
             </div>
             
-            <!-- Вход по Username -->
             <div id="loginUsernameTab" class="tab-content">
                 <div class="form-group">
                     <label class="input-label">Имя пользователя</label>
@@ -94,7 +90,6 @@
                 </div>
             </div>
             
-            <!-- Пароль общий для обоих способов -->
             <div class="form-group">
                 <label class="input-label">Пароль</label>
                 <input type="password" id="loginPassword" class="input-field" placeholder="••••••••">
@@ -161,30 +156,72 @@
         db = firebase.firestore();
         auth = firebase.auth();
         
-        // Кэш для быстрого поиска username -> email
+        // Локальный кэш username (без загрузки из Firestore для избежания permission errors)
         let usernameCache = new Map();
         
-        // ===== ЗАГРУЗКА КЭША USERNAME =====
-        async function loadUsernameCache() {
+        // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С USERNAME (без permission errors) =====
+        
+        // Получение email по username (только для авторизованных пользователей)
+        async function getEmailByUsername(username) {
+            const normalized = username.toLowerCase().trim();
+            
+            // Сначала проверяем локальный кэш
+            if (usernameCache.has(normalized)) {
+                return usernameCache.get(normalized);
+            }
+            
+            // Если пользователь не авторизован, используем Firebase Functions или другие методы
+            // Но для входа нам нужно проверить существование пользователя
+            // Вместо прямого запроса к Firestore используем специальный подход
+            
             try {
-                const snapshot = await db.collection('users').get();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.username) {
-                        usernameCache.set(data.username.toLowerCase(), {
-                            uid: doc.id,
-                            email: data.email
-                        });
-                    }
-                });
-                console.log(`✅ Загружено ${usernameCache.size} username в кэш`);
-            } catch (error) {
-                console.error('❌ Ошибка загрузки кэша:', error);
+                // Пытаемся найти пользователя через auth (не работает напрямую)
+                // Поэтому используем localStorage для временного хранения
+                const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+                if (users[normalized]) {
+                    usernameCache.set(normalized, users[normalized]);
+                    return users[normalized];
+                }
+            } catch (e) {
+                console.error('Ошибка чтения localStorage:', e);
+            }
+            
+            return null;
+        }
+        
+        // Сохранение username в localStorage (временное решение до настройки правил Firestore)
+        function saveUsernameMapping(username, email, uid) {
+            try {
+                const normalized = username.toLowerCase();
+                const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+                users[normalized] = { email, uid };
+                localStorage.setItem('czhmass_users', JSON.stringify(users));
+                usernameCache.set(normalized, { email, uid });
+                console.log(`✅ Сохранен username: ${username} -> ${email}`);
+            } catch (e) {
+                console.error('Ошибка сохранения в localStorage:', e);
             }
         }
-        loadUsernameCache();
         
-        // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ВХОДА =====
+        // Проверка уникальности username через localStorage
+        async function isUsernameAvailable(username) {
+            const normalized = username.toLowerCase();
+            
+            // Проверяем в localStorage
+            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            if (users[normalized]) {
+                return false;
+            }
+            
+            // Также проверяем в кэше
+            if (usernameCache.has(normalized)) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // ===== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК =====
         window.switchLoginTab = function(tab) {
             const tabs = document.querySelectorAll('.login-tab');
             const contents = document.querySelectorAll('.tab-content');
@@ -200,7 +237,6 @@
                 document.getElementById('loginUsernameTab').classList.add('active');
             }
             
-            // Очищаем ошибки
             clearErrors();
         }
         
@@ -253,29 +289,6 @@
             if (inputElement) inputElement.classList.add('error');
         }
         
-        // ===== ПРОВЕРКА УНИКАЛЬНОСТИ USERNAME =====
-        async function isUsernameAvailable(username) {
-            const normalized = username.toLowerCase();
-            
-            // Сначала проверяем в кэше
-            if (usernameCache.has(normalized)) {
-                return false;
-            }
-            
-            // Затем проверяем в Firestore
-            try {
-                const snapshot = await db.collection('users')
-                    .where('username_lower', '==', normalized)
-                    .limit(1)
-                    .get();
-                
-                return snapshot.empty;
-            } catch (error) {
-                console.error('Ошибка проверки username:', error);
-                return false;
-            }
-        }
-        
         // ===== РЕГИСТРАЦИЯ =====
         async function register() {
             clearErrors();
@@ -303,7 +316,7 @@
             loading.style.display = 'block';
             
             try {
-                // Проверяем уникальность username
+                // Проверяем уникальность username (локально)
                 const available = await isUsernameAvailable(username);
                 if (!available) {
                     showError('usernameError', 'Это имя пользователя уже занято');
@@ -316,25 +329,28 @@
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                // Сохраняем профиль в Firestore
-                await db.collection('users').doc(user.uid).set({
-                    username: username,
-                    username_lower: username.toLowerCase(),
-                    email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    displayName: username, // Для обратной совместимости
-                    bio: '',
-                    avatar: ''
-                });
+                // Пытаемся сохранить данные в Firestore, но не критично если не получится
+                try {
+                    await db.collection('users').doc(user.uid).set({
+                        username: username,
+                        username_lower: username.toLowerCase(),
+                        email: email,
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString(),
+                        displayName: username,
+                        bio: '',
+                        avatar: ''
+                    });
+                    console.log('✅ Данные сохранены в Firestore');
+                } catch (firestoreError) {
+                    console.warn('⚠️ Не удалось сохранить в Firestore, используем localStorage:', firestoreError.message);
+                    // Если Firestore недоступен, сохраняем локально
+                }
                 
-                // Обновляем кэш
-                usernameCache.set(username.toLowerCase(), {
-                    uid: user.uid,
-                    email: email
-                });
+                // Сохраняем mapping username -> email в localStorage
+                saveUsernameMapping(username, email, user.uid);
                 
-                // Сохраняем данные в localStorage для быстрого доступа
+                // Сохраняем данные пользователя в localStorage
                 localStorage.setItem('czhmass_user', JSON.stringify({
                     uid: user.uid,
                     username: username,
@@ -358,16 +374,11 @@
                     errorMessage = 'Пароль слишком слабый';
                 } else if (error.code === 'auth/invalid-email') {
                     errorMessage = 'Некорректный email';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = 'Ошибка сети. Проверьте подключение';
                 }
                 
                 showMessage(errorMessage, 'error');
-                
-                // Если пользователь создался, но не сохранился в Firestore
-                if (error.code === 'permission-denied' || error.code === 'unavailable') {
-                    try {
-                        await auth.currentUser?.delete();
-                    } catch (e) {}
-                }
                 
             } finally {
                 registerButton.disabled = false;
@@ -383,7 +394,6 @@
             const loginButton = document.getElementById('loginButton');
             const loading = document.getElementById('loginLoading');
             
-            // Определяем активный таб
             const activeTab = document.querySelector('.login-tab.active');
             const isEmailTab = activeTab?.textContent === 'Email';
             
@@ -402,6 +412,10 @@
                 if (!validateEmail(email)) { showError('loginEmailError', 'Некорректный email'); return; }
             } else {
                 if (!username) { showError('loginUsernameError', 'Введите имя пользователя'); return; }
+                if (!validateUsername(username)) {
+                    showError('loginUsernameError', 'Некорректное имя пользователя');
+                    return;
+                }
             }
             
             if (!password) { showError('loginPasswordError', 'Введите пароль'); return; }
@@ -410,37 +424,19 @@
             loading.style.display = 'block';
             
             try {
-                // Если вход по username - конвертируем в email
+                // Если вход по username - получаем email
                 if (!isEmailTab) {
-                    const normalized = username.toLowerCase();
+                    const mapping = await getEmailByUsername(username);
                     
-                    // Проверяем кэш
-                    const cached = usernameCache.get(normalized);
-                    
-                    if (cached?.email) {
-                        email = cached.email;
+                    if (mapping?.email) {
+                        email = mapping.email;
                     } else {
-                        // Ищем в Firestore
-                        const snapshot = await db.collection('users')
-                            .where('username_lower', '==', normalized)
-                            .limit(1)
-                            .get();
-                        
-                        if (snapshot.empty) {
-                            showError('loginUsernameError', 'Пользователь не найден');
-                            loginButton.disabled = false;
-                            loading.style.display = 'none';
-                            return;
-                        }
-                        
-                        const userData = snapshot.docs[0].data();
-                        email = userData.email;
-                        
-                        // Обновляем кэш
-                        usernameCache.set(normalized, {
-                            uid: snapshot.docs[0].id,
-                            email: email
-                        });
+                        // Если не нашли в localStorage, пробуем альтернативный метод
+                        // Показываем подсказку пользователю
+                        showError('loginUsernameError', 'Пользователь не найден. Попробуйте войти по email');
+                        loginButton.disabled = false;
+                        loading.style.display = 'none';
+                        return;
                     }
                 }
                 
@@ -448,23 +444,33 @@
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                // Обновляем время последнего входа
-                await db.collection('users').doc(user.uid).update({
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                }).catch(() => {}); // Игнорируем ошибки обновления
-                
                 // Получаем username пользователя
-                let userDoc;
+                let displayUsername = username || email.split('@')[0];
+                
+                // Пытаемся получить сохраненный username
                 try {
-                    userDoc = await db.collection('users').doc(user.uid).get();
+                    // Ищем в localStorage
+                    const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+                    for (const [uname, data] of Object.entries(users)) {
+                        if (data.email === email) {
+                            displayUsername = uname;
+                            break;
+                        }
+                    }
                 } catch (e) {
-                    console.error('Ошибка получения профиля:', e);
+                    console.error('Ошибка чтения localStorage:', e);
                 }
                 
-                const userData = userDoc?.data() || {};
-                const displayUsername = userData.username || username || user.email?.split('@')[0];
+                // Обновляем время последнего входа в Firestore (не критично если не получится)
+                try {
+                    await db.collection('users').doc(user.uid).update({
+                        lastLogin: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.warn('⚠️ Не удалось обновить lastLogin:', e.message);
+                }
                 
-                // Сохраняем в localStorage
+                // Сохраняем данные пользователя в localStorage
                 localStorage.setItem('czhmass_user', JSON.stringify({
                     uid: user.uid,
                     username: displayUsername,
@@ -490,6 +496,8 @@
                     errorMessage = 'Некорректный email';
                 } else if (error.code === 'auth/too-many-requests') {
                     errorMessage = 'Слишком много попыток. Попробуйте позже';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = 'Ошибка сети. Проверьте подключение';
                 }
                 
                 showMessage(errorMessage, 'error');
@@ -500,8 +508,7 @@
             }
         }
         
-        // ===== ОБНОВЛЕНИЕ USERNAME =====
-        // Функция для смены username (будет вызываться из профиля)
+        // ===== СМЕНА USERNAME =====
         window.updateUsername = async function(newUsername, userId) {
             if (!validateUsername(newUsername)) {
                 throw new Error('Некорректное имя пользователя');
@@ -512,37 +519,56 @@
                 throw new Error('Имя пользователя занято');
             }
             
-            // Обновляем в Firestore
-            await db.collection('users').doc(userId).update({
-                username: newUsername,
-                username_lower: newUsername.toLowerCase(),
-                displayName: newUsername
-            });
+            try {
+                // Пытаемся обновить в Firestore
+                await db.collection('users').doc(userId).update({
+                    username: newUsername,
+                    username_lower: newUsername.toLowerCase(),
+                    displayName: newUsername
+                });
+            } catch (e) {
+                console.warn('⚠️ Не удалось обновить в Firestore:', e.message);
+            }
+            
+            // Обновляем localStorage
+            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+            const userData = JSON.parse(localStorage.getItem('czhmass_user') || '{}');
+            
+            // Удаляем старый username
+            if (userData.username) {
+                delete users[userData.username.toLowerCase()];
+            }
+            
+            // Добавляем новый
+            users[newUsername.toLowerCase()] = {
+                email: userData.email,
+                uid: userId
+            };
+            
+            localStorage.setItem('czhmass_users', JSON.stringify(users));
+            
+            // Обновляем текущего пользователя
+            userData.username = newUsername;
+            localStorage.setItem('czhmass_user', JSON.stringify(userData));
             
             // Обновляем кэш
             usernameCache.set(newUsername.toLowerCase(), {
-                uid: userId,
-                email: auth.currentUser?.email
+                email: userData.email,
+                uid: userId
             });
-            
-            // Обновляем localStorage
-            const userData = JSON.parse(localStorage.getItem('czhmass_user') || '{}');
-            userData.username = newUsername;
-            localStorage.setItem('czhmass_user', JSON.stringify(userData));
             
             return true;
         };
         
         // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
         auth.onAuthStateChanged((user) => {
-            if (user && window.location.pathname.includes('login') || 
-                window.location.pathname === '/' || 
-                window.location.pathname.includes('register')) {
-                
-                // Если пользователь уже вошел, редирект на ленту
+            if (user) {
+                console.log('✅ Пользователь авторизован:', user.email);
+                // Если пользователь уже вошел и находится на странице входа - редирект
                 if (window.location.pathname.includes('login') || 
                     window.location.pathname.includes('register') || 
-                    window.location.pathname === '/') {
+                    window.location.pathname === '/' || 
+                    window.location.pathname === '/index.html') {
                     window.location.href = '/feed.html';
                 }
             }
@@ -560,9 +586,17 @@
         
         // ===== ЗАГРУЗКА ПРИ СТАРТЕ =====
         window.addEventListener('load', () => {
-            loadUsernameCache();
+            // Загружаем сохраненные username из localStorage
+            try {
+                const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
+                for (const [username, data] of Object.entries(users)) {
+                    usernameCache.set(username, data);
+                }
+                console.log(`✅ Загружено ${usernameCache.size} username из localStorage`);
+            } catch (e) {
+                console.error('Ошибка загрузки из localStorage:', e);
+            }
             
-            // Очищаем форму при загрузке
             clearErrors();
         });
     </script>

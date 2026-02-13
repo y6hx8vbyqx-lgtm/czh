@@ -735,6 +735,29 @@ body{
 .change-name-btn:hover{
   background:rgba(255,255,255,0.1);
 }
+
+/* Новая кнопка для перехода на profile.html */
+.profile-page-btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.profile-page-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
 .profile-stats{
   display:flex;
   gap:16px;
@@ -1165,6 +1188,10 @@ body{
           <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
           <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
+          <!-- Новая маленькая кнопка для перехода на profile.html (показывается только в своём профиле) -->
+          <button class="profile-page-btn" id="profilePageBtn" onclick="goToProfilePage()" style="display:none">
+            📄 Страница
+          </button>
         </div>
         <div class="profile-stats">
           <div class="profile-stat">
@@ -2455,10 +2482,15 @@ async function openProfile(uid, name) {
   
   // Настраиваем кнопки
   const changeNameBtn = document.getElementById("changeNameBtn");
+  const profilePageBtn = document.getElementById("profilePageBtn");
+  
   if (uid === currentUser.uid) {
     changeNameBtn.style.display = "inline-block";
+    // Показываем кнопку перехода на profile.html только в своём профиле
+    profilePageBtn.style.display = "inline-flex";
   } else {
     changeNameBtn.style.display = "none";
+    profilePageBtn.style.display = "none";
   }
   
   updateProfileSubscribeButton(uid);
@@ -2490,6 +2522,11 @@ async function openCurrentUserProfile() {
   }
   
   await openProfile(currentUser.uid, userData.username);
+}
+
+// Функция для перехода на profile.html
+function goToProfilePage() {
+  location.href = 'profile.html';
 }
 
 // Закрытие профиля

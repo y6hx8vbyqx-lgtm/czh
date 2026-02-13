@@ -1034,14 +1034,14 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
-    <button class="nav-btn" onclick="location.href='profile.html'">👤</button>
+    <!-- Удалена кнопка профиля 👤 из верхней панели -->
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
     <button class="nav-btn chats-btn" onclick="location.href='chats.html'">💬</button>
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>
 
-<!-- Таб бар для переключения ленты -->
+<!-- Таб бар для переключения ленты с добавленной кнопкой профиля -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('all')">
     <div>
@@ -1059,6 +1059,13 @@ body{
     <div>
       <div>🏷️</div>
       <div class="tab-label">Хештеги</div>
+    </div>
+  </button>
+  <!-- Добавлена кнопка профиля в нижнюю панель -->
+  <button class="tab-btn" onclick="openCurrentUserProfile()">
+    <div>
+      <div>👤</div>
+      <div class="tab-label">Профиль</div>
     </div>
   </button>
 </div>
@@ -1785,14 +1792,16 @@ async function getUserIdByUsername(username) {
 function switchTab(tab) {
   currentTab = tab;
   
-  // Обновляем активные кнопки
+  // Обновляем активные кнопки в таб-баре (теперь их 4)
   const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
   const subsTab = document.querySelector('.tab-bar .tab-btn:nth-child(2)');
   const hashtagsTab = document.querySelector('.tab-bar .tab-btn:nth-child(3)');
+  const profileTab = document.querySelector('.tab-bar .tab-btn:nth-child(4)');
   
   allTab.classList.toggle('active', tab === 'all');
   subsTab.classList.toggle('active', tab === 'subscriptions');
   hashtagsTab.classList.toggle('active', tab === 'hashtags');
+  profileTab.classList.remove('active'); // Кнопка профиля не активируется при переключении ленты
   
   // Если возвращаемся из ленты хештега
   if (currentHashtag) {
@@ -2471,6 +2480,16 @@ async function openProfile(uid, name) {
   
   await refreshProfilePosts(uid);
   await refreshProfileReposts(uid);
+}
+
+// Новая функция для открытия профиля текущего пользователя
+async function openCurrentUserProfile() {
+  if (!currentUser || !userData) {
+    showNotification("Данные пользователя еще загружаются...");
+    return;
+  }
+  
+  await openProfile(currentUser.uid, userData.username);
 }
 
 // Закрытие профиля

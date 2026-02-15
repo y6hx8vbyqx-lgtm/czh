@@ -122,6 +122,62 @@ body{
   padding:8px 12px;border-radius:12px;font-size:16px;
 }
 
+/* ===== НОВАЯ КНОПКА ЧАТОВ ===== */
+.chats-btn {
+  background: linear-gradient(145deg, #5ac8fa, #4aa3d4);
+  border: none;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(90, 200, 250, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chats-btn:hover {
+  background: linear-gradient(145deg, #6bc9ff, #5ab0e0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(90, 200, 250, 0.5);
+}
+
+.chats-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(90, 200, 250, 0.4);
+}
+
+.chats-btn .icon {
+  width: 18px;
+  height: 18px;
+  background-color: #000;
+  display: inline-block;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') no-repeat center;
+  mask-size: contain;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') no-repeat center;
+  -webkit-mask-size: contain;
+  transition: transform 0.2s;
+}
+
+.chats-btn:hover .icon {
+  transform: scale(1.1);
+}
+
+@media (max-width: 480px) {
+  .chats-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  .chats-btn .icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 /* Таб бар (iOS стиль) */
 .tab-bar{
   position:fixed;
@@ -563,7 +619,7 @@ body{
   color:var(--bg);
 }
 
-/* Кнопка чата */
+/* Кнопка чата в профиле */
 .chat-btn {
   background: #5ac8fa;
   border: none;
@@ -583,12 +639,6 @@ body{
 .chat-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* Кнопка чатов в навбаре */
-.chats-btn {
-  background: #5ac8fa;
-  color: var(--bg);
 }
 
 /* Стили для репостов */
@@ -1059,7 +1109,11 @@ body{
   <div class="nav-btns">
     <!-- Удалена кнопка профиля 👤 из верхней панели -->
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-    <button class="nav-btn chats-btn" onclick="location.href='chats.html'">💬</button>
+    <!-- НОВАЯ КНОПКА ЧАТОВ: иконка + текст "Чаты" -->
+    <button class="chats-btn" onclick="location.href='chats.html'">
+      <span class="icon"></span>
+      <span>Чаты</span>
+    </button>
     <button class="nav-btn" onclick="logout()">🚪</button>
   </div>
 </div>

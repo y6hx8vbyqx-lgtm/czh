@@ -1609,6 +1609,136 @@ async function startVideoCall() {
   await initializeCall();
 }
 
+async function sendIceCandidate(candidate) {
+  if (!currentCall) return;
+  
+  try {
+    const candidateData = {
+      candidate: candidate.candidate || '',
+      sdpMid: candidate.sdpMid || '',
+      sdpMLineIndex: candidate.sdpMLineIndex || 0,
+      usernameFragment: candidate.usernameFragment || ''
+    };
+    
+    await db.collection('calls').doc(currentCall).collection('iceCandidates').add({
+      candidate: candidateData,
+      sender: currentUser.uid,
+      timestamp: new Date()
+    });
+    console.log('✅ ICE кандидат отправлен:', candidateData);
+  } catch (error) {
+    console.error('Ошибка отправки ICE кандидата:', error);
+  }
+}
+
+function watchCallStatus(callId) {
+  if (callStatusListener) callStatusListener();
+  
+  callStatusListener = db.collection('calls').doc(callId).onSnapshot(async (snapshot) => {
+    const call = snapshot.data();
+    if (!call) return;
+    
+    console.log('Статус звонка:', call.status);
+    
+    if (call.status === 'connected') {
+      document.getElementById('outgoingControls').style.display = 'none';
+      document.getElementById('activeCallControls').style.display = 'flex';
+      if (callType === 'video') {
+        document.getElementById('videoToggleBtn').style.display = 'flex';
+      }
+      startCallTimer();
+      
+      if (localStream) {
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = true;
+          console.log('🔊 Локальное аудио включено');
+        }
+      }
+      
+    } else if (call.status === 'ended') {
+      console.log('Звонок завершен');
+      showNotification('Звонок завершен');
+      cleanupCall();
+      
+    } else if (call.status === 'declined') {
+      console.log('Звонок отклонен');
+      showNotification('Пользователь отклонил звонок');
+      cleanupCall();
+      
+    } else if (call.answer && peerConnection) {
+      console.log('Получен ответ');
+      
+      // Устанавливаем remote description если еще не установлен
+      if (!peerConnection.currentRemoteDescription) {
+        try {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
+          console.log('✅ Remote description установлен');
+          
+          // Добавляем накопленные ICE кандидаты
+          console.log('Добавление накопленных ICE кандидатов:', pendingIceCandidates.length);
+          for (const candidateData of pendingIceCandidates) {
+            try {
+              const candidate = new RTCIceCandidate({
+                candidate: candidateData.candidate || '',
+                sdpMid: candidateData.sdpMid || '',
+                sdpMLineIndex: candidateData.sdpMLineIndex || 0,
+                usernameFragment: candidateData.usernameFragment || ''
+              });
+              await peerConnection.addIceCandidate(candidate);
+              console.log('✅ Накопленный ICE кандидат добавлен');
+            } catch (e) {
+              console.error('Ошибка добавления накопленного ICE кандидата:', e);
+            }
+          }
+          pendingIceCandidates = [];
+        } catch (e) {
+          console.error('Ошибка установки remote description:', e);
+        }
+      }
+    }
+  });
+  
+  // Слушаем ICE кандидаты
+  if (iceCandidateListener) iceCandidateListener();
+  
+  iceCandidateListener = db.collection('calls').doc(callId).collection('iceCandidates')
+    .orderBy('timestamp', 'asc')
+    .onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added' && peerConnection) {
+          const data = change.doc.data();
+          if (data.sender !== currentUser.uid) {
+            console.log('📦 Получен ICE кандидат от собеседника');
+            
+            try {
+              const candidateData = data.candidate;
+              
+              // Проверяем, установлен ли remote description
+              if (!peerConnection.remoteDescription) {
+                console.log('⚠️ Remote description еще не установлен, сохраняем ICE кандидат');
+                pendingIceCandidates.push(candidateData);
+                return;
+              }
+              
+              const candidate = new RTCIceCandidate({
+                candidate: candidateData.candidate || '',
+                sdpMid: candidateData.sdpMid || '',
+                sdpMLineIndex: candidateData.sdpMLineIndex || 0,
+                usernameFragment: candidateData.usernameFragment || ''
+              });
+              
+              await peerConnection.addIceCandidate(candidate);
+              console.log('✅ ICE кандидат добавлен');
+            } catch (e) {
+              console.error('Ошибка добавления ICE кандидата:', e);
+            }
+          }
+        }
+      });
+    });
+}
+
 async function initializeCall() {
   try {
     console.log('Инициализация звонка...');
@@ -1646,29 +1776,22 @@ async function initializeCall() {
       console.log('✅ Локальное видео запущено');
     }
     
-    peerConnection = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-      ],
-      iceCandidatePoolSize: 10
-    });
+    peerConnection = new RTCPeerConnection(iceServers);
     
+    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
+    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
       
       const remoteAudioTracks = remoteStream.getAudioTracks();
       if (remoteAudioTracks.length > 0) {
-        console.log('🔊 Удаленный аудио трек получен');
+        console.log('🔊 Удаленный аудио трек получен:', remoteAudioTracks[0].label);
         remoteAudioTracks[0].enabled = true;
       }
       
@@ -1681,6 +1804,7 @@ async function initializeCall() {
       }
     };
     
+    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -1694,10 +1818,17 @@ async function initializeCall() {
     
     peerConnection.oniceconnectionstatechange = () => {
       console.log('🔌 ICE connection state:', peerConnection.iceConnectionState);
+      if (peerConnection.iceConnectionState === 'connected' || 
+          peerConnection.iceConnectionState === 'completed') {
+        console.log('✅ ICE соединение установлено!');
+      }
     };
     
     peerConnection.onconnectionstatechange = () => {
       console.log('🔗 Состояние соединения:', peerConnection.connectionState);
+      if (peerConnection.connectionState === 'connected') {
+        console.log('✅ Соединение установлено!');
+      }
     };
     
     console.log('📞 Создание оффера...');
@@ -1748,126 +1879,6 @@ async function initializeCall() {
     
     cleanupCall();
   }
-}
-
-async function sendIceCandidate(candidate) {
-  if (!currentCall) return;
-  
-  try {
-    const candidateData = {
-      candidate: candidate.candidate || '',
-      sdpMid: candidate.sdpMid || '',
-      sdpMLineIndex: candidate.sdpMLineIndex || 0,
-      usernameFragment: candidate.usernameFragment || ''
-    };
-    
-    await db.collection('calls').doc(currentCall).collection('iceCandidates').add({
-      candidate: candidateData,
-      sender: currentUser.uid,
-      timestamp: new Date()
-    });
-    console.log('✅ ICE кандидат отправлен');
-  } catch (error) {
-    console.error('Ошибка отправки ICE кандидата:', error);
-  }
-}
-
-function watchCallStatus(callId) {
-  if (callStatusListener) callStatusListener();
-  
-  callStatusListener = db.collection('calls').doc(callId).onSnapshot(async (snapshot) => {
-    const call = snapshot.data();
-    if (!call) return;
-    
-    console.log('Статус звонка:', call.status);
-    
-    if (call.status === 'connected') {
-      document.getElementById('outgoingControls').style.display = 'none';
-      document.getElementById('activeCallControls').style.display = 'flex';
-      if (callType === 'video') {
-        document.getElementById('videoToggleBtn').style.display = 'flex';
-      }
-      startCallTimer();
-      
-      if (localStream) {
-        const audioTracks = localStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          audioTracks[0].enabled = true;
-          console.log('🔊 Локальное аудио включено');
-        }
-      }
-      
-    } else if (call.status === 'ended') {
-      console.log('Звонок завершен');
-      showNotification('Звонок завершен');
-      cleanupCall();
-      
-    } else if (call.status === 'declined') {
-      console.log('Звонок отклонен');
-      showNotification('Пользователь отклонил звонок');
-      cleanupCall();
-      
-    } else if (call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-      console.log('Получен ответ');
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
-      
-      // Добавляем накопленные ICE кандидаты
-      console.log('Добавление накопленных ICE кандидатов:', pendingIceCandidates.length);
-      for (const candidateData of pendingIceCandidates) {
-        try {
-          const candidate = new RTCIceCandidate({
-            candidate: candidateData.candidate || '',
-            sdpMid: candidateData.sdpMid || '',
-            sdpMLineIndex: candidateData.sdpMLineIndex || 0,
-            usernameFragment: candidateData.usernameFragment || ''
-          });
-          await peerConnection.addIceCandidate(candidate);
-          console.log('✅ Накопленный ICE кандидат добавлен');
-        } catch (e) {
-          console.error('Ошибка добавления накопленного ICE кандидата:', e);
-        }
-      }
-      pendingIceCandidates = [];
-    }
-  });
-  
-  if (iceCandidateListener) iceCandidateListener();
-  
-  iceCandidateListener = db.collection('calls').doc(callId).collection('iceCandidates')
-    .onSnapshot((snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added' && peerConnection) {
-          const data = change.doc.data();
-          if (data.sender !== currentUser.uid) {
-            console.log('Получен ICE кандидат от собеседника');
-            
-            try {
-              const candidateData = data.candidate;
-              
-              // Если remote description еще не установлен, сохраняем кандидата
-              if (!peerConnection.currentRemoteDescription) {
-                console.log('⚠️ Remote description еще не установлен, сохраняем ICE кандидат');
-                pendingIceCandidates.push(candidateData);
-                return;
-              }
-              
-              const candidate = new RTCIceCandidate({
-                candidate: candidateData.candidate || '',
-                sdpMid: candidateData.sdpMid || '',
-                sdpMLineIndex: candidateData.sdpMLineIndex || 0,
-                usernameFragment: candidateData.usernameFragment || ''
-              });
-              
-              peerConnection.addIceCandidate(candidate)
-                .then(() => console.log('✅ ICE кандидат добавлен'))
-                .catch(e => console.error('Ошибка добавления ICE:', e));
-            } catch (e) {
-              console.error('Ошибка создания ICE кандидата:', e);
-            }
-          }
-        }
-      });
-    });
 }
 
 function showCallModal(mode) {
@@ -1938,6 +1949,7 @@ async function acceptIncomingCall() {
       } : false
     };
     
+    console.log('Запрос медиа с параметрами:', constraints);
     localStream = await navigator.mediaDevices.getUserMedia(constraints);
     console.log('✅ Медиа получены');
     
@@ -1956,47 +1968,69 @@ async function acceptIncomingCall() {
       await localVideo.play().catch(e => console.warn('Ошибка воспроизведения локального видео:', e));
     }
     
-    peerConnection = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-      ]
-    });
+    peerConnection = new RTCPeerConnection(iceServers);
     
+    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
+      console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
+    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
-      console.log('Получен удаленный поток');
+      console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
       
       const remoteAudioTracks = remoteStream.getAudioTracks();
       if (remoteAudioTracks.length > 0) {
-        console.log('🔊 Удаленный аудио трек получен');
+        console.log('🔊 Удаленный аудио трек получен:', remoteAudioTracks[0].label);
         remoteAudioTracks[0].enabled = true;
       }
       
       const remoteVideo = document.getElementById('remoteVideo');
       if (remoteVideo) {
         remoteVideo.srcObject = remoteStream;
-        remoteVideo.play().catch(e => console.warn('Ошибка воспроизведения удаленного видео:', e));
+        remoteVideo.play()
+          .then(() => console.log('✅ Удаленное видео запущено'))
+          .catch(e => console.warn('Ошибка воспроизведения удаленного видео:', e));
       }
     };
     
+    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('📦 Отправка ICE кандидата');
         sendIceCandidate(event.candidate);
       }
     };
     
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+    peerConnection.onicegatheringstatechange = () => {
+      console.log('🔄 ICE gathering state:', peerConnection.iceGatheringState);
+    };
     
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('🔌 ICE connection state:', peerConnection.iceConnectionState);
+      if (peerConnection.iceConnectionState === 'connected' || 
+          peerConnection.iceConnectionState === 'completed') {
+        console.log('✅ ICE соединение установлено!');
+      }
+    };
+    
+    peerConnection.onconnectionstatechange = () => {
+      console.log('🔗 Состояние соединения:', peerConnection.connectionState);
+      if (peerConnection.connectionState === 'connected') {
+        console.log('✅ Соединение установлено!');
+      }
+    };
+    
+    console.log('Установка remote description...');
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+    console.log('✅ Remote description установлен');
+    
+    console.log('Создание ответа...');
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
+    console.log('✅ Ответ создан');
     
     await db.collection('calls').doc(currentCall).update({
       answer: {
@@ -2016,7 +2050,7 @@ async function acceptIncomingCall() {
     watchCallStatus(currentCall);
     
   } catch (error) {
-    console.error('Ошибка принятия звонка:', error);
+    console.error('❌ Ошибка принятия звонка:', error);
     showNotification('Ошибка: ' + error.message);
     cleanupCall();
   }

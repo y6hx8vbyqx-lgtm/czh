@@ -22,6 +22,7 @@
   --success:#30d158;
   --online:#30d158;
   --offline:#8e8e93;
+  --views:#8e8e93;
   --message:#5ac8fa;
   --outgoing-message:#667eea;
   --pinned:#ffd60a;
@@ -1302,6 +1303,7 @@ let incomingCallListener = null;
 let callStatusListener = null;
 let ringtoneAudio = null;
 let iceCandidateListener = null;
+let pendingIceCandidates = [];
 
 const iceServers = {
   iceServers: [
@@ -1349,7 +1351,6 @@ async function testMediaDevices() {
     });
     console.log('✅ Доступ к микрофону получен');
     
-    // Проверяем, что аудио действительно работает
     const audioTrack = audioStream.getAudioTracks()[0];
     if (audioTrack) {
       console.log('🔊 Аудио трек:', audioTrack.label);
@@ -1437,18 +1438,7 @@ async function initializeCall() {
       console.log('🔊 Аудио трек:', audioTracks[0].label);
       console.log('🔊 Аудио трек включен:', audioTracks[0].enabled);
       
-      // Принудительно включаем аудио
       audioTracks[0].enabled = true;
-      
-      // Создаем аудио контекст для разблокировки аудио на iOS
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
-    } else {
-      console.error('❌ Нет аудио трека');
-      showNotification('Ошибка: нет доступа к микрофону');
-      return;
     }
     
     if (callType === 'video') {
@@ -1479,13 +1469,9 @@ async function initializeCall() {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
       
-      // Проверяем аудио треки
       const remoteAudioTracks = remoteStream.getAudioTracks();
       if (remoteAudioTracks.length > 0) {
-        console.log('🔊 Получен удаленный аудио трек:', remoteAudioTracks[0].label);
-        console.log('🔊 Удаленный аудио трек включен:', remoteAudioTracks[0].enabled);
-        
-        // Принудительно включаем удаленное аудио
+        console.log('🔊 Удаленный аудио трек получен');
         remoteAudioTracks[0].enabled = true;
       }
       
@@ -1606,7 +1592,6 @@ function watchCallStatus(callId) {
       }
       startCallTimer();
       
-      // Еще раз проверяем аудио
       if (localStream) {
         const audioTracks = localStream.getAudioTracks();
         if (audioTracks.length > 0) {
@@ -1628,6 +1613,24 @@ function watchCallStatus(callId) {
     } else if (call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
       console.log('Получен ответ');
       await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
+      
+      // Добавляем накопленные ICE кандидаты
+      console.log('Добавление накопленных ICE кандидатов:', pendingIceCandidates.length);
+      for (const candidateData of pendingIceCandidates) {
+        try {
+          const candidate = new RTCIceCandidate({
+            candidate: candidateData.candidate || '',
+            sdpMid: candidateData.sdpMid || '',
+            sdpMLineIndex: candidateData.sdpMLineIndex || 0,
+            usernameFragment: candidateData.usernameFragment || ''
+          });
+          await peerConnection.addIceCandidate(candidate);
+          console.log('✅ Накопленный ICE кандидат добавлен');
+        } catch (e) {
+          console.error('Ошибка добавления накопленного ICE кандидата:', e);
+        }
+      }
+      pendingIceCandidates = [];
     }
   });
   
@@ -1642,11 +1645,20 @@ function watchCallStatus(callId) {
             console.log('Получен ICE кандидат от собеседника');
             
             try {
+              const candidateData = data.candidate;
+              
+              // Если remote description еще не установлен, сохраняем кандидата
+              if (!peerConnection.currentRemoteDescription) {
+                console.log('⚠️ Remote description еще не установлен, сохраняем ICE кандидат');
+                pendingIceCandidates.push(candidateData);
+                return;
+              }
+              
               const candidate = new RTCIceCandidate({
-                candidate: data.candidate.candidate || '',
-                sdpMid: data.candidate.sdpMid || '',
-                sdpMLineIndex: data.candidate.sdpMLineIndex || 0,
-                usernameFragment: data.candidate.usernameFragment || ''
+                candidate: candidateData.candidate || '',
+                sdpMid: candidateData.sdpMid || '',
+                sdpMLineIndex: candidateData.sdpMLineIndex || 0,
+                usernameFragment: candidateData.usernameFragment || ''
               });
               
               peerConnection.addIceCandidate(candidate)
@@ -1736,12 +1748,6 @@ async function acceptIncomingCall() {
     if (audioTracks.length > 0) {
       console.log('🔊 Локальный аудио трек:', audioTracks[0].label);
       audioTracks[0].enabled = true;
-      
-      // Создаем аудио контекст для разблокировки на iOS
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
     }
     
     showCallModal('incoming');
@@ -1771,7 +1777,6 @@ async function acceptIncomingCall() {
       console.log('Получен удаленный поток');
       remoteStream = event.streams[0];
       
-      // Проверяем удаленное аудио
       const remoteAudioTracks = remoteStream.getAudioTracks();
       if (remoteAudioTracks.length > 0) {
         console.log('🔊 Удаленный аудио трек получен');
@@ -1884,6 +1889,7 @@ function cleanupCall() {
     iceCandidateListener = null;
   }
   
+  pendingIceCandidates = [];
   remoteStream = null;
   currentCall = null;
   
@@ -1902,7 +1908,6 @@ function startCallTimer() {
 }
 
 function playRingtone() {
-  // Используем другой URL для звонка
   ringtoneAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
   ringtoneAudio.loop = true;
   ringtoneAudio.play().catch(e => console.log('Не удалось воспроизвести звонок:', e));

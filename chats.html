@@ -1625,7 +1625,7 @@ async function sendIceCandidate(candidate) {
       sender: currentUser.uid,
       timestamp: new Date()
     });
-    console.log('✅ ICE кандидат отправлен:', candidateData);
+    console.log('✅ ICE кандидат отправлен');
   } catch (error) {
     console.error('Ошибка отправки ICE кандидата:', error);
   }
@@ -1639,6 +1639,7 @@ function watchCallStatus(callId) {
     if (!call) return;
     
     console.log('Статус звонка:', call.status);
+    console.log('Документ звонка:', call); // Логируем весь документ для отладки
     
     if (call.status === 'connected') {
       document.getElementById('outgoingControls').style.display = 'none';
@@ -1821,6 +1822,7 @@ async function initializeCall() {
       if (peerConnection.iceConnectionState === 'connected' || 
           peerConnection.iceConnectionState === 'completed') {
         console.log('✅ ICE соединение установлено!');
+        showNotification('✅ Соединение установлено!');
       }
     };
     
@@ -1936,6 +1938,8 @@ async function acceptIncomingCall() {
     const callDoc = await db.collection('calls').doc(currentCall).get();
     const call = callDoc.data();
     
+    console.log('Принят звонок, данные:', call);
+    
     const constraints = {
       audio: {
         echoCancellation: true,
@@ -2013,6 +2017,7 @@ async function acceptIncomingCall() {
       if (peerConnection.iceConnectionState === 'connected' || 
           peerConnection.iceConnectionState === 'completed') {
         console.log('✅ ICE соединение установлено!');
+        showNotification('✅ Соединение установлено!');
       }
     };
     
@@ -2030,7 +2035,7 @@ async function acceptIncomingCall() {
     console.log('Создание ответа...');
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    console.log('✅ Ответ создан');
+    console.log('✅ Ответ создан, отправляем в Firebase');
     
     await db.collection('calls').doc(currentCall).update({
       answer: {

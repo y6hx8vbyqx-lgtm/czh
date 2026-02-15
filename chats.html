@@ -1302,6 +1302,7 @@ let callStartTime = null;
 let incomingCallListener = null;
 let callStatusListener = null;
 let ringtoneAudio = null;
+let iceCandidateListener = null;
 
 const iceServers = {
   iceServers: [
@@ -1444,9 +1445,7 @@ async function initializeCall() {
         { urls: 'stun:stun3.l.google.com:19302' },
         { urls: 'stun:stun4.l.google.com:19302' }
       ],
-      iceCandidatePoolSize: 10,
-      bundlePolicy: 'max-bundle',
-      rtcpMuxPolicy: 'require'
+      iceCandidatePoolSize: 10
     });
     
     localStream.getTracks().forEach(track => {
@@ -1483,11 +1482,6 @@ async function initializeCall() {
     
     peerConnection.onconnectionstatechange = () => {
       console.log('🔗 Состояние соединения:', peerConnection.connectionState);
-      if (peerConnection.connectionState === 'disconnected' || 
-          peerConnection.connectionState === 'failed') {
-        console.log('❌ Соединение потеряно');
-        endCall();
-      }
     };
     
     console.log('📞 Создание оффера...');
@@ -1595,7 +1589,9 @@ function watchCallStatus(callId) {
     }
   });
   
-  db.collection('calls').doc(callId).collection('iceCandidates')
+  if (iceCandidateListener) iceCandidateListener();
+  
+  iceCandidateListener = db.collection('calls').doc(callId).collection('iceCandidates')
     .onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added' && peerConnection) {
@@ -1792,11 +1788,17 @@ function cleanupCall() {
   console.log('🧹 Очистка звонка');
   
   if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
+    localStream.getTracks().forEach(track => {
+      track.stop();
+      console.log('✅ Трек остановлен:', track.kind);
+    });
+    localStream = null;
   }
   
   if (peerConnection) {
     peerConnection.close();
+    peerConnection = null;
+    console.log('✅ Peer connection закрыт');
   }
   
   document.getElementById('callModal').classList.remove('show');
@@ -1808,16 +1810,27 @@ function cleanupCall() {
   if (localVideo) localVideo.srcObject = null;
   if (remoteVideo) remoteVideo.srcObject = null;
   
-  if (callTimer) clearInterval(callTimer);
-  stopRingtone();
-  if (callStatusListener) callStatusListener();
+  if (callTimer) {
+    clearInterval(callTimer);
+    callTimer = null;
+  }
   
-  localStream = null;
+  stopRingtone();
+  
+  if (callStatusListener) {
+    callStatusListener();
+    callStatusListener = null;
+  }
+  
+  if (iceCandidateListener) {
+    iceCandidateListener();
+    iceCandidateListener = null;
+  }
+  
   remoteStream = null;
-  peerConnection = null;
   currentCall = null;
-  callTimer = null;
-  callStatusListener = null;
+  
+  console.log('✅ Звонок полностью очищен');
 }
 
 function startCallTimer() {

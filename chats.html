@@ -922,6 +922,10 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
+.reaction-emoji.heart:hover {
+  color: var(--heart);
+}
+
 .message-date-divider {
   text-align: center;
   color: var(--sub);
@@ -1141,6 +1145,29 @@ body {
   color: var(--heart);
 }
 
+.unmute-btn {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 10002;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: fade 0.3s ease;
+}
+
+.unmute-btn:hover {
+  opacity: 0.9;
+  transform: translateX(-50%) scale(1.05);
+}
+
 @media (max-width: 768px) {
   .dynamic-island {
     top: 8px;
@@ -1323,7 +1350,7 @@ body {
     </div>
     
     <div class="video-container" id="videoContainer" style="display:none;">
-      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="remoteVideo" autoplay playsinline muted></video>
       <video id="localVideo" autoplay muted playsinline></video>
     </div>
     
@@ -1345,6 +1372,9 @@ body {
     </div>
   </div>
 </div>
+
+<!-- Кнопка включения звука -->
+<button class="unmute-btn" id="unmuteBtn" style="display:none;" onclick="unmuteAudio()">🔊 Включить звук</button>
 
 <div class="incoming-call" id="incomingCall" style="display:none;">
   <div class="incoming-avatar" id="incomingAvatar">👤</div>
@@ -1405,6 +1435,8 @@ let incomingCallListener = null;
 let callStatusListener = null;
 let iceCandidateListener = null;
 let pendingIceCandidates = [];
+let audioContext = null;
+let audioElement = null;
 
 const iceServers = {
   iceServers: [
@@ -1435,6 +1467,19 @@ function formatTimeAgo(date) {
 function formatMessageTime(date) {
   if (!date) return '';
   return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function unmuteAudio() {
+  const remoteVideo = document.getElementById('remoteVideo');
+  if (remoteVideo) {
+    remoteVideo.muted = false;
+    document.getElementById('unmuteBtn').style.display = 'none';
+    showNotification('🔊 Звук включен');
+  }
+  
+  if (audioElement) {
+    audioElement.muted = false;
+  }
 }
 
 async function loadUserData() {
@@ -1597,9 +1642,125 @@ function addMessageToUI(msg) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `message fade ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
   messageDiv.setAttribute('data-message-id', msg.id);
-  messageDiv.innerHTML = `<div class="message-text">${msg.text || ''}</div>
+  messageDiv.setAttribute('data-sender-id', msg.senderId);
+  
+  let reactionsHTML = '';
+  if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+    reactionsHTML = '<div class="message-reactions">';
+    const reactionCounts = {};
+    Object.values(msg.reactions).forEach(emoji => {
+      reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+    });
+    Object.entries(reactionCounts).forEach(([emoji, count]) => {
+      reactionsHTML += `<div class="reaction" onclick="addReactionToMessage('${msg.id}', '${emoji}')">${emoji} ${count}</div>`;
+    });
+    reactionsHTML += '</div>';
+  }
+  
+  messageDiv.innerHTML = `
+    <div class="message-text">${msg.text || ''}</div>
+    ${reactionsHTML}
     <div class="message-time">${formatMessageTime(msgDate)}</div>`;
+  
+  setupMessageClickHandler(messageDiv, msg);
   chatMessages.appendChild(messageDiv);
+}
+
+function setupMessageClickHandler(messageDiv, msg) {
+  if ('ontouchstart' in window) {
+    let longPressTimer;
+    messageDiv.addEventListener('touchstart', (e) => {
+      longPressTimer = setTimeout(() => {
+        showMessageContextMenu(e, msg.id, msg);
+      }, 500);
+    });
+    messageDiv.addEventListener('touchend', () => clearTimeout(longPressTimer));
+    messageDiv.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+  } else {
+    messageDiv.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showMessageContextMenu(e, msg.id, msg);
+    });
+    messageDiv.addEventListener('click', (e) => {
+      showReactionsPanel(e, msg.id, msg);
+    });
+  }
+}
+
+function showReactionsPanel(event, messageId, messageData) {
+  const x = event.clientX;
+  const y = event.clientY;
+  selectedMessageForReaction = { id: messageId, ...messageData };
+  
+  const panel = document.getElementById('reactionsPanel');
+  panel.style.left = Math.min(x - 100, window.innerWidth - 220) + 'px';
+  panel.style.top = Math.min(y - 60, window.innerHeight - 80) + 'px';
+  panel.classList.add('show');
+  
+  setTimeout(() => {
+    const closePanel = (e) => {
+      if (!panel.contains(e.target)) {
+        panel.classList.remove('show');
+        document.removeEventListener('click', closePanel);
+      }
+    };
+    document.addEventListener('click', closePanel);
+  }, 10);
+}
+
+function showMessageContextMenu(event, messageId, messageData) {
+  event.preventDefault();
+  const menu = document.getElementById('messageContextMenu');
+  menu.style.left = event.clientX + 'px';
+  menu.style.top = event.clientY + 'px';
+  menu.classList.add('show');
+  
+  window.currentContextMessageId = messageId;
+  window.currentContextMessageData = messageData;
+  
+  setTimeout(() => {
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('show');
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    document.addEventListener('click', closeMenu);
+  }, 10);
+}
+
+async function addReaction(emoji) {
+  if (!selectedMessageForReaction || !currentChatId) return;
+  
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages').doc(selectedMessageForReaction.id);
+    
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    currentReactions[currentUser.uid] = emoji;
+    
+    await messageRef.update({ reactions: currentReactions });
+    document.getElementById('reactionsPanel').classList.remove('show');
+    showNotification(`➕ ${emoji}`);
+  } catch (error) {
+    console.error('Ошибка реакции:', error);
+  }
+}
+
+async function addReactionToMessage(messageId, emoji) {
+  if (!currentChatId) return;
+  try {
+    const messageRef = db.collection('chats').doc(currentChatId)
+      .collection('messages').doc(messageId);
+    const messageDoc = await messageRef.get();
+    const currentReactions = messageDoc.data()?.reactions || {};
+    currentReactions[currentUser.uid] = emoji;
+    await messageRef.update({ reactions: currentReactions });
+    showNotification(`➕ ${emoji}`);
+  } catch (error) {
+    console.error('Ошибка реакции:', error);
+  }
 }
 
 function setupChatMessagesListener() {
@@ -1629,6 +1790,14 @@ async function sendMessage() {
     read: false
   };
   
+  if (replyingToMessage) {
+    messageData.replyTo = {
+      messageId: replyingToMessage.id,
+      senderId: replyingToMessage.senderId,
+      text: replyingToMessage.text
+    };
+  }
+  
   try {
     if (!currentChatId) {
       const newChat = await db.collection('chats').add({
@@ -1649,9 +1818,40 @@ async function sendMessage() {
     
     await db.collection('chats').doc(currentChatId).collection('messages').add(messageData);
     input.value = '';
+    cancelReply();
     loadChatsList();
   } catch (error) {
     showNotification('Ошибка отправки');
+  }
+}
+
+function replyToMessage(messageId, messageData) {
+  replyingToMessage = {
+    id: messageId,
+    text: messageData.text,
+    senderId: messageData.senderId
+  };
+  
+  document.getElementById('replyContainer').style.display = 'block';
+  document.getElementById('replySender').textContent = 
+    messageData.senderId === currentUser.uid ? 'Вы' : '@' + currentChatUsername;
+  document.getElementById('replyText').textContent = messageData.text;
+  document.getElementById('chatInput').focus();
+}
+
+function cancelReply() {
+  replyingToMessage = null;
+  document.getElementById('replyContainer').style.display = 'none';
+}
+
+async function deleteMessage(messageId) {
+  if (!currentChatId || !confirm('Удалить сообщение?')) return;
+  try {
+    await db.collection('chats').doc(currentChatId).collection('messages').doc(messageId).delete();
+    document.querySelector(`[data-message-id="${messageId}"]`).remove();
+    showNotification('Сообщение удалено');
+  } catch (error) {
+    showNotification('Ошибка удаления');
   }
 }
 
@@ -1703,11 +1903,19 @@ async function initializeCall() {
     peerConnection.ontrack = (event) => {
       remoteStream = event.streams[0];
       const remoteVideo = document.getElementById('remoteVideo');
-      if (remoteVideo) remoteVideo.srcObject = remoteStream;
+      if (remoteVideo) {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.muted = true; // Начинаем с muted
+      }
       
-      const audio = new Audio();
-      audio.srcObject = remoteStream;
-      audio.play().catch(() => {});
+      // Создаем отдельный аудио элемент для лучшего контроля
+      audioElement = new Audio();
+      audioElement.srcObject = remoteStream;
+      audioElement.muted = true; // Начинаем с muted
+      audioElement.play().catch(() => {});
+      
+      // Показываем кнопку включения звука
+      document.getElementById('unmuteBtn').style.display = 'block';
     };
     
     peerConnection.onicecandidate = (event) => {
@@ -1807,6 +2015,10 @@ function listenForIncomingCalls() {
           const call = change.doc.data();
           showNotification(`📞 Входящий звонок от @${call.callerName}`);
           document.getElementById('incomingCall').style.display = 'block';
+          document.getElementById('incomingName').textContent = '@' + call.callerName;
+          document.getElementById('incomingAvatar').textContent = call.callerName?.[0]?.toUpperCase() || 'U';
+          document.getElementById('incomingType').textContent = 
+            call.type === 'video' ? 'Входящий видеозвонок' : 'Входящий аудиозвонок';
           currentCall = change.doc.id;
           callType = call.type;
           currentChatUserId = call.callerId;
@@ -1841,11 +2053,17 @@ async function acceptIncomingCall() {
     peerConnection.ontrack = (event) => {
       remoteStream = event.streams[0];
       const remoteVideo = document.getElementById('remoteVideo');
-      if (remoteVideo) remoteVideo.srcObject = remoteStream;
+      if (remoteVideo) {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.muted = true;
+      }
       
-      const audio = new Audio();
-      audio.srcObject = remoteStream;
-      audio.play().catch(() => {});
+      audioElement = new Audio();
+      audioElement.srcObject = remoteStream;
+      audioElement.muted = true;
+      audioElement.play().catch(() => {});
+      
+      document.getElementById('unmuteBtn').style.display = 'block';
     };
     
     peerConnection.onicecandidate = (event) => {
@@ -1892,6 +2110,7 @@ function cleanupCall() {
   document.getElementById('callModal').classList.remove('show');
   document.getElementById('incomingCall').style.display = 'none';
   document.getElementById('videoContainer').style.display = 'none';
+  document.getElementById('unmuteBtn').style.display = 'none';
   if (callTimer) clearInterval(callTimer);
   if (callStatusListener) callStatusListener();
   if (iceCandidateListener) iceCandidateListener();
@@ -1901,6 +2120,7 @@ function cleanupCall() {
   peerConnection = null;
   currentCall = null;
   pendingIceCandidates = [];
+  audioElement = null;
 }
 
 function startCallTimer() {
@@ -1941,6 +2161,27 @@ function declineCall() { declineIncomingCall(); }
 function openProfileFromChat() { window.location.href = `feed.html?openProfile=${currentChatUserId}`; }
 function toggleBlockUser() { showNotification('Функция в разработке'); }
 function logout() { auth.signOut().then(() => location.href = 'index.html'); }
+
+document.getElementById('contextReplyBtn')?.addEventListener('click', () => {
+  document.getElementById('messageContextMenu').classList.remove('show');
+  if (window.currentContextMessageId && window.currentContextMessageData) {
+    replyToMessage(window.currentContextMessageId, window.currentContextMessageData);
+  }
+});
+
+document.getElementById('contextReactionBtn')?.addEventListener('click', () => {
+  document.getElementById('messageContextMenu').classList.remove('show');
+  if (window.currentContextMessageId) {
+    addReactionToMessage(window.currentContextMessageId, '❤️');
+  }
+});
+
+document.getElementById('contextDeleteMessageBtn')?.addEventListener('click', () => {
+  document.getElementById('messageContextMenu').classList.remove('show');
+  if (window.currentContextMessageId) {
+    deleteMessage(window.currentContextMessageId);
+  }
+});
 
 auth.onAuthStateChanged(async (user) => {
   if (!user) { location.href = 'index.html'; return; }

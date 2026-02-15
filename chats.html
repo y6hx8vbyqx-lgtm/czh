@@ -88,7 +88,6 @@ body{
   z-index:1;
 }
 
-/* Список чатов */
 .chats-list {
   display: flex;
   flex-direction: column;
@@ -231,7 +230,6 @@ body{
   line-height: 1.4;
 }
 
-/* Окно чата */
 .chat-overlay {
   position: fixed;
   inset: 0;
@@ -314,7 +312,6 @@ body{
   background: rgba(255,255,255,0.1);
 }
 
-/* Кнопки звонков */
 .call-buttons {
   display: flex;
   gap: 8px;
@@ -387,7 +384,6 @@ body{
   opacity: 0.9;
 }
 
-/* Модальное окно звонка */
 .call-modal {
   position: fixed;
   top: 0;
@@ -504,7 +500,6 @@ body{
   color: #fff;
 }
 
-/* Видео контейнер */
 .video-container {
   position: relative;
   width: 100%;
@@ -533,7 +528,6 @@ body{
   object-fit: cover;
 }
 
-/* Входящий звонок */
 .incoming-call {
   position: fixed;
   top: 50%;
@@ -615,7 +609,6 @@ body{
   transform: scale(1.1);
 }
 
-/* Ответ на сообщение */
 .reply-preview {
   background: var(--card);
   border-left: 4px solid var(--reply);
@@ -671,7 +664,6 @@ body{
   flex-shrink: 0;
 }
 
-/* Сообщения */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -756,7 +748,6 @@ body{
   font-size: 10px;
 }
 
-/* Реакции на сообщения */
 .message-reactions {
   display: flex;
   align-items: center;
@@ -787,7 +778,6 @@ body{
   font-size: 11px;
 }
 
-/* Панель реакций */
 .reactions-panel {
   position: absolute;
   background: var(--card);
@@ -847,7 +837,6 @@ body{
   right: 0;
 }
 
-/* Поле ввода */
 .chat-input-area {
   background: var(--card);
   padding: 16px;
@@ -915,7 +904,6 @@ body{
   cursor: not-allowed;
 }
 
-/* Нет сообщений */
 .no-messages {
   text-align: center;
   color: var(--sub);
@@ -928,7 +916,6 @@ body{
   width: 100%;
 }
 
-/* Загрузчик */
 .loader {
   text-align: center;
   padding: 40px 0;
@@ -952,7 +939,6 @@ body{
   to { transform: rotate(360deg); }
 }
 
-/* Уведомление */
 .notification{
   position:fixed;
   top:120px;
@@ -975,12 +961,10 @@ body{
   transform:translateX(-50%) translateY(0);
 }
 
-/* Кнопка назад на мобильных */
 .back-btn {
   display: none;
 }
 
-/* Контекстное меню для всех устройств */
 .context-menu {
   position: fixed;
   background: var(--card);
@@ -1145,7 +1129,6 @@ body{
   </div>
 </div>
 
-<!-- Окно чата -->
 <div class="chat-overlay" id="chatOverlay">
   <div class="chat-container">
     <div class="chat-header">
@@ -1158,7 +1141,6 @@ body{
         </div>
       </div>
       
-      <!-- Кнопки звонков -->
       <div class="call-buttons">
         <button class="call-btn audio" id="audioCallBtn" onclick="startAudioCall()" title="Аудиозвонок">
           📞
@@ -1204,7 +1186,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно звонка -->
 <div class="call-modal" id="callModal">
   <div class="call-container">
     <div class="call-avatar" id="callAvatar">👤</div>
@@ -1238,7 +1219,6 @@ body{
   </div>
 </div>
 
-<!-- Входящий звонок -->
 <div class="incoming-call" id="incomingCall" style="display:none;">
   <div class="incoming-avatar" id="incomingAvatar">👤</div>
   <div class="incoming-name" id="incomingName">Пользователь</div>
@@ -1249,7 +1229,6 @@ body{
   </div>
 </div>
 
-<!-- Контекстное меню для чатов -->
 <div class="context-menu" id="contextMenu">
   <div class="menu-item pin-item" id="contextPinBtn">
     <span>📌</span>
@@ -1261,7 +1240,6 @@ body{
   </div>
 </div>
 
-<!-- Контекстное меню для сообщений -->
 <div class="context-menu" id="messageContextMenu">
   <div class="menu-item reply-item" id="contextReplyBtn">
     <span>↩️</span>
@@ -1277,7 +1255,6 @@ body{
   </div>
 </div>
 
-<!-- Панель реакций -->
 <div class="reactions-panel" id="reactionsPanel">
   <div class="reaction-emoji heart" onclick="addReaction('❤️')">❤️</div>
   <div class="reaction-emoji" onclick="addReaction('👍')">👍</div>
@@ -1316,7 +1293,7 @@ let selectedMessageForReaction = null;
 
 // Переменные для звонков
 let currentCall = null;
-let callType = null; // 'audio' или 'video'
+let callType = null;
 let localStream = null;
 let remoteStream = null;
 let peerConnection = null;
@@ -1326,7 +1303,6 @@ let incomingCallListener = null;
 let callStatusListener = null;
 let ringtoneAudio = null;
 
-// Конфигурация ICE серверов
 const iceServers = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -1339,19 +1315,16 @@ const iceServers = {
 
 // ==================== ФУНКЦИИ ДЛЯ ЗВОНКОВ ====================
 
-// Тест медиаустройств
 async function testMediaDevices() {
   console.log('🔍 Тест медиаустройств...');
   
   try {
-    // Проверяем поддержку
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error('❌ getUserMedia не поддерживается');
       showNotification('Ваш браузер не поддерживает звонки');
       return false;
     }
     
-    // Проверяем устройства
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter(d => d.kind === 'audioinput');
     const videoInputs = devices.filter(d => d.kind === 'videoinput');
@@ -1366,7 +1339,6 @@ async function testMediaDevices() {
       return false;
     }
     
-    // Пробуем получить доступ к микрофону
     console.log('🎤 Запрос доступа к микрофону...');
     const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     console.log('✅ Доступ к микрофону получен');
@@ -1388,7 +1360,6 @@ async function testMediaDevices() {
   }
 }
 
-// Начать аудиозвонок
 async function startAudioCall() {
   console.log('📞 Начинаем аудиозвонок...');
   
@@ -1402,7 +1373,6 @@ async function startAudioCall() {
     return;
   }
   
-  // Проверяем медиа
   const mediaOk = await testMediaDevices();
   if (!mediaOk) return;
   
@@ -1410,7 +1380,6 @@ async function startAudioCall() {
   await initializeCall();
 }
 
-// Начать видеозвонок
 async function startVideoCall() {
   console.log('📹 Начинаем видеозвонок...');
   
@@ -1428,12 +1397,10 @@ async function startVideoCall() {
   await initializeCall();
 }
 
-// Инициализация звонка
 async function initializeCall() {
   try {
     console.log('Инициализация звонка...');
     
-    // Запрашиваем доступ к медиа
     const constraints = {
       audio: {
         echoCancellation: true,
@@ -1451,46 +1418,54 @@ async function initializeCall() {
     localStream = await navigator.mediaDevices.getUserMedia(constraints);
     console.log('✅ Медиа получены:', localStream.getTracks().map(t => t.kind).join(', '));
     
-    // Проверяем аудио
     const audioTracks = localStream.getAudioTracks();
     if (audioTracks.length > 0) {
       console.log('🔊 Аудио трек:', audioTracks[0].label);
+      audioTracks[0].enabled = true;
     } else {
       console.error('❌ Нет аудио трека');
       showNotification('Ошибка: нет доступа к микрофону');
       return;
     }
     
-    // Показываем локальное видео
     if (callType === 'video') {
       document.getElementById('videoContainer').style.display = 'block';
       const localVideo = document.getElementById('localVideo');
       localVideo.srcObject = localStream;
-      await localVideo.play();
+      await localVideo.play().catch(e => console.warn('Ошибка воспроизведения локального видео:', e));
       console.log('✅ Локальное видео запущено');
     }
     
-    // Создаем peer connection
-    peerConnection = new RTCPeerConnection(iceServers);
+    peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
+      ],
+      iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require'
+    });
     
-    // Добавляем треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
-    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
       const remoteVideo = document.getElementById('remoteVideo');
       if (remoteVideo) {
         remoteVideo.srcObject = remoteStream;
-        remoteVideo.play().catch(e => console.error('Ошибка воспроизведения удаленного видео:', e));
+        remoteVideo.play()
+          .then(() => console.log('✅ Удаленное видео запущено'))
+          .catch(e => console.warn('Ошибка воспроизведения удаленного видео:', e));
       }
     };
     
-    // ICE кандидаты
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -1498,9 +1473,16 @@ async function initializeCall() {
       }
     };
     
-    // Состояние соединения
+    peerConnection.onicegatheringstatechange = () => {
+      console.log('🔄 ICE gathering state:', peerConnection.iceGatheringState);
+    };
+    
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('🔌 ICE connection state:', peerConnection.iceConnectionState);
+    };
+    
     peerConnection.onconnectionstatechange = () => {
-      console.log('🔌 Состояние соединения:', peerConnection.connectionState);
+      console.log('🔗 Состояние соединения:', peerConnection.connectionState);
       if (peerConnection.connectionState === 'disconnected' || 
           peerConnection.connectionState === 'failed') {
         console.log('❌ Соединение потеряно');
@@ -1508,7 +1490,6 @@ async function initializeCall() {
       }
     };
     
-    // Создаем оффер
     console.log('📞 Создание оффера...');
     const offer = await peerConnection.createOffer({
       offerToReceiveAudio: true,
@@ -1518,7 +1499,6 @@ async function initializeCall() {
     await peerConnection.setLocalDescription(offer);
     console.log('✅ Оффер создан');
     
-    // Сохраняем в Firebase
     const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     const callData = {
@@ -1539,35 +1519,49 @@ async function initializeCall() {
     
     currentCall = callId;
     
-    // Показываем окно
     showCallModal('outgoing');
     
-    // Слушаем статус
     watchCallStatus(callId);
     
   } catch (error) {
     console.error('❌ Ошибка инициализации звонка:', error);
-    showNotification('Ошибка: ' + error.message);
+    
+    if (error.name === 'NotAllowedError') {
+      showNotification('Разрешите доступ к микрофону и камере');
+    } else if (error.name === 'NotFoundError') {
+      showNotification('Микрофон или камера не найдены');
+    } else if (error.name === 'NotReadableError') {
+      showNotification('Устройства заняты другим приложением');
+    } else {
+      showNotification('Ошибка: ' + error.message);
+    }
+    
     cleanupCall();
   }
 }
 
-// Отправить ICE кандидат
 async function sendIceCandidate(candidate) {
   if (!currentCall) return;
   
   try {
+    const candidateData = {
+      candidate: candidate.candidate || '',
+      sdpMid: candidate.sdpMid || '',
+      sdpMLineIndex: candidate.sdpMLineIndex || 0,
+      usernameFragment: candidate.usernameFragment || ''
+    };
+    
     await db.collection('calls').doc(currentCall).collection('iceCandidates').add({
-      candidate: candidate,
+      candidate: candidateData,
       sender: currentUser.uid,
       timestamp: new Date()
     });
+    console.log('✅ ICE кандидат отправлен');
   } catch (error) {
     console.error('Ошибка отправки ICE кандидата:', error);
   }
 }
 
-// Слушаем статус звонка
 function watchCallStatus(callId) {
   if (callStatusListener) callStatusListener();
   
@@ -1601,7 +1595,6 @@ function watchCallStatus(callId) {
     }
   });
   
-  // Слушаем ICE кандидаты
   db.collection('calls').doc(callId).collection('iceCandidates')
     .onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
@@ -1609,15 +1602,27 @@ function watchCallStatus(callId) {
           const data = change.doc.data();
           if (data.sender !== currentUser.uid) {
             console.log('Получен ICE кандидат от собеседника');
-            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
-              .catch(e => console.error('Ошибка добавления ICE:', e));
+            
+            try {
+              const candidate = new RTCIceCandidate({
+                candidate: data.candidate.candidate || '',
+                sdpMid: data.candidate.sdpMid || '',
+                sdpMLineIndex: data.candidate.sdpMLineIndex || 0,
+                usernameFragment: data.candidate.usernameFragment || ''
+              });
+              
+              peerConnection.addIceCandidate(candidate)
+                .then(() => console.log('✅ ICE кандидат добавлен'))
+                .catch(e => console.error('Ошибка добавления ICE:', e));
+            } catch (e) {
+              console.error('Ошибка создания ICE кандидата:', e);
+            }
           }
         }
       });
     });
 }
 
-// Показать окно звонка
 function showCallModal(mode) {
   const modal = document.getElementById('callModal');
   document.getElementById('callName').textContent = '@' + currentChatUsername;
@@ -1631,7 +1636,6 @@ function showCallModal(mode) {
   modal.classList.add('show');
 }
 
-// Слушаем входящие звонки
 function listenForIncomingCalls() {
   if (incomingCallListener) return;
   
@@ -1644,7 +1648,6 @@ function listenForIncomingCalls() {
           const call = change.doc.data();
           console.log('📞 Входящий звонок от:', call.callerName);
           
-          // Получаем информацию о звонящем
           const callerInfo = await getUserInfo(call.callerId);
           
           document.getElementById('incomingName').textContent = '@' + callerInfo.username;
@@ -1654,7 +1657,6 @@ function listenForIncomingCalls() {
           
           document.getElementById('incomingCall').style.display = 'block';
           
-          // Звук звонка
           playRingtone();
           
           currentCall = change.doc.id;
@@ -1666,7 +1668,6 @@ function listenForIncomingCalls() {
     });
 }
 
-// Принять входящий звонок
 async function acceptIncomingCall() {
   console.log('✅ Принимаем звонок...');
   
@@ -1677,14 +1678,26 @@ async function acceptIncomingCall() {
     const callDoc = await db.collection('calls').doc(currentCall).get();
     const call = callDoc.data();
     
-    // Запрашиваем медиа
     const constraints = {
-      audio: true,
-      video: call.type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: call.type === 'video' ? {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      } : false
     };
     
     localStream = await navigator.mediaDevices.getUserMedia(constraints);
     console.log('✅ Медиа получены');
+    
+    const audioTracks = localStream.getAudioTracks();
+    if (audioTracks.length > 0) {
+      audioTracks[0].enabled = true;
+    }
     
     showCallModal('incoming');
     
@@ -1692,11 +1705,18 @@ async function acceptIncomingCall() {
       document.getElementById('videoContainer').style.display = 'block';
       const localVideo = document.getElementById('localVideo');
       localVideo.srcObject = localStream;
-      await localVideo.play();
+      await localVideo.play().catch(e => console.warn('Ошибка воспроизведения локального видео:', e));
     }
     
-    // Создаем peer connection
-    peerConnection = new RTCPeerConnection(iceServers);
+    peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
+      ]
+    });
     
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
@@ -1706,8 +1726,10 @@ async function acceptIncomingCall() {
       console.log('Получен удаленный поток');
       remoteStream = event.streams[0];
       const remoteVideo = document.getElementById('remoteVideo');
-      remoteVideo.srcObject = remoteStream;
-      remoteVideo.play().catch(e => console.error('Ошибка воспроизведения:', e));
+      if (remoteVideo) {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.play().catch(e => console.warn('Ошибка воспроизведения удаленного видео:', e));
+      }
     };
     
     peerConnection.onicecandidate = (event) => {
@@ -1716,14 +1738,11 @@ async function acceptIncomingCall() {
       }
     };
     
-    // Устанавливаем удаленное описание
     await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
     
-    // Создаем ответ
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     
-    // Отправляем ответ
     await db.collection('calls').doc(currentCall).update({
       answer: {
         type: answer.type,
@@ -1748,7 +1767,6 @@ async function acceptIncomingCall() {
   }
 }
 
-// Отклонить входящий звонок
 async function declineIncomingCall() {
   console.log('❌ Отклоняем звонок');
   document.getElementById('incomingCall').style.display = 'none';
@@ -1760,7 +1778,6 @@ async function declineIncomingCall() {
   }
 }
 
-// Завершить звонок
 async function endCall() {
   console.log('🔚 Завершение звонка');
   
@@ -1771,7 +1788,6 @@ async function endCall() {
   cleanupCall();
 }
 
-// Очистка звонка
 function cleanupCall() {
   console.log('🧹 Очистка звонка');
   
@@ -1804,7 +1820,6 @@ function cleanupCall() {
   callStatusListener = null;
 }
 
-// Запустить таймер
 function startCallTimer() {
   callStartTime = Date.now();
   callTimer = setInterval(() => {
@@ -1816,7 +1831,6 @@ function startCallTimer() {
   }, 1000);
 }
 
-// Звук звонка
 function playRingtone() {
   ringtoneAudio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
   ringtoneAudio.loop = true;
@@ -1830,7 +1844,6 @@ function stopRingtone() {
   }
 }
 
-// Переключить звук
 function toggleMute() {
   if (localStream) {
     const audioTrack = localStream.getAudioTracks()[0];
@@ -1842,7 +1855,6 @@ function toggleMute() {
   }
 }
 
-// Переключить видео
 function toggleVideo() {
   if (localStream && callType === 'video') {
     const videoTrack = localStream.getVideoTracks()[0];
@@ -1854,17 +1866,15 @@ function toggleVideo() {
   }
 }
 
-// Принять звонок (из модального окна)
 function acceptCall() {
   acceptIncomingCall();
 }
 
-// Отклонить звонок (из модального окна)
 function declineCall() {
   declineIncomingCall();
 }
 
-// ==================== ФОРМАТИРОВАНИЕ ВРЕМЕНИ ====================
+// ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
 
 function formatTimeAgo(date) {
   if (!date) return "только что";
@@ -1899,8 +1909,6 @@ function formatMessageTime(date) {
     minute: "2-digit"
   });
 }
-
-// ==================== ЗАГРУЗКА ДАННЫХ ====================
 
 async function loadUserData() {
   try {
@@ -1973,8 +1981,6 @@ async function getUserInfo(userId) {
     };
   }
 }
-
-// ==================== СПИСОК ЧАТОВ ====================
 
 async function loadChatsList() {
   const chatsList = document.getElementById('chatsList');
@@ -2103,8 +2109,6 @@ async function loadChatsList() {
   }
 }
 
-// ==================== УПРАВЛЕНИЕ ЧАТАМИ ====================
-
 async function togglePinChat(chatId) {
   try {
     const isCurrentlyPinned = pinnedChats.includes(chatId);
@@ -2169,8 +2173,6 @@ async function deleteChat(chatId) {
     showNotification("Ошибка удаления: " + error.message);
   }
 }
-
-// ==================== ОКНО ЧАТА ====================
 
 async function openChat(userId, username, chatId = null) {
   currentChatUserId = userId;
@@ -2320,8 +2322,6 @@ function openProfileFromChat() {
   if (!currentChatUserId) return;
   window.location.href = `feed.html?openProfile=${currentChatUserId}`;
 }
-
-// ==================== СООБЩЕНИЯ ====================
 
 async function loadChatMessages() {
   const chatMessages = document.getElementById('chatMessages');
@@ -2590,8 +2590,6 @@ async function sendMessage() {
   }
 }
 
-// ==================== РЕАКЦИИ НА СООБЩЕНИЯ ====================
-
 function showReactionsPanel(event, messageId, messageData) {
   let x, y;
   if (event.type.includes('touch')) {
@@ -2743,8 +2741,6 @@ function updateMessageReactions(messageId, reactions) {
   });
 }
 
-// ==================== ОТВЕТ НА СООБЩЕНИЯ ====================
-
 function replyToMessage(messageId, messageData) {
   const senderInfo = messageData.senderId === currentUser.uid ? 
     { username: 'Вы' } : 
@@ -2776,8 +2772,6 @@ function cancelReply() {
   replyingToMessage = null;
   document.getElementById('replyContainer').style.display = 'none';
 }
-
-// ==================== КОНТЕКСТНЫЕ МЕНЮ ====================
 
 function showMessageContextMenu(event, messageId, messageData) {
   event.preventDefault();
@@ -2862,8 +2856,6 @@ async function deleteMessage(messageId) {
   }
 }
 
-// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-
 function showNotification(message, duration = 3000) {
   const notification = document.getElementById('notification');
   notification.textContent = message;
@@ -2903,8 +2895,6 @@ async function checkForAutoOpenChat() {
   }
 }
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -2943,6 +2933,7 @@ document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
     sendMessage();
   }
 });
+
 </script>
 
 </body>

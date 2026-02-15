@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
 
 <style>
 :root{
@@ -32,6 +33,8 @@
   --call-accept:#30d158;
   --call-decline:#ff453a;
   --call-video:#5ac8fa;
+  --voice-message:#5ac8fa;
+  --voice-wave:#667eea;
 }
 *{box-sizing:border-box}
 body{
@@ -837,6 +840,72 @@ body{
   right: 0;
 }
 
+/* Стили для голосовых сообщений */
+.voice-message {
+  background: rgba(90,200,250,0.1);
+  border-radius: 20px;
+  padding: 12px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.voice-play-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--voice-message);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+.voice-play-btn:hover {
+  transform: scale(1.1);
+}
+.voice-play-btn.playing {
+  background: var(--danger);
+}
+.voice-waveform {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.wave-bar {
+  width: 3px;
+  height: 20px;
+  background: var(--voice-wave);
+  border-radius: 1.5px;
+  transition: height 0.1s ease;
+}
+.wave-bar.active {
+  background: var(--success);
+  height: 30px;
+}
+.voice-time {
+  font-size: 12px;
+  color: var(--sub);
+  min-width: 45px;
+}
+.voice-delete-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.voice-delete-btn:hover {
+  opacity: 1;
+}
+
 .chat-input-area {
   background: var(--card);
   padding: 16px;
@@ -902,6 +971,33 @@ body{
 .chat-send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.voice-record-btn {
+  background: var(--voice-message);
+  border: none;
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+.voice-record-btn.recording {
+  background: var(--danger);
+  animation: pulse 1s infinite;
+}
+.voice-record-btn:hover {
+  transform: scale(1.1);
+}
+.voice-record-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .no-messages {
@@ -1218,6 +1314,9 @@ body{
                   placeholder="Напишите сообщение..." 
                   rows="1"
                   maxlength="1000"></textarea>
+        <button class="voice-record-btn" id="voiceRecordBtn" onclick="toggleVoiceRecording()" title="Голосовое сообщение">
+          🎤
+        </button>
         <button class="chat-send-btn" id="chatSendBtn" onclick="sendMessage()">➤</button>
       </div>
     </div>
@@ -1310,10 +1409,12 @@ body{
 firebase.initializeApp({
   apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
   authDomain: "czhmass.firebaseapp.com",
-  projectId: "czhmass"
+  projectId: "czhmass",
+  storageBucket: "czhmass.appspot.com"
 });
 const db = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
 // Глобальные переменные
 let currentUser = null;
@@ -1343,6 +1444,14 @@ let ringtoneAudio = null;
 let audioContext = null;
 let iceCandidateListener = null;
 let pendingIceCandidates = [];
+
+// Переменные для голосовых сообщений
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordingStartTime = null;
+let recordingTimer = null;
+let audioPlayers = {};
 
 const iceServers = {
   iceServers: [
@@ -1680,15 +1789,9 @@ function watchCallStatus(callId) {
               await peerConnection.setRemoteDescription(new RTCSessionDescription(freshCall.answer));
               console.log('✅ Remote description установлен (повторно)!');
               
-              // Добавляем накопленные ICE кандидаты
               for (const candidateData of pendingIceCandidates) {
                 try {
-                  const candidate = new RTCIceCandidate({
-                    candidate: candidateData.candidate || '',
-                    sdpMid: candidateData.sdpMid || '',
-                    sdpMLineIndex: candidateData.sdpMLineIndex || 0,
-                    usernameFragment: candidateData.usernameFragment || ''
-                  });
+                  const candidate = new RTCIceCandidate(candidateData);
                   await peerConnection.addIceCandidate(candidate);
                   console.log('✅ Накопленный ICE кандидат добавлен');
                 } catch (e) {
@@ -1705,17 +1808,18 @@ function watchCallStatus(callId) {
       
     } else if (call.status === 'ended') {
       console.log('Звонок завершен');
+      await saveCallHistory(call);
       showNotification('Звонок завершен');
       cleanupCall();
       
     } else if (call.status === 'declined') {
       console.log('Звонок отклонен');
+      await saveCallHistory({ ...call, status: 'declined' });
       showNotification('Пользователь отклонил звонок');
       cleanupCall();
     }
   });
   
-  // Слушаем ICE кандидаты
   if (iceCandidateListener) iceCandidateListener();
   
   iceCandidateListener = db.collection('calls').doc(callId).collection('iceCandidates')
@@ -1730,7 +1834,6 @@ function watchCallStatus(callId) {
             try {
               const candidateData = data.candidate;
               
-              // Проверяем, установлен ли remote description
               if (!peerConnection.remoteDescription) {
                 console.log('⚠️ Remote description еще не установлен, сохраняем ICE кандидат');
                 pendingIceCandidates.push(candidateData);
@@ -1753,6 +1856,37 @@ function watchCallStatus(callId) {
         }
       });
     });
+}
+
+// Новая функция для сохранения истории звонков
+async function saveCallHistory(call) {
+  if (!currentChatId || !call) return;
+  
+  try {
+    const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    const durationStr = duration > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : null;
+    
+    const callMessage = {
+      type: 'call',
+      callType: call.type || callType,
+      callStatus: call.status,
+      callerId: call.callerId,
+      duration: durationStr,
+      timestamp: new Date(),
+      senderId: currentUser.uid
+    };
+    
+    await db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .add(callMessage);
+    
+    console.log('✅ История звонка сохранена');
+    
+  } catch (error) {
+    console.error('Ошибка сохранения истории звонка:', error);
+  }
 }
 
 async function initializeCall() {
@@ -1793,13 +1927,11 @@ async function initializeCall() {
     
     peerConnection = new RTCPeerConnection(iceServers);
     
-    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
-    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
@@ -1819,7 +1951,6 @@ async function initializeCall() {
       }
     };
     
-    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -1988,13 +2119,11 @@ async function acceptIncomingCall() {
     
     peerConnection = new RTCPeerConnection(iceServers);
     
-    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
-    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
@@ -2014,7 +2143,6 @@ async function acceptIncomingCall() {
       }
     };
     
-    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -2047,10 +2175,7 @@ async function acceptIncomingCall() {
     console.log('✅ Remote description установлен');
     
     console.log('Создание ответа...');
-    const answer = await peerConnection.createAnswer({
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: call.type === 'video'
-    });
+    const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     console.log('✅ Ответ создан, отправляем в Firebase');
     
@@ -2084,7 +2209,10 @@ async function declineIncomingCall() {
   stopRingtone();
   
   if (currentCall) {
+    const callDoc = await db.collection('calls').doc(currentCall).get();
+    const call = callDoc.data();
     await db.collection('calls').doc(currentCall).update({ status: 'declined' });
+    await saveCallHistory({ ...call, status: 'declined' });
     currentCall = null;
   }
 }
@@ -2093,7 +2221,10 @@ async function endCall() {
   console.log('🔚 Завершение звонка');
   
   if (currentCall) {
+    const callDoc = await db.collection('calls').doc(currentCall).get();
+    const call = callDoc.data();
     await db.collection('calls').doc(currentCall).update({ status: 'ended' });
+    await saveCallHistory(call);
   }
   
   cleanupCall();
@@ -2189,6 +2320,207 @@ function acceptCall() {
 
 function declineCall() {
   declineIncomingCall();
+}
+
+// ==================== ФУНКЦИИ ДЛЯ ГОЛОСОВЫХ СООБЩЕНИЙ ====================
+
+async function toggleVoiceRecording() {
+  if (isRecording) {
+    stopVoiceRecording();
+  } else {
+    await startVoiceRecording();
+  }
+}
+
+async function startVoiceRecording() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showNotification('Ваш браузер не поддерживает запись голоса');
+      return;
+    }
+    
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      } 
+    });
+    
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+    
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      await sendVoiceMessage(audioBlob);
+      
+      stream.getTracks().forEach(track => track.stop());
+    };
+    
+    mediaRecorder.start();
+    isRecording = true;
+    recordingStartTime = Date.now();
+    
+    document.getElementById('voiceRecordBtn').classList.add('recording');
+    document.getElementById('voiceRecordBtn').innerHTML = '⏹️';
+    
+    // Запускаем таймер записи
+    recordingTimer = setInterval(() => {
+      const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      showNotification(`⏺️ Запись: ${minutes}:${seconds.toString().padStart(2, '0')}`, 1000);
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Ошибка начала записи:', error);
+    showNotification('Ошибка доступа к микрофону');
+  }
+}
+
+function stopVoiceRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
+    
+    document.getElementById('voiceRecordBtn').classList.remove('recording');
+    document.getElementById('voiceRecordBtn').innerHTML = '🎤';
+  }
+}
+
+async function sendVoiceMessage(audioBlob) {
+  if (!currentChatUserId) {
+    showNotification('Ошибка: выберите чат');
+    return;
+  }
+  
+  if (blockedUsers.includes(currentChatUserId)) {
+    showNotification('Нельзя отправить сообщение заблокированному пользователю');
+    return;
+  }
+  
+  try {
+    showNotification('⏫ Загрузка голосового сообщения...');
+    
+    // Создаем уникальное имя файла
+    const fileName = `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.webm`;
+    const storageRef = storage.ref().child(`voice_messages/${currentChatId}/${fileName}`);
+    
+    // Загружаем в Storage
+    await storageRef.put(audioBlob);
+    const downloadUrl = await storageRef.getDownloadURL();
+    
+    // Создаем сообщение
+    const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+    
+    let chatId = currentChatId;
+    
+    if (!chatId) {
+      const newChatRef = await db.collection('chats').add({
+        participants: [currentUser.uid, currentChatUserId],
+        lastMessage: '🎤 Голосовое сообщение',
+        lastSender: currentUser.uid,
+        lastMessageTime: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        unreadFor: [currentChatUserId]
+      });
+      
+      chatId = newChatRef.id;
+      currentChatId = chatId;
+    } else {
+      await db.collection('chats').doc(chatId).update({
+        lastMessage: '🎤 Голосовое сообщение',
+        lastSender: currentUser.uid,
+        lastMessageTime: new Date(),
+        updatedAt: new Date(),
+        unreadFor: firebase.firestore.FieldValue.arrayUnion(currentChatUserId)
+      });
+    }
+    
+    const messageData = {
+      type: 'voice',
+      voiceUrl: downloadUrl,
+      voiceDuration: duration,
+      senderId: currentUser.uid,
+      timestamp: new Date(),
+      read: false
+    };
+    
+    if (replyingToMessage) {
+      messageData.replyTo = {
+        messageId: replyingToMessage.id,
+        senderId: replyingToMessage.senderId,
+        text: replyingToMessage.text
+      };
+      cancelReply();
+    }
+    
+    await db.collection('chats').doc(chatId)
+      .collection('messages')
+      .add(messageData);
+    
+    showNotification('✅ Голосовое сообщение отправлено');
+    loadChatsList();
+    
+  } catch (error) {
+    console.error('Ошибка отправки голосового сообщения:', error);
+    showNotification('Ошибка: ' + error.message);
+  }
+}
+
+function playVoiceMessage(messageId, voiceUrl) {
+  if (audioPlayers[messageId]) {
+    // Останавливаем если играет
+    if (!audioPlayers[messageId].paused) {
+      audioPlayers[messageId].pause();
+      audioPlayers[messageId].currentTime = 0;
+      updateVoiceButtonState(messageId, false);
+      return;
+    }
+  }
+  
+  // Останавливаем все другие аудио
+  Object.values(audioPlayers).forEach(player => {
+    if (!player.paused) {
+      player.pause();
+    }
+  });
+  
+  const audio = new Audio(voiceUrl);
+  audioPlayers[messageId] = audio;
+  
+  audio.onplay = () => updateVoiceButtonState(messageId, true);
+  audio.onended = () => updateVoiceButtonState(messageId, false);
+  audio.onpause = () => updateVoiceButtonState(messageId, false);
+  
+  audio.play().catch(e => console.error('Ошибка воспроизведения:', e));
+}
+
+function updateVoiceButtonState(messageId, isPlaying) {
+  const button = document.querySelector(`.voice-play-btn[data-message-id="${messageId}"]`);
+  if (button) {
+    button.innerHTML = isPlaying ? '⏸️' : '▶️';
+    button.classList.toggle('playing', isPlaying);
+  }
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
@@ -2540,6 +2872,13 @@ function closeChat() {
     chatMessagesListener = null;
   }
   
+  // Останавливаем все воспроизводящиеся голосовые
+  Object.values(audioPlayers).forEach(player => {
+    if (!player.paused) {
+      player.pause();
+    }
+  });
+  
   currentChatUserId = null;
   currentChatUsername = null;
   currentChatId = null;
@@ -2571,18 +2910,21 @@ function updateBlockButtons(isCurrentlyBlocked) {
   const unblockBtn = document.getElementById('unblockBtn');
   const chatInput = document.getElementById('chatInput');
   const chatSendBtn = document.getElementById('chatSendBtn');
+  const voiceBtn = document.getElementById('voiceRecordBtn');
   
   if (isCurrentlyBlocked) {
     blockBtn.style.display = 'none';
     unblockBtn.style.display = 'block';
     chatInput.disabled = true;
     chatSendBtn.disabled = true;
+    voiceBtn.disabled = true;
     chatInput.placeholder = 'Пользователь заблокирован';
   } else {
     blockBtn.style.display = 'block';
     unblockBtn.style.display = 'none';
     chatInput.disabled = false;
     chatSendBtn.disabled = false;
+    voiceBtn.disabled = false;
     chatInput.placeholder = 'Напишите сообщение...';
   }
 }
@@ -2710,50 +3052,90 @@ function addMessageToUI(msg) {
   
   const readStatus = msg.read === true ? '✓✓' : '✓';
   
-  let replyHTML = '';
-  if (msg.replyTo) {
-    const replySender = msg.replyTo.senderId === currentUser.uid ? 'Вы' : currentChatUsername;
-    const replyText = msg.replyTo.text || '';
-    const shortText = replyText.length > 50 ? replyText.substring(0, 47) + '...' : replyText;
+  let contentHTML = '';
+  
+  // Обработка разных типов сообщений
+  if (msg.type === 'call') {
+    const isCaller = msg.callerId === currentUser.uid;
+    const callIcon = msg.callType === 'video' ? '📹' : '📞';
+    const callStatus = msg.callStatus === 'connected' ? 'состоялся' : 'отменен';
+    const durationText = msg.duration ? ` (${msg.duration})` : '';
     
-    replyHTML = `
-      <div class="message-reply">
-        <div class="message-reply-sender">${replySender}</div>
-        <div class="message-reply-text">${shortText}</div>
+    contentHTML = `
+      <div style="display:flex;align-items:center;gap:8px;opacity:0.8;">
+        <span>${callIcon}</span>
+        <span>${isCaller ? 'Исходящий' : 'Входящий'} звонок ${callStatus}${durationText}</span>
       </div>
+    `;
+    
+  } else if (msg.type === 'voice') {
+    const duration = formatDuration(msg.voiceDuration);
+    const waveBars = Array(20).fill(0).map((_, i) => 
+      `<div class="wave-bar" style="height:${Math.random() * 20 + 10}px"></div>`
+    ).join('');
+    
+    contentHTML = `
+      <div class="voice-message">
+        <button class="voice-play-btn" data-message-id="${msg.id}" onclick="playVoiceMessage('${msg.id}', '${msg.voiceUrl}')">▶️</button>
+        <div class="voice-waveform">
+          ${waveBars}
+        </div>
+        <span class="voice-time">${duration}</span>
+        ${isOutgoing ? `<button class="voice-delete-btn" onclick="deleteMessage('${msg.id}')">🗑️</button>` : ''}
+      </div>
+    `;
+    
+  } else {
+    // Обычное текстовое сообщение
+    let replyHTML = '';
+    if (msg.replyTo) {
+      const replySender = msg.replyTo.senderId === currentUser.uid ? 'Вы' : currentChatUsername;
+      const replyText = msg.replyTo.text || '';
+      const shortText = replyText.length > 50 ? replyText.substring(0, 47) + '...' : replyText;
+      
+      replyHTML = `
+        <div class="message-reply">
+          <div class="message-reply-sender">${replySender}</div>
+          <div class="message-reply-text">${shortText}</div>
+        </div>
+      `;
+    }
+    
+    let reactionsHTML = '';
+    if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+      const reactionGroups = {};
+      Object.entries(msg.reactions).forEach(([userId, emoji]) => {
+        if (!reactionGroups[emoji]) {
+          reactionGroups[emoji] = [];
+        }
+        reactionGroups[emoji].push(userId);
+      });
+      
+      reactionsHTML = '<div class="message-reactions">';
+      Object.entries(reactionGroups).forEach(([emoji, users]) => {
+        const isLikedByMe = users.includes(currentUser.uid);
+        reactionsHTML += `
+          <div class="reaction ${isLikedByMe ? 'liked' : ''}" onclick="event.stopPropagation(); addReactionToMessage('${msg.id}', '${emoji}')">
+            <span>${emoji}</span>
+            <span class="reaction-count">${users.length}</span>
+          </div>
+        `;
+      });
+      reactionsHTML += '</div>';
+    }
+    
+    contentHTML = `
+      ${replyHTML}
+      <div class="message-text">${msg.text || ''}</div>
+      ${reactionsHTML}
     `;
   }
   
-  let reactionsHTML = '';
-  if (msg.reactions && Object.keys(msg.reactions).length > 0) {
-    const reactionGroups = {};
-    Object.entries(msg.reactions).forEach(([userId, emoji]) => {
-      if (!reactionGroups[emoji]) {
-        reactionGroups[emoji] = [];
-      }
-      reactionGroups[emoji].push(userId);
-    });
-    
-    reactionsHTML = '<div class="message-reactions">';
-    Object.entries(reactionGroups).forEach(([emoji, users]) => {
-      const isLikedByMe = users.includes(currentUser.uid);
-      reactionsHTML += `
-        <div class="reaction ${isLikedByMe ? 'liked' : ''}" onclick="event.stopPropagation(); addReactionToMessage('${msg.id}', '${emoji}')">
-          <span>${emoji}</span>
-          <span class="reaction-count">${users.length}</span>
-        </div>
-      `;
-    });
-    reactionsHTML += '</div>';
-  }
-  
   messageDiv.innerHTML = `
-    ${replyHTML}
-    <div class="message-text">${msg.text || ''}</div>
-    ${reactionsHTML}
+    ${contentHTML}
     <div class="message-time">
       ${messageTime}
-      ${isOutgoing ? `<span class="message-status">${readStatus}</span>` : ''}
+      ${isOutgoing && msg.type !== 'call' ? `<span class="message-status">${readStatus}</span>` : ''}
     </div>
   `;
   
@@ -2775,7 +3157,7 @@ function setupMessageClickHandler(messageDiv, msg) {
     
     messageDiv.addEventListener('touchend', (e) => {
       clearTimeout(longPressTimer);
-      if (!isLongPress) {
+      if (!isLongPress && msg.type !== 'call' && msg.type !== 'voice') {
         showReactionsPanel(e, msg.id, msg);
       }
     });
@@ -2786,11 +3168,13 @@ function setupMessageClickHandler(messageDiv, msg) {
   } else {
     messageDiv.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      showMessageContextMenu(e, msg.id, msg);
+      if (msg.type !== 'call' && msg.type !== 'voice') {
+        showMessageContextMenu(e, msg.id, msg);
+      }
     });
     
     messageDiv.addEventListener('click', (e) => {
-      if (e.button === 0) {
+      if (e.button === 0 && msg.type !== 'call' && msg.type !== 'voice') {
         showReactionsPanel(e, msg.id, msg);
       }
     });
@@ -2908,6 +3292,8 @@ async function sendMessage() {
 }
 
 function showReactionsPanel(event, messageId, messageData) {
+  if (messageData.type === 'call' || messageData.type === 'voice') return;
+  
   let x, y;
   if (event.type.includes('touch')) {
     const touch = event.touches[0] || event.changedTouches[0];
@@ -3059,6 +3445,11 @@ function updateMessageReactions(messageId, reactions) {
 }
 
 function replyToMessage(messageId, messageData) {
+  if (messageData.type === 'call' || messageData.type === 'voice') {
+    showNotification('Нельзя ответить на звонок или голосовое сообщение');
+    return;
+  }
+  
   const senderInfo = messageData.senderId === currentUser.uid ? 
     { username: 'Вы' } : 
     { username: currentChatUsername };
@@ -3091,6 +3482,8 @@ function cancelReply() {
 }
 
 function showMessageContextMenu(event, messageId, messageData) {
+  if (messageData.type === 'call' || messageData.type === 'voice') return;
+  
   event.preventDefault();
   event.stopPropagation();
   

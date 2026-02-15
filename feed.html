@@ -24,6 +24,9 @@
   --views:#8e8e93;
   --hashtag:#5ac8fa;
   --pin:#ffcc00;
+  --poll-bg:#1c1c1e;
+  --poll-bar:#2c2c2e;
+  --poll-voted:#30d158;
 }
 *{box-sizing:border-box}
 body{
@@ -122,7 +125,7 @@ body{
   padding:8px 12px;border-radius:12px;font-size:16px;
 }
 
-/* ===== НОВАЯ КНОПКА ЧАТОВ ===== */
+/* Кнопка чатов */
 .chats-btn {
   background: linear-gradient(145deg, #5ac8fa, #4aa3d4);
   border: none;
@@ -178,7 +181,7 @@ body{
   }
 }
 
-/* Таб бар (iOS стиль) */
+/* Таб бар */
 .tab-bar{
   position:fixed;
   bottom:20px;
@@ -269,7 +272,258 @@ body{
   color:#ff453a;
 }
 
-/* ПОИСК ПОЛЬЗОВАТЕЛЕЙ */
+/* Кнопка добавления опроса */
+.add-poll-btn {
+  background: rgba(90, 200, 250, 0.1);
+  border: 1px dashed var(--hashtag);
+  color: var(--hashtag);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+  width: 100%;
+  font-weight: 600;
+}
+.add-poll-btn:hover {
+  background: rgba(90, 200, 250, 0.2);
+  border-style: solid;
+}
+
+/* Контейнер для опроса */
+.poll-container {
+  background: var(--poll-bg);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+
+.poll-question {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.poll-option {
+  background: var(--poll-bar);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.poll-option:hover {
+  background: #3c3c3e;
+}
+
+.poll-option.voted {
+  border: 2px solid var(--poll-voted);
+}
+
+.poll-option-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(90, 200, 250, 0.2), rgba(102, 126, 234, 0.2));
+  transition: width 0.5s ease;
+  z-index: 0;
+}
+
+.poll-option-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+.poll-option-text {
+  font-weight: 500;
+}
+
+.poll-option-percent {
+  color: var(--hashtag);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.poll-option-votes {
+  color: var(--sub);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.poll-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sub);
+  font-size: 13px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.poll-timer-icon {
+  font-size: 14px;
+}
+
+.poll-timer-expired {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.poll-timer-active {
+  color: var(--success);
+}
+
+/* Модальное окно создания опроса */
+.poll-modal {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.poll-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.poll-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.poll-option-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.poll-option-input-field {
+  flex: 1;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.poll-option-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.poll-option-remove:hover {
+  background: rgba(255, 69, 58, 0.1);
+}
+
+.poll-add-option {
+  background: rgba(90, 200, 250, 0.1);
+  border: 1px dashed var(--hashtag);
+  color: var(--hashtag);
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  margin: 12px 0;
+  font-weight: 600;
+}
+
+.poll-add-option:hover {
+  background: rgba(90, 200, 250, 0.2);
+  border-style: solid;
+}
+
+.poll-duration-select {
+  width: 100%;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+.poll-duration-select option {
+  background: #1c1c1e;
+}
+
+.poll-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.poll-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.poll-btn.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.poll-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Индикатор опроса в посте */
+.poll-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(90, 200, 250, 0.1);
+  color: var(--hashtag);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+/* Поиск пользователей */
 .search{
   background:var(--card);
   border-radius:22px;
@@ -349,7 +603,7 @@ body{
   font-size:14px;
 }
 
-/* Хештеги в посте */
+/* Хештеги */
 .hashtag {
   color: var(--hashtag);
   font-weight: 600;
@@ -360,7 +614,6 @@ body{
   opacity: 0.7;
 }
 
-/* Кнопка назад к хештегам */
 .back-to-hashtags-btn {
   width: 100%;
   background: var(--card);
@@ -382,7 +635,6 @@ body{
   background: rgba(90, 200, 250, 0.1);
 }
 
-/* Лента хештега */
 .hashtag-header {
   background: var(--card);
   border-radius: 22px;
@@ -401,7 +653,6 @@ body{
   font-size: 14px;
 }
 
-/* Список хештегов */
 .hashtags-list {
   background: var(--card);
   border-radius: 22px;
@@ -420,9 +671,6 @@ body{
 }
 .hashtag-item:hover {
   background: rgba(90, 200, 250, 0.1);
-}
-.hashtag-item:last-child {
-  margin-bottom: 0;
 }
 .hashtag-item-name {
   font-size: 16px;
@@ -530,7 +778,7 @@ body{
   padding:0;
 }
 
-/* Кнопка закрепления репоста */
+/* Кнопка закрепления */
 .pin-btn {
   background: none;
   border: none;
@@ -557,7 +805,6 @@ body{
   cursor: not-allowed;
 }
 
-/* Метка закрепленного репоста */
 .pinned-badge {
   display: inline-flex;
   align-items: center;
@@ -571,7 +818,6 @@ body{
   background: rgba(255, 204, 0, 0.1);
 }
 
-/* Разделитель закрепленных и обычных репостов */
 .reposts-divider {
   text-align: center;
   padding: 16px;
@@ -598,7 +844,6 @@ body{
   padding: 0 16px;
 }
 
-/* Кнопка подписки */
 .subscribe-btn{
   background:var(--accent);
   border:none;
@@ -619,7 +864,6 @@ body{
   color:var(--bg);
 }
 
-/* Кнопка чата в профиле */
 .chat-btn {
   background: #5ac8fa;
   border: none;
@@ -641,7 +885,6 @@ body{
   cursor: not-allowed;
 }
 
-/* Стили для репостов */
 .repost-info {
   display: flex;
   align-items: center;
@@ -786,7 +1029,6 @@ body{
   background:rgba(255,255,255,0.1);
 }
 
-/* Новая кнопка для перехода на profile.html */
 .profile-page-btn {
   background: var(--accent);
   border: none;
@@ -845,7 +1087,6 @@ body{
   color: var(--pin);
 }
 
-/* Описание профиля */
 .profile-bio{
   background:var(--card);
   border-radius:18px;
@@ -893,7 +1134,6 @@ body{
   color:#ff453a;
 }
 
-/* Табы профиля (посты/репосты) */
 .profile-tabs {
   display: flex;
   background: var(--card);
@@ -951,7 +1191,6 @@ body{
   width: 100%;
 }
 
-/* Уведомление */
 .notification{
   position:fixed;
   top:120px;
@@ -974,7 +1213,6 @@ body{
   transform:translateX(-50%) translateY(0);
 }
 
-/* Модальные окна */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -1080,7 +1318,6 @@ body{
   color:white;
 }
 
-/* Кнопка удаления комментария */
 .comment-delete-btn{
   background:none;
   border:none;
@@ -1107,9 +1344,7 @@ body{
 <div class="navbar">
   <div class="logo">czhmass</div>
   <div class="nav-btns">
-    <!-- Удалена кнопка профиля 👤 из верхней панели -->
     <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
-    <!-- НОВАЯ КНОПКА ЧАТОВ: иконка + текст "Чаты" -->
     <button class="chats-btn" onclick="location.href='chats.html'">
       <span class="icon"></span>
       <span>Чаты</span>
@@ -1118,7 +1353,7 @@ body{
   </div>
 </div>
 
-<!-- Таб бар для переключения ленты с добавленной кнопкой профиля -->
+<!-- Таб бар -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('all')">
     <div>
@@ -1138,7 +1373,6 @@ body{
       <div class="tab-label">Хештеги</div>
     </div>
   </button>
-  <!-- Добавлена кнопка профиля в нижнюю панель -->
   <button class="tab-btn" onclick="openCurrentUserProfile()">
     <div>
       <div>👤</div>
@@ -1149,7 +1383,7 @@ body{
 
 <div class="container">
 
-  <!-- Контейнер для кнопки "К хештегам" (показывается только в ленте хештега) -->
+  <!-- Контейнер для кнопки "К хештегам" -->
   <div id="hashtagHeader" style="display:none">
     <button class="back-to-hashtags-btn" onclick="backToHashtags()">
       ← К хештегам
@@ -1161,6 +1395,17 @@ body{
     <div class="create">
       <textarea id="postText" placeholder="Что у вас нового? Можно использовать #хештеги..." maxlength="500"></textarea>
       <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
+      
+      <!-- Кнопка добавления опроса -->
+      <button class="add-poll-btn" onclick="openPollModal()">
+        📊 Добавить опрос
+      </button>
+      
+      <!-- Индикатор добавленного опроса -->
+      <div id="pollIndicator" style="display:none; margin-top:8px; padding:8px; background:rgba(90,200,250,0.1); border-radius:12px; font-size:14px; color:var(--hashtag);">
+        📊 Опрос добавлен (нажмите на кнопку чтобы изменить)
+      </div>
+      
       <button onclick="createPost()">Опубликовать</button>
     </div>
 
@@ -1211,6 +1456,60 @@ body{
   </div>
 </div>
 
+<!-- Модальное окно для создания опроса -->
+<div class="modal-overlay" id="pollModal">
+  <div class="poll-modal">
+    <div class="poll-modal-header">
+      <div class="poll-modal-title">Создание опроса</div>
+      <button class="modal-close" onclick="closePollModal()">✕</button>
+    </div>
+    
+    <input type="text" class="modal-input" id="pollQuestion" placeholder="Вопрос опроса" maxlength="100">
+    
+    <div id="pollOptionsContainer">
+      <!-- Опции будут добавляться сюда динамически -->
+    </div>
+    
+    <button class="poll-add-option" onclick="addPollOption()">
+      + Добавить вариант ответа
+    </button>
+    
+    <select class="poll-duration-select" id="pollDuration">
+      <option value="3600">1 час</option>
+      <option value="10800">3 часа</option>
+      <option value="21600">6 часов</option>
+      <option value="43200">12 часов</option>
+      <option value="86400" selected>24 часа</option>
+      <option value="172800">2 дня</option>
+      <option value="259200">3 дня</option>
+      <option value="604800">7 дней</option>
+    </select>
+    
+    <div class="poll-buttons">
+      <button class="poll-btn secondary" onclick="closePollModal()">Отмена</button>
+      <button class="poll-btn primary" onclick="savePoll()">Готово</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно просмотра результатов опроса -->
+<div class="modal-overlay" id="pollResultsModal">
+  <div class="poll-modal">
+    <div class="poll-modal-header">
+      <div class="poll-modal-title" id="pollResultsTitle">Результаты опроса</div>
+      <button class="modal-close" onclick="closePollResultsModal()">✕</button>
+    </div>
+    
+    <div id="pollResultsContent" style="margin-bottom:20px;">
+      <!-- Результаты будут загружаться сюда -->
+    </div>
+    
+    <div class="poll-buttons">
+      <button class="poll-btn primary" onclick="closePollResultsModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMENTS -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
@@ -1224,7 +1523,7 @@ body{
   </div>
 </div>
 
-<!-- PROFILE (только для кликов по нику) -->
+<!-- PROFILE -->
 <div class="sheet" id="profileSheet">
   <div class="sheet-header">
     <strong>Профиль</strong>
@@ -1242,7 +1541,6 @@ body{
           <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
           <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
           <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
-          <!-- Новая маленькая кнопка для перехода на profile.html (показывается только в своём профиле) -->
           <button class="profile-page-btn" id="profilePageBtn" onclick="goToProfilePage()" style="display:none">
             📄 Страница
           </button>
@@ -1340,49 +1638,366 @@ let currentProfileTab = 'posts';
 let currentHashtag = null;
 let hashtagsCache = new Map();
 
+// Переменные для опросов
+let currentPoll = null; // Временный опрос при создании поста
+
 // Загружаем просмотренные посты из localStorage
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ФУНКЦИЯ ДЛЯ СНЕЖИНОК ====================
+// ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
+
+// Открытие модального окна создания опроса
+function openPollModal() {
+  currentPoll = {
+    question: '',
+    options: ['', ''] // Минимум 2 опции
+  };
+  
+  document.getElementById('pollQuestion').value = '';
+  renderPollOptions();
+  document.getElementById('pollModal').classList.add('show');
+}
+
+// Закрытие модального окна создания опроса
+function closePollModal() {
+  document.getElementById('pollModal').classList.remove('show');
+}
+
+// Рендеринг опций опроса
+function renderPollOptions() {
+  const container = document.getElementById('pollOptionsContainer');
+  container.innerHTML = '';
+  
+  currentPoll.options.forEach((option, index) => {
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'poll-option-input';
+    optionDiv.innerHTML = `
+      <input type="text" class="poll-option-input-field" 
+             value="${option}" 
+             placeholder="Вариант ${index + 1}"
+             oninput="updatePollOption(${index}, this.value)"
+             maxlength="50">
+      ${currentPoll.options.length > 2 ? 
+        `<button class="poll-option-remove" onclick="removePollOption(${index})">✕</button>` : 
+        '<div style="width:32px"></div>'}
+    `;
+    container.appendChild(optionDiv);
+  });
+}
+
+// Обновление опции опроса
+function updatePollOption(index, value) {
+  currentPoll.options[index] = value;
+}
+
+// Добавление новой опции
+function addPollOption() {
+  if (currentPoll.options.length < 10) {
+    currentPoll.options.push('');
+    renderPollOptions();
+  } else {
+    showNotification('Максимум 10 вариантов ответа');
+  }
+}
+
+// Удаление опции
+function removePollOption(index) {
+  currentPoll.options.splice(index, 1);
+  renderPollOptions();
+}
+
+// Сохранение опроса
+function savePoll() {
+  const question = document.getElementById('pollQuestion').value.trim();
+  const options = currentPoll.options.filter(opt => opt.trim() !== '');
+  
+  if (!question) {
+    showNotification('Введите вопрос опроса');
+    return;
+  }
+  
+  if (options.length < 2) {
+    showNotification('Добавьте минимум 2 варианта ответа');
+    return;
+  }
+  
+  const duration = parseInt(document.getElementById('pollDuration').value);
+  
+  currentPoll = {
+    question: question,
+    options: options,
+    duration: duration,
+    endsAt: new Date(Date.now() + duration * 1000)
+  };
+  
+  // Показываем индикатор
+  document.getElementById('pollIndicator').style.display = 'block';
+  document.getElementById('pollIndicator').innerHTML = `📊 Опрос: "${question.substring(0, 30)}${question.length > 30 ? '...' : ''}" (${options.length} вариантов)`;
+  
+  closePollModal();
+  showNotification('Опрос добавлен к посту');
+}
+
+// Очистка опроса
+function clearPoll() {
+  currentPoll = null;
+  document.getElementById('pollIndicator').style.display = 'none';
+}
+
+// Голосование в опросе
+async function voteInPoll(postId, optionIndex) {
+  try {
+    const postRef = db.collection("posts").doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) {
+      showNotification('Пост не найден');
+      return;
+    }
+    
+    const post = postDoc.data();
+    const poll = post.poll;
+    
+    if (!poll) {
+      showNotification('Опрос не найден');
+      return;
+    }
+    
+    // Проверяем, не истек ли опрос
+    const endsAt = poll.endsAt.toDate ? poll.endsAt.toDate() : new Date(poll.endsAt);
+    if (endsAt < new Date()) {
+      showNotification('Голосование завершено');
+      await showPollResults(postId);
+      return;
+    }
+    
+    // Проверяем, голосовал ли пользователь
+    const votedBy = poll.votedBy || [];
+    if (votedBy.includes(currentUser.uid)) {
+      showNotification('Вы уже голосовали в этом опросе');
+      await showPollResults(postId);
+      return;
+    }
+    
+    // Обновляем голоса
+    const votes = poll.votes || [];
+    votes[optionIndex] = (votes[optionIndex] || 0) + 1;
+    
+    await postRef.update({
+      'poll.votes': votes,
+      'poll.votedBy': firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+      'poll.totalVotes': firebase.firestore.FieldValue.increment(1)
+    });
+    
+    showNotification('Голос учтен!');
+    
+    // Обновляем отображение
+    await showPollResults(postId);
+    
+    // Обновляем пост в ленте
+    if (postsCache.has(postId)) {
+      const cachedPost = postsCache.get(postId);
+      cachedPost.poll = {
+        ...cachedPost.poll,
+        votes: votes,
+        votedBy: [...(cachedPost.poll?.votedBy || []), currentUser.uid],
+        totalVotes: (cachedPost.poll?.totalVotes || 0) + 1
+      };
+    }
+    
+    // Обновляем UI
+    updatePollDisplay(postId);
+    
+  } catch (error) {
+    console.error("Ошибка при голосовании:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+// Показ результатов опроса
+async function showPollResults(postId) {
+  try {
+    const postDoc = await db.collection("posts").doc(postId).get();
+    if (!postDoc.exists) return;
+    
+    const post = postDoc.data();
+    const poll = post.poll;
+    
+    if (!poll) return;
+    
+    const modal = document.getElementById('pollResultsModal');
+    const content = document.getElementById('pollResultsContent');
+    const title = document.getElementById('pollResultsTitle');
+    
+    title.textContent = poll.question;
+    
+    const endsAt = poll.endsAt.toDate ? poll.endsAt.toDate() : new Date(poll.endsAt);
+    const now = new Date();
+    const isExpired = endsAt < now;
+    const totalVotes = poll.totalVotes || 0;
+    const votes = poll.votes || [];
+    const votedBy = poll.votedBy || [];
+    const hasVoted = votedBy.includes(currentUser.uid);
+    
+    let resultsHTML = '';
+    
+    poll.options.forEach((option, index) => {
+      const voteCount = votes[index] || 0;
+      const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+      
+      resultsHTML += `
+        <div class="poll-option" style="margin-bottom:10px;">
+          <div class="poll-option-bar" style="width: ${percentage}%"></div>
+          <div class="poll-option-content">
+            <span class="poll-option-text">${option}</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="poll-option-percent">${percentage}%</span>
+              <span class="poll-option-votes">(${voteCount})</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    resultsHTML += `
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="color:var(--sub);">Всего голосов:</span>
+          <span style="font-weight:600; color:var(--text);">${totalVotes}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; color:${isExpired ? 'var(--danger)' : 'var(--success)'};">
+          <span class="poll-timer-icon">⏱️</span>
+          <span>${isExpired ? 'Голосование завершено' : 'Голосование активно'}</span>
+        </div>
+        <div style="margin-top:8px; color:var(--sub); font-size:12px;">
+          Завершается: ${endsAt.toLocaleString('ru-RU')}
+        </div>
+      </div>
+    `;
+    
+    content.innerHTML = resultsHTML;
+    modal.classList.add('show');
+    
+  } catch (error) {
+    console.error("Ошибка при загрузке результатов:", error);
+    showNotification("Ошибка: " + error.message);
+  }
+}
+
+// Закрытие модального окна результатов
+function closePollResultsModal() {
+  document.getElementById('pollResultsModal').classList.remove('show');
+}
+
+// Обновление отображения опроса в посте
+function updatePollDisplay(postId) {
+  const postElement = document.getElementById(`post-${postId}`);
+  if (!postElement) return;
+  
+  const pollElement = postElement.querySelector('.poll-container');
+  if (!pollElement) return;
+  
+  const post = postsCache.get(postId);
+  if (!post || !post.poll) return;
+  
+  const poll = post.poll;
+  const endsAt = poll.endsAt.toDate ? poll.endsAt.toDate() : new Date(poll.endsAt);
+  const now = new Date();
+  const isExpired = endsAt < now;
+  const totalVotes = poll.totalVotes || 0;
+  const votes = poll.votes || [];
+  const votedBy = poll.votedBy || [];
+  const hasVoted = votedBy.includes(currentUser.uid);
+  
+  let pollHTML = `
+    <div class="poll-container">
+      <div class="poll-question">${poll.question}</div>
+      <div class="poll-options">
+  `;
+  
+  poll.options.forEach((option, index) => {
+    const voteCount = votes[index] || 0;
+    const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+    
+    if (isExpired || hasVoted) {
+      // Режим просмотра результатов
+      pollHTML += `
+        <div class="poll-option">
+          <div class="poll-option-bar" style="width: ${percentage}%"></div>
+          <div class="poll-option-content">
+            <span class="poll-option-text">${option}</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="poll-option-percent">${percentage}%</span>
+              <span class="poll-option-votes">(${voteCount})</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Режим голосования
+      pollHTML += `
+        <div class="poll-option" onclick="voteInPoll('${postId}', ${index})">
+          <div class="poll-option-content">
+            <span class="poll-option-text">${option}</span>
+          </div>
+        </div>
+      `;
+    }
+  });
+  
+  pollHTML += `
+      </div>
+      <div class="poll-timer">
+        <span class="poll-timer-icon">⏱️</span>
+        <span class="${isExpired ? 'poll-timer-expired' : 'poll-timer-active'}">
+          ${isExpired ? 'Опрос завершен' : 'Голосование активно'}
+        </span>
+        <span style="margin-left:auto; color:var(--sub);">
+          ${totalVotes} ${getVotesWord(totalVotes)}
+        </span>
+      </div>
+    </div>
+  `;
+  
+  pollElement.outerHTML = pollHTML;
+}
+
+// Склонение слова "голос"
+function getVotesWord(count) {
+  if (count % 10 === 1 && count % 100 !== 11) return 'голос';
+  if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'голоса';
+  return 'голосов';
+}
+
+// ==================== ФУНКЦИИ ДЛЯ СНЕЖИНОК ====================
 function createSnowflakes() {
   const container = document.getElementById('snowflakes-container');
   if (!container) return;
   
-  // Количество снежинок (не слишком много, чтобы не мешать)
   const snowflakeCount = 30;
   
   for (let i = 0; i < snowflakeCount; i++) {
     setTimeout(() => {
       const snowflake = document.createElement('div');
       
-      // Размер снежинки
-      const size = Math.random() * 3 + 2; // 2-5px
+      const size = Math.random() * 3 + 2;
       const sizeClass = size < 3 ? 'snowflake-small' : 
                        size < 4 ? 'snowflake-medium' : 'snowflake-large';
       
       snowflake.className = `snowflake ${sizeClass}`;
-      
-      // Позиционирование
       snowflake.style.left = `${Math.random() * 100}%`;
       snowflake.style.top = `${-10 - Math.random() * 20}%`;
+      snowflake.style.opacity = Math.random() * 0.4 + 0.3;
       
-      // Случайная прозрачность
-      snowflake.style.opacity = Math.random() * 0.4 + 0.3; // 0.3-0.7
-      
-      // Случайная скорость падения (медленно)
-      const duration = Math.random() * 20 + 25; // 25-45 секунд
+      const duration = Math.random() * 20 + 25;
       snowflake.style.animationDuration = `${duration}s`;
-      
-      // Случайная задержка начала анимации
       snowflake.style.animationDelay = `${Math.random() * 5}s`;
       
       container.appendChild(snowflake);
       
-      // Удаляем снежинку после завершения анимации и создаем новую
       setTimeout(() => {
         if (snowflake.parentNode) {
           snowflake.remove();
-          // Создаем новую снежинку через случайное время
           setTimeout(() => {
             if (container.children.length < snowflakeCount) {
               createSingleSnowflake();
@@ -1393,7 +2008,6 @@ function createSnowflakes() {
     }, Math.random() * 3000);
   }
   
-  // Функция для создания одной снежинки
   function createSingleSnowflake() {
     const snowflake = document.createElement('div');
     
@@ -1427,21 +2041,14 @@ function createSnowflakes() {
 
 // ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
 
-// Извлечение хештегов из текста
 function extractHashtags(text) {
   if (!text) return [];
-  
-  // Регулярное выражение для поиска хештегов
   const hashtagRegex = /#([а-яА-ЯёЁa-zA-Z0-9_]+)/g;
   const matches = text.match(hashtagRegex);
-  
   if (!matches) return [];
-  
-  // Убираем символ # и приводим к нижнему регистру
   return matches.map(tag => tag.substring(1).toLowerCase());
 }
 
-// Обновление хештегов в посте
 function updateHashtagsInPost(post) {
   const hashtags = extractHashtags(post.text);
   if (hashtags.length === 0) return post.text;
@@ -1458,7 +2065,6 @@ function updateHashtagsInPost(post) {
   return processedText;
 }
 
-// Загрузка всех хештегов
 async function loadAllHashtags() {
   const feed = document.getElementById("feed");
   feed.innerHTML = `
@@ -1470,7 +2076,6 @@ async function loadAllHashtags() {
   `;
   
   try {
-    // Получаем все посты
     const postsSnap = await db.collection("posts")
       .orderBy("createdAt", "desc")
       .limit(500)
@@ -1487,7 +2092,6 @@ async function loadAllHashtags() {
       return;
     }
     
-    // Собираем все хештеги
     const hashtagCounts = {};
     
     postsSnap.forEach(doc => {
@@ -1503,11 +2107,9 @@ async function loadAllHashtags() {
       });
     });
     
-    // Сортируем по количеству использований
     const sortedHashtags = Object.entries(hashtagCounts)
       .sort((a, b) => b[1] - a[1]);
     
-    // Сохраняем в кэш
     hashtagsCache.clear();
     sortedHashtags.forEach(([tag, count]) => {
       hashtagsCache.set(tag, count);
@@ -1524,7 +2126,6 @@ async function loadAllHashtags() {
       return;
     }
     
-    // Отображаем хештеги
     let hashtagsHTML = '<div class="hashtags-list">';
     
     sortedHashtags.forEach(([tag, count]) => {
@@ -1551,18 +2152,13 @@ async function loadAllHashtags() {
   }
 }
 
-// Открытие ленты хештега
 async function openHashtagFeed(hashtag) {
   currentHashtag = hashtag.toLowerCase();
   
-  // Показываем кнопку "К хештегам"
   document.getElementById('hashtagHeader').style.display = 'block';
-  
-  // Скрываем блок создания поста и поиска
   document.querySelector('.create').style.display = 'none';
   document.querySelector('.search').style.display = 'none';
   
-  // Обновляем заголовок
   const feed = document.getElementById("feed");
   feed.innerHTML = `
     <div class="hashtag-header">
@@ -1572,7 +2168,6 @@ async function openHashtagFeed(hashtag) {
   `;
   
   try {
-    // Получаем все посты
     const postsSnap = await db.collection("posts")
       .orderBy("createdAt", "desc")
       .limit(100)
@@ -1591,7 +2186,6 @@ async function openHashtagFeed(hashtag) {
       return;
     }
     
-    // Фильтруем посты по хештегу
     const filteredPosts = [];
     let postCount = 0;
     
@@ -1606,7 +2200,6 @@ async function openHashtagFeed(hashtag) {
       }
     });
     
-    // Обновляем заголовок
     const header = document.querySelector('.hashtag-header');
     if (header) {
       header.innerHTML = `
@@ -1628,7 +2221,6 @@ async function openHashtagFeed(hashtag) {
       return;
     }
     
-    // Отображаем посты
     displayPosts(filteredPosts, true);
     
   } catch (error) {
@@ -1645,22 +2237,16 @@ async function openHashtagFeed(hashtag) {
   }
 }
 
-// Возврат к списку хештегов
 function backToHashtags() {
   currentHashtag = null;
   
-  // Скрываем кнопку "К хештегам"
   document.getElementById('hashtagHeader').style.display = 'none';
-  
-  // Показываем блок создания поста и поиска
   document.querySelector('.create').style.display = 'block';
   document.querySelector('.search').style.display = 'block';
   
-  // Загружаем хештеги
   loadAllHashtags();
 }
 
-// Склонение слова "пост"
 function declinePosts(count) {
   if (count % 10 === 1 && count % 100 !== 11) {
     return 'пост';
@@ -1673,7 +2259,6 @@ function declinePosts(count) {
 
 // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
 
-// Инициализация при загрузке страницы
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -1684,29 +2269,22 @@ auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   
   try {
-    // Создаем снежинки
     createSnowflakes();
     
-    // Загружаем данные пользователя
     await loadUserData();
     
-    // Загружаем админов и подписки
     await Promise.all([
       loadAdminUsers(),
       loadSubscriptions(),
       loadBlockedUsers()
     ]);
     
-    // Загружаем посты
     loadPosts();
     
-    // Инициализируем счетчик слов для поста
     updateWordCounter('postText', 'postWordCounter', 50);
     
-    // Проверяем нужно ли прокрутить к посту
     setTimeout(checkPostToScroll, 1000);
     
-    // Обновляем время
     startTimeUpdater();
     
   } catch (error) {
@@ -1715,13 +2293,11 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// Функция для подсчета слов
 function countWords(text) {
   if (!text || !text.trim()) return 0;
   return text.trim().split(/\s+/).length;
 }
 
-// Функция для обновления счетчика слов
 function updateWordCounter(textareaId, counterId, maxWords) {
   const textarea = document.getElementById(textareaId);
   const counter = document.getElementById(counterId);
@@ -1734,7 +2310,6 @@ function updateWordCounter(textareaId, counterId, maxWords) {
     
     counter.textContent = `Слов: ${wordCount}/${maxWords}`;
     
-    // Изменяем цвет в зависимости от количества слов
     counter.classList.remove('warning', 'error');
     if (wordCount > maxWords * 0.8 && wordCount <= maxWords) {
       counter.classList.add('warning');
@@ -1743,18 +2318,15 @@ function updateWordCounter(textareaId, counterId, maxWords) {
     }
   }
   
-  // Обновляем при загрузке и при каждом вводе
   updateCounter();
   textarea.addEventListener('input', updateCounter);
 }
 
-// Загрузка данных пользователя
 async function loadUserData() {
   try {
     const snap = await db.collection("users").doc(currentUser.uid).get();
     
     if (!snap.exists) {
-      // Создаем нового пользователя
       userData = {
         username: "user" + currentUser.uid.slice(-6),
         email: currentUser.email || "не указан",
@@ -1765,19 +2337,17 @@ async function loadUserData() {
         bio: "",
         blockedUsers: [],
         reposts: [],
-        pinnedReposts: [] // Добавляем поле для закрепленных репостов
+        pinnedReposts: []
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
       userData = snap.data();
-      // Инициализируем репосты если их нет
       if (!userData.reposts) {
         userData.reposts = [];
         await db.collection("users").doc(currentUser.uid).update({
           reposts: []
         });
       }
-      // Инициализируем закрепленные репосты если их нет
       if (!userData.pinnedReposts) {
         userData.pinnedReposts = [];
         await db.collection("users").doc(currentUser.uid).update({
@@ -1786,12 +2356,10 @@ async function loadUserData() {
       }
     }
     
-    // Обновляем время последнего входа
     await db.collection("users").doc(currentUser.uid).update({
       lastLogin: new Date()
     });
     
-    // Показываем кнопку админа если пользователь админ
     if (userData.isAdmin === true) {
       document.getElementById("adminBtn").style.display = "block";
       console.log("Админ найден, показываем кнопку");
@@ -1805,7 +2373,6 @@ async function loadUserData() {
   }
 }
 
-// Загрузка списка админов
 async function loadAdminUsers() {
   try {
     const adminSnap = await db.collection("users")
@@ -1822,7 +2389,6 @@ async function loadAdminUsers() {
   }
 }
 
-// Загрузка подписок
 async function loadSubscriptions() {
   try {
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
@@ -1836,7 +2402,6 @@ async function loadSubscriptions() {
   }
 }
 
-// Загрузка заблокированных пользователей
 async function loadBlockedUsers() {
   try {
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
@@ -1850,7 +2415,6 @@ async function loadBlockedUsers() {
   }
 }
 
-// Вспомогательная функция для получения userId по username
 async function getUserIdByUsername(username) {
   try {
     const userSnap = await db.collection("users")
@@ -1869,11 +2433,9 @@ async function getUserIdByUsername(username) {
 
 // ==================== ФУНКЦИИ ДЛЯ ПОСТОВ ====================
 
-// Переключение табов
 function switchTab(tab) {
   currentTab = tab;
   
-  // Обновляем активные кнопки в таб-баре (теперь их 4)
   const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
   const subsTab = document.querySelector('.tab-bar .tab-btn:nth-child(2)');
   const hashtagsTab = document.querySelector('.tab-bar .tab-btn:nth-child(3)');
@@ -1882,9 +2444,8 @@ function switchTab(tab) {
   allTab.classList.toggle('active', tab === 'all');
   subsTab.classList.toggle('active', tab === 'subscriptions');
   hashtagsTab.classList.toggle('active', tab === 'hashtags');
-  profileTab.classList.remove('active'); // Кнопка профиля не активируется при переключении ленты
+  profileTab.classList.remove('active');
   
-  // Если возвращаемся из ленты хештега
   if (currentHashtag) {
     currentHashtag = null;
     document.getElementById('hashtagHeader').style.display = 'none';
@@ -1892,7 +2453,6 @@ function switchTab(tab) {
     document.querySelector('.search').style.display = 'block';
   }
   
-  // Загружаем контент
   if (tab === 'hashtags') {
     loadAllHashtags();
   } else {
@@ -1900,17 +2460,14 @@ function switchTab(tab) {
   }
 }
 
-// Загрузка постов
 async function loadPosts() {
   const feed = document.getElementById("feed");
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
   
   try {
     if (currentTab === 'subscriptions' && subscriptions.size > 0) {
-      // Загружаем посты только от подписок
       await loadSubscriptionPosts();
     } else if (currentTab === 'subscriptions') {
-      // Нет подписок
       feed.innerHTML = `
         <div style='text-align:center;color:var(--sub);padding:40px 0;'>
           Вы пока ни на кого не подписаны<br><br>
@@ -1918,7 +2475,6 @@ async function loadPosts() {
           чтобы видеть их посты здесь!
         </div>`;
     } else {
-      // Загружаем все посты
       await loadAllPosts();
     }
     
@@ -1931,7 +2487,6 @@ async function loadPosts() {
   }
 }
 
-// Загрузка всех постов
 async function loadAllPosts() {
   const feed = document.getElementById("feed");
   
@@ -1949,7 +2504,6 @@ async function loadAllPosts() {
     const posts = [];
     snap.forEach(doc => {
       const postData = doc.data();
-      // Фильтруем посты от заблокированных пользователей
       if (!blockedUsers.has(postData.userId)) {
         posts.push({ id: doc.id, ...postData });
       }
@@ -1968,7 +2522,6 @@ async function loadAllPosts() {
   }
 }
 
-// Загрузка постов от подписок
 async function loadSubscriptionPosts() {
   const feed = document.getElementById("feed");
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов от подписок...</div>";
@@ -1987,7 +2540,6 @@ async function loadSubscriptionPosts() {
     const posts = [];
     snap.forEach(doc => {
       const postData = doc.data();
-      // Фильтруем посты от подписок и не от заблокированных
       if (subscriptions.has(postData.userId) && !blockedUsers.has(postData.userId)) {
         posts.push({ id: doc.id, ...postData });
       }
@@ -2009,14 +2561,12 @@ async function loadSubscriptionPosts() {
   }
 }
 
-// Отображение постов
 async function displayPosts(posts, isHashtagFeed = false) {
   const feed = document.getElementById("feed");
   
   if (!isHashtagFeed) {
     feed.innerHTML = "";
   } else {
-    // Для ленты хештега очищаем только посты после заголовка
     const header = document.querySelector('.hashtag-header');
     if (header) {
       feed.innerHTML = header.outerHTML;
@@ -2027,22 +2577,17 @@ async function displayPosts(posts, isHashtagFeed = false) {
   
   let lastPostDate = null;
   
-  // Сначала загружаем информацию о том, кто репостнул посты
   const postsWithRepostInfo = await Promise.all(posts.map(async postData => {
     const postId = postData.id;
     const post = postData;
     
-    // Собираем всех репостнувших пользователей (включая себя и подписок)
     const allRepostingUsers = [];
     
     if (post.repostedBy && post.repostedBy.length > 0) {
-      // Для каждого репостнувшего находим userId и проверяем подписку
       for (const username of post.repostedBy) {
-        // Получаем userId по username
         const userId = await getUserIdByUsername(username);
         
         if (userId) {
-          // Проверяем, является ли это нашим репостом или репостом из подписок
           if (userId === currentUser.uid || subscriptions.has(userId)) {
             allRepostingUsers.push({
               username: username,
@@ -2054,7 +2599,6 @@ async function displayPosts(posts, isHashtagFeed = false) {
       }
     }
     
-    // Сортируем: сначала свои репосты, затем по алфавиту
     allRepostingUsers.sort((a, b) => {
       if (a.isCurrentUser && !b.isCurrentUser) return -1;
       if (!a.isCurrentUser && b.isCurrentUser) return 1;
@@ -2072,7 +2616,6 @@ async function displayPosts(posts, isHashtagFeed = false) {
     const postId = postData.id;
     postsCache.set(postId, post);
     
-    // Получаем дату поста
     let postDate = null;
     try {
       postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
@@ -2080,7 +2623,6 @@ async function displayPosts(posts, isHashtagFeed = false) {
       console.log("Ошибка получения даты поста:", e);
     }
     
-    // Добавляем разделитель даты если нужно
     if (lastPostDate && postDate && !isHashtagFeed) {
       const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
       if (dividerLabel) {
@@ -2094,13 +2636,11 @@ async function displayPosts(posts, isHashtagFeed = false) {
     
     if (postDate) lastPostDate = postDate;
     
-    // Проверяем лайк, подписку и репост
     const liked = post.likedBy?.includes(currentUser.uid);
     const isSubscribed = subscriptions.has(post.userId);
     const isAdmin = adminUsers.has(post.userId);
     const isReposted = userData.reposts?.includes(postId) || false;
     
-    // Форматируем время
     let timeAgo = "только что";
     let fullDateTime = "";
     try {
@@ -2113,13 +2653,10 @@ async function displayPosts(posts, isHashtagFeed = false) {
       console.log("Ошибка форматирования даты:", dateError);
     }
     
-    // Обрабатываем хештеги в тексте
     const processedText = updateHashtagsInPost(post);
     
-    // Генерируем HTML для репост-информации
     let repostHTML = '';
     if (post.repostingUsers && post.repostingUsers.length > 0) {
-      // Берем первого пользователя для основного отображения
       const mainUser = post.repostingUsers[0];
       const otherUsersCount = post.repostingUsers.length - 1;
       
@@ -2137,7 +2674,64 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
-    // Создаем HTML для поста
+    // Генерируем HTML для опроса, если он есть
+    let pollHTML = '';
+    if (post.poll) {
+      const endsAt = post.poll.endsAt.toDate ? post.poll.endsAt.toDate() : new Date(post.poll.endsAt);
+      const now = new Date();
+      const isExpired = endsAt < now;
+      const totalVotes = post.poll.totalVotes || 0;
+      const votes = post.poll.votes || [];
+      const votedBy = post.poll.votedBy || [];
+      const hasVoted = votedBy.includes(currentUser.uid);
+      
+      pollHTML = '<div class="poll-container">';
+      pollHTML += `<div class="poll-question">${post.poll.question}</div>`;
+      pollHTML += '<div class="poll-options">';
+      
+      post.poll.options.forEach((option, index) => {
+        const voteCount = votes[index] || 0;
+        const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+        
+        if (isExpired || hasVoted) {
+          pollHTML += `
+            <div class="poll-option">
+              <div class="poll-option-bar" style="width: ${percentage}%"></div>
+              <div class="poll-option-content">
+                <span class="poll-option-text">${option}</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="poll-option-percent">${percentage}%</span>
+                  <span class="poll-option-votes">(${voteCount})</span>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          pollHTML += `
+            <div class="poll-option" onclick="voteInPoll('${postId}', ${index})">
+              <div class="poll-option-content">
+                <span class="poll-option-text">${option}</span>
+              </div>
+            </div>
+          `;
+        }
+      });
+      
+      pollHTML += '</div>';
+      pollHTML += `
+        <div class="poll-timer">
+          <span class="poll-timer-icon">⏱️</span>
+          <span class="${isExpired ? 'poll-timer-expired' : 'poll-timer-active'}">
+            ${isExpired ? 'Опрос завершен' : 'Голосование активно'}
+          </span>
+          <span style="margin-left:auto; color:var(--sub);" onclick="showPollResults('${postId}')" style="cursor:pointer;">
+            ${totalVotes} ${getVotesWord(totalVotes)}
+          </span>
+        </div>
+      `;
+      pollHTML += '</div>';
+    }
+    
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}">
       ${repostHTML}
@@ -2160,6 +2754,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
           `<button class="trash" onclick="deletePost('${postId}', '${post.userId}')">🗑</button>` : ""}
       </div>
       <div class="post-text">${processedText}</div>
+      ${pollHTML}
       <div class="post-actions">
         <button class="action ${liked ? "liked" : ""}" onclick="toggleLike('${postId}')">
           ${liked ? "❤️" : "🤍"} <span id="likes-${postId}">${post.likes || 0}</span>
@@ -2177,20 +2772,16 @@ async function displayPosts(posts, isHashtagFeed = false) {
     </div>`;
   });
   
-  // Настраиваем отслеживание просмотров
   setTimeout(setupViewTracking, 500);
-  // Проверяем нужно ли прокрутить к посту
   setTimeout(checkPostToScroll, 100);
 }
 
-// Функция для склонения "других"
 function getOtherUsersText(count) {
   if (count === 1) return 'другой';
   if (count >= 2 && count <= 4) return 'других';
   return 'других';
 }
 
-// Переключение отображения всех репостнувших пользователей
 function toggleRepostUsers(postId, showAll = false) {
   const post = postsCache.get(postId);
   if (!post || !post.repostingUsers || post.repostingUsers.length <= 1) return;
@@ -2199,7 +2790,6 @@ function toggleRepostUsers(postId, showAll = false) {
   if (!repostInfoElement) return;
   
   if (showAll) {
-    // Показываем всех пользователей
     let usersHTML = '';
     post.repostingUsers.forEach((user, index) => {
       usersHTML += `
@@ -2218,7 +2808,6 @@ function toggleRepostUsers(postId, showAll = false) {
       </button>
     `;
   } else {
-    // Возвращаем к компактному виду
     const mainUser = post.repostingUsers[0];
     const otherUsersCount = post.repostingUsers.length - 1;
     
@@ -2235,12 +2824,10 @@ function toggleRepostUsers(postId, showAll = false) {
   }
 }
 
-// Открытие профиля из репоста
 async function openProfileFromRepost(userId, username) {
   await openProfile(userId, username);
 }
 
-// Создание поста
 async function createPost() {
   const postText = document.getElementById("postText");
   const text = postText.value.trim();
@@ -2259,7 +2846,7 @@ async function createPost() {
   try {
     const username = userData.username || "anon" + currentUser.uid.slice(-4);
     
-    await db.collection("posts").add({
+    const postData = {
       text: text,
       userId: currentUser.uid,
       username: username,
@@ -2270,13 +2857,28 @@ async function createPost() {
       likedBy: [],
       repostedBy: [],
       commentsCount: 0
-    });
+    };
+    
+    // Добавляем опрос, если он есть
+    if (currentPoll) {
+      postData.poll = {
+        question: currentPoll.question,
+        options: currentPoll.options,
+        endsAt: currentPoll.endsAt,
+        votes: new Array(currentPoll.options.length).fill(0),
+        votedBy: [],
+        totalVotes: 0
+      };
+    }
+    
+    await db.collection("posts").add(postData);
     
     postText.value = "";
     updateWordCounter('postText', 'postWordCounter', 50);
+    clearPoll(); // Очищаем опрос после публикации
+    
     showNotification("Пост опубликован!");
     
-    // Если находимся в ленте хештегов, возвращаемся к списку хештегов
     if (currentTab === 'hashtags') {
       loadAllHashtags();
     } else {
@@ -2289,12 +2891,10 @@ async function createPost() {
   }
 }
 
-// Удаление поста
 async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
-    // Удаляем пост из всех репостов пользователей
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();
@@ -2308,7 +2908,6 @@ async function deletePost(postId, postUserId) {
     
     await batch.commit();
     
-    // Удаляем пост из закрепленных репостов пользователей
     const usersWithPinnedRepost = await db.collection("users")
       .where("pinnedReposts", "array-contains", postId)
       .get();
@@ -2322,24 +2921,20 @@ async function deletePost(postId, postUserId) {
     
     await batch2.commit();
     
-    // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();
     showNotification("Пост удален!");
     
-    // Удаляем из просмотренных
     if (viewedPosts[postId]) {
       delete viewedPosts[postId];
       localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
     }
     
-    // Обновляем ленту в зависимости от текущего таба
     if (currentTab === 'hashtags') {
       loadAllHashtags();
     } else {
       loadPosts();
     }
     
-    // Обновляем профиль если открыт
     if (currentProfileUserId === postUserId) {
       await refreshProfilePosts(postUserId);
       await refreshProfileReposts(postUserId);
@@ -2351,7 +2946,6 @@ async function deletePost(postId, postUserId) {
   }
 }
 
-// Лайк поста
 async function toggleLike(id) {
   const post = postsCache.get(id);
   if (!post) return;
@@ -2366,7 +2960,6 @@ async function toggleLike(id) {
         : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
     });
     
-    // Обновляем кэш
     post.likes = (post.likes || 0) + (liked ? -1 : 1);
     if (liked) {
       post.likedBy = post.likedBy?.filter(uid => uid !== currentUser.uid) || [];
@@ -2375,7 +2968,6 @@ async function toggleLike(id) {
       post.likedBy.push(currentUser.uid);
     }
     
-    // Обновляем отображение
     const likeButton = document.querySelector(`#post-${id} .action`);
     const likesSpan = document.getElementById(`likes-${id}`);
     if (likeButton && likesSpan) {
@@ -2391,7 +2983,6 @@ async function toggleLike(id) {
   }
 }
 
-// Репост поста
 async function toggleRepost(id) {
   const post = postsCache.get(id);
   if (!post) return;
@@ -2399,7 +2990,6 @@ async function toggleRepost(id) {
   const isReposted = userData.reposts?.includes(id) || false;
   
   try {
-    // Обновляем счетчик репостов в посте
     const postRef = db.collection("posts").doc(id);
     const postDoc = await postRef.get();
     const postData = postDoc.data();
@@ -2407,10 +2997,8 @@ async function toggleRepost(id) {
     let newRepostedBy = postData.repostedBy || [];
     
     if (isReposted) {
-      // Убираем репост
       newRepostedBy = newRepostedBy.filter(username => username !== userData.username);
     } else {
-      // Добавляем репост
       if (!newRepostedBy.includes(userData.username)) {
         newRepostedBy.push(userData.username);
       }
@@ -2421,17 +3009,14 @@ async function toggleRepost(id) {
       repostedBy: newRepostedBy
     });
     
-    // Обновляем список репостов пользователя
     await db.collection("users").doc(currentUser.uid).update({
       reposts: isReposted
         ? firebase.firestore.FieldValue.arrayRemove(id)
         : firebase.firestore.FieldValue.arrayUnion(id)
     });
     
-    // Обновляем локальные данные
     if (isReposted) {
       userData.reposts = userData.reposts.filter(postId => postId !== id);
-      // Если пост был закреплен, убираем его из закрепленных
       if (userData.pinnedReposts?.includes(id)) {
         await togglePinRepost(id, false);
       }
@@ -2440,11 +3025,9 @@ async function toggleRepost(id) {
       userData.reposts.push(id);
     }
     
-    // Обновляем кэш
     post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
     post.repostedBy = newRepostedBy;
     
-    // Обновляем отображение
     const repostButton = document.querySelector(`#post-${id} .action:nth-child(3)`);
     const repostsSpan = document.getElementById(`reposts-${id}`);
     if (repostButton && repostsSpan) {
@@ -2454,7 +3037,6 @@ async function toggleRepost(id) {
     
     showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
     
-    // Перезагружаем посты чтобы отобразить/скрыть надпись о репосте
     setTimeout(() => {
       if (currentTab === 'hashtags') {
         loadAllHashtags();
@@ -2471,7 +3053,6 @@ async function toggleRepost(id) {
 
 // ==================== ФУНКЦИИ ДЛЯ ЗАКРЕПЛЕНИЯ РЕПОСТОВ ====================
 
-// Закрепление/открепление репоста
 async function togglePinRepost(postId, forcePin = null) {
   if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
   
@@ -2479,7 +3060,6 @@ async function togglePinRepost(postId, forcePin = null) {
   const shouldPin = forcePin !== null ? forcePin : !isCurrentlyPinned;
   
   try {
-    // Проверяем количество закрепленных репостов
     const pinnedCount = userData.pinnedReposts?.length || 0;
     const maxPinnedReposts = 3;
     
@@ -2488,14 +3068,12 @@ async function togglePinRepost(postId, forcePin = null) {
       return;
     }
     
-    // Обновляем список закрепленных репостов
     await db.collection("users").doc(currentUser.uid).update({
       pinnedReposts: shouldPin
         ? firebase.firestore.FieldValue.arrayUnion(postId)
         : firebase.firestore.FieldValue.arrayRemove(postId)
     });
     
-    // Обновляем локальные данные
     if (shouldPin) {
       if (!userData.pinnedReposts) userData.pinnedReposts = [];
       userData.pinnedReposts.push(postId);
@@ -2503,13 +3081,11 @@ async function togglePinRepost(postId, forcePin = null) {
       userData.pinnedReposts = userData.pinnedReposts?.filter(id => id !== postId) || [];
     }
     
-    // Обновляем количество закрепленных репостов в профиле
     const newPinnedCount = userData.pinnedReposts?.length || 0;
     document.getElementById('profilePinnedCount').textContent = newPinnedCount;
     
     showNotification(shouldPin ? "Репост закреплен!" : "Репост откреплен");
     
-    // Обновляем отображение репостов в профиле
     await refreshProfileReposts(currentProfileUserId);
     
   } catch (error) {
@@ -2520,7 +3096,6 @@ async function togglePinRepost(postId, forcePin = null) {
 
 // ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
 
-// Открытие профиля
 async function openProfile(uid, name) {
   if (!uid || !name) return;
   
@@ -2531,16 +3106,13 @@ async function openProfile(uid, name) {
   document.getElementById("profileName").textContent = "@" + name;
   document.getElementById("profileAvatar").textContent = name?.[0] || "A";
   
-  // Сбрасываем табы к постам
   switchProfileTab('posts');
   
-  // Настраиваем кнопки
   const changeNameBtn = document.getElementById("changeNameBtn");
   const profilePageBtn = document.getElementById("profilePageBtn");
   
   if (uid === currentUser.uid) {
     changeNameBtn.style.display = "inline-block";
-    // Показываем кнопку перехода на profile.html только в своём профиле
     profilePageBtn.style.display = "inline-flex";
   } else {
     changeNameBtn.style.display = "none";
@@ -2568,7 +3140,6 @@ async function openProfile(uid, name) {
   await refreshProfileReposts(uid);
 }
 
-// Новая функция для открытия профиля текущего пользователя
 async function openCurrentUserProfile() {
   if (!currentUser || !userData) {
     showNotification("Данные пользователя еще загружаются...");
@@ -2578,18 +3149,15 @@ async function openCurrentUserProfile() {
   await openProfile(currentUser.uid, userData.username);
 }
 
-// Функция для перехода на profile.html
 function goToProfilePage() {
   location.href = 'profile.html';
 }
 
-// Закрытие профиля
 function closeProfile() {
   currentProfileUserId = null;
   document.getElementById("profileSheet").classList.remove("show");
 }
 
-// Переключение таба в профиле
 function switchProfileTab(tab) {
   currentProfileTab = tab;
   
@@ -2614,7 +3182,6 @@ function switchProfileTab(tab) {
   }
 }
 
-// Обновление кнопки подписки в профиле
 function updateProfileSubscribeButton(userId) {
   const button = document.getElementById('profileSubscribeBtn');
   if (!button) return;
@@ -2630,7 +3197,6 @@ function updateProfileSubscribeButton(userId) {
   }
 }
 
-// Обновление кнопки чата в профиле
 function updateProfileChatButton(userId) {
   const chatBtn = document.getElementById('profileChatBtn');
   if (!chatBtn) return;
@@ -2646,13 +3212,11 @@ function updateProfileChatButton(userId) {
   }
 }
 
-// Подписка/отписка
 async function toggleSubscribe(userId, username) {
   try {
     const isSubscribed = subscriptions.has(userId);
     
     if (isSubscribed) {
-      // Отписываемся
       await db.collection("users").doc(currentUser.uid).update({
         subscriptions: firebase.firestore.FieldValue.arrayRemove(userId)
       });
@@ -2664,7 +3228,6 @@ async function toggleSubscribe(userId, username) {
       subscriptions.delete(userId);
       showNotification(`Вы отписались от @${username}`);
     } else {
-      // Подписываемся
       await db.collection("users").doc(currentUser.uid).update({
         subscriptions: firebase.firestore.FieldValue.arrayUnion(userId)
       });
@@ -2677,14 +3240,12 @@ async function toggleSubscribe(userId, username) {
       showNotification(`Вы подписались на @${username}`);
     }
     
-    // Обновляем UI
     if (currentProfileUserId === userId) {
       updateProfileSubscribeButton(userId);
       updateProfileChatButton(userId);
       await updateProfileSubscribersCount(userId);
     }
     
-    // Перезагружаем посты, если мы в ленте подписок
     if (currentTab === 'subscriptions') {
       loadPosts();
     }
@@ -2697,7 +3258,6 @@ async function toggleSubscribe(userId, username) {
   }
 }
 
-// Обновление количества подписчиков
 async function updateProfileSubscribersCount(userId) {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -2711,7 +3271,6 @@ async function updateProfileSubscribersCount(userId) {
   }
 }
 
-// Обновление количества репостов
 async function updateProfileRepostsCount(userId) {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -2725,7 +3284,6 @@ async function updateProfileRepostsCount(userId) {
   }
 }
 
-// Обновление количества закрепленных репостов
 async function updateProfilePinnedCount(userId) {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -2739,7 +3297,6 @@ async function updateProfilePinnedCount(userId) {
   }
 }
 
-// Загрузка описания профиля
 async function loadUserBio(userId) {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
@@ -2755,7 +3312,6 @@ async function loadUserBio(userId) {
         bioText.style.display = 'block';
         bioEmpty.style.display = 'none';
         
-        // Показываем счетчик слов только для своего профиля
         if (userId === currentUser.uid) {
           const wordCount = countWords(bio);
           wordCounter.textContent = `Слов: ${wordCount}/50`;
@@ -2776,7 +3332,6 @@ async function loadUserBio(userId) {
         wordCounter.style.display = 'none';
       }
       
-      // Показываем кнопку редактирования только для своего профиля
       const editBtn = document.getElementById('editBioBtn');
       if (userId === currentUser.uid) {
         editBtn.style.display = 'block';
@@ -2784,7 +3339,6 @@ async function loadUserBio(userId) {
         editBtn.style.display = 'none';
       }
       
-      // Показываем галочку для админов
       const verifiedBadge = document.getElementById('profileVerifiedBadge');
       if (adminUsers.has(userId)) {
         verifiedBadge.style.display = 'inline';
@@ -2797,7 +3351,6 @@ async function loadUserBio(userId) {
   }
 }
 
-// Открытие модального окна для редактирования описания
 function openEditBioModal() {
   const modal = document.getElementById('editBioModal');
   const bioTextarea = document.getElementById('bioText');
@@ -2810,12 +3363,10 @@ function openEditBioModal() {
   bioTextarea.setSelectionRange(bioTextarea.value.length, bioTextarea.value.length);
 }
 
-// Закрытие модального окна для редактирования описания
 function closeEditBioModal() {
   document.getElementById('editBioModal').classList.remove('show');
 }
 
-// Сохранение описания
 async function saveBio() {
   const bioTextarea = document.getElementById('bioText');
   const newBio = bioTextarea.value.trim();
@@ -2833,7 +3384,6 @@ async function saveBio() {
     
     userData.bio = newBio;
     
-    // Обновляем отображение описания
     if (currentProfileUserId === currentUser.uid) {
       await loadUserBio(currentUser.uid);
     }
@@ -2847,7 +3397,6 @@ async function saveBio() {
   }
 }
 
-// Обновление постов в профиле
 async function refreshProfilePosts(uid) {
   const profilePosts = document.getElementById("profilePosts");
   const profilePostsCount = document.getElementById("profilePostsCount");
@@ -2892,11 +3441,15 @@ async function refreshProfilePosts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
+      // Добавляем индикатор опроса, если он есть
+      const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
+      
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
           <div class="post-text">${processedText}</div>
           <div class="post-time" title="${fullDateTime}">
             <span>${timeAgo}</span>
+            ${pollBadge}
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
             <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
@@ -2919,7 +3472,6 @@ async function refreshProfilePosts(uid) {
   }
 }
 
-// Обновление репостов в профиле
 async function refreshProfileReposts(uid) {
   const profileReposts = document.getElementById("profileReposts");
   
@@ -2949,12 +3501,10 @@ async function refreshProfileReposts(uid) {
     
     profileReposts.innerHTML = "<div style='text-align:center;color:var(--sub);padding:20px 0;'>Загрузка репостов...</div>";
     
-    // Загружаем все репостнутые посты
     const postsPromises = repostIds.map(postId => 
       db.collection("posts").doc(postId).get().then(doc => {
         if (doc.exists) {
           const post = { id: doc.id, ...doc.data() };
-          // Добавляем информацию о закреплении
           post.isPinned = pinnedRepostIds.includes(postId);
           return post;
         }
@@ -2965,18 +3515,15 @@ async function refreshProfileReposts(uid) {
     const posts = await Promise.all(postsPromises);
     const validPosts = posts.filter(post => post !== null);
     
-    // Разделяем на закрепленные и обычные репосты
     const pinnedPosts = validPosts.filter(post => post.isPinned);
     const regularPosts = validPosts.filter(post => !post.isPinned);
     
-    // Сортируем закрепленные посты (новые первыми)
     pinnedPosts.sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
       return dateB - dateA;
     });
     
-    // Сортируем обычные репосты по дате создания (новые первыми)
     regularPosts.sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
@@ -2993,7 +3540,6 @@ async function refreshProfileReposts(uid) {
     
     profileReposts.innerHTML = "";
     
-    // Отображаем закрепленные репосты
     if (pinnedPosts.length > 0) {
       pinnedPosts.forEach(post => {
         const isAdmin = adminUsers.has(post.userId);
@@ -3062,7 +3608,6 @@ async function refreshProfileReposts(uid) {
           </div>`;
       });
       
-      // Добавляем разделитель если есть и обычные репосты
       if (regularPosts.length > 0) {
         profileReposts.innerHTML += `
           <div class="reposts-divider">
@@ -3072,7 +3617,6 @@ async function refreshProfileReposts(uid) {
       }
     }
     
-    // Отображаем обычные репосты
     regularPosts.forEach(post => {
       const isAdmin = adminUsers.has(post.userId);
       const liked = post.likedBy?.includes(currentUser.uid);
@@ -3148,7 +3692,6 @@ async function refreshProfileReposts(uid) {
   }
 }
 
-// Получение количества постов пользователя
 async function getUserPostsCount(uid) {
   try {
     const snap = await db.collection("posts")
@@ -3161,7 +3704,6 @@ async function getUserPostsCount(uid) {
   }
 }
 
-// Получение количества лайков пользователя
 async function getUserLikesCount(uid) {
   try {
     const snap = await db.collection("posts")
@@ -3181,7 +3723,6 @@ async function getUserLikesCount(uid) {
   }
 }
 
-// Получение постов пользователя
 async function getUserPosts(uid) {
   try {
     const allPostsSnap = await db.collection("posts")
@@ -3196,7 +3737,6 @@ async function getUserPosts(uid) {
       });
     });
     
-    // Сортируем по дате (новые первыми)
     userPosts.sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
@@ -3210,12 +3750,10 @@ async function getUserPosts(uid) {
   }
 }
 
-// Удаление поста из профиля
 async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
-    // Удаляем пост из всех репостов пользователей
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();
@@ -3229,7 +3767,6 @@ async function deletePostFromProfile(postId, userId) {
     
     await batch.commit();
     
-    // Удаляем пост из закрепленных репостов пользователей
     const usersWithPinnedRepost = await db.collection("users")
       .where("pinnedReposts", "array-contains", postId)
       .get();
@@ -3243,7 +3780,6 @@ async function deletePostFromProfile(postId, userId) {
     
     await batch2.commit();
     
-    // Удаляем сам пост
     await db.collection("posts").doc(postId).delete();
     
     if (viewedPosts[postId]) {
@@ -3273,37 +3809,31 @@ async function deletePostFromProfile(postId, userId) {
 
 // ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
 
-// Переход к чату с пользователем
 function goToChatWithUser() {
   if (!currentProfileUserId) return;
   
   const username = document.getElementById('profileName').textContent.replace('@', '');
   
-  // Сохраняем данные пользователя для чата
   sessionStorage.setItem('openChatWith', JSON.stringify({
     userId: currentProfileUserId,
     username: username
   }));
   
-  // Переходим на страницу чатов
   location.href = 'chats.html';
 }
 
 // ==================== ФУНКЦИИ ДЛЯ КОММЕНТАРИЕВ ====================
 
-// Открытие комментариев
 function openComments(id) {
   currentPostId = id;
   document.getElementById("commentsSheet").classList.add("show");
   loadComments();
 }
 
-// Закрытие комментариев
 function closeComments() {
   document.getElementById("commentsSheet").classList.remove("show");
 }
 
-// Загрузка комментариев
 async function loadComments() {
   const commentsBody = document.getElementById("commentsBody");
   commentsBody.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка комментариев...</div>";
@@ -3355,7 +3885,6 @@ async function loadComments() {
   }
 }
 
-// Добавление комментария
 async function addComment() {
   const commentInput = document.getElementById("commentInput");
   const text = commentInput.value.trim();
@@ -3398,7 +3927,6 @@ async function addComment() {
   }
 }
 
-// Удаление комментария
 async function deleteComment(commentId) {
   if (!confirm("Удалить комментарий?")) return;
   
@@ -3423,7 +3951,6 @@ async function deleteComment(commentId) {
 
 // ==================== ФУНКЦИИ ДЛЯ СМЕНЫ ИМЕНИ ====================
 
-// Открытие модального окна для смены имени
 function openChangeNameModal() {
   const modal = document.getElementById('changeNameModal');
   const input = document.getElementById('newUsernameInput');
@@ -3435,12 +3962,10 @@ function openChangeNameModal() {
   input.focus();
 }
 
-// Закрытие модального окна для смены имени
 function closeChangeNameModal() {
   document.getElementById('changeNameModal').classList.remove('show');
 }
 
-// Смена имени пользователя
 async function changeUsername() {
   const input = document.getElementById('newUsernameInput');
   const newUsername = input.value.trim();
@@ -3498,10 +4023,8 @@ async function changeUsername() {
   }
 }
 
-// Обновление имени во всех постах и комментариях
 async function updateUsernameInAllPosts(userId, newUsername) {
   try {
-    // Обновляем имя в постах
     const postsSnap = await db.collection("posts")
       .where("userId", "==", userId)
       .get();
@@ -3511,7 +4034,6 @@ async function updateUsernameInAllPosts(userId, newUsername) {
       batch.update(doc.ref, { username: newUsername });
     });
     
-    // Обновляем имя в комментариях
     const allPostsSnap = await db.collection("posts").get();
     const commentUpdates = [];
     
@@ -3540,7 +4062,6 @@ async function updateUsernameInAllPosts(userId, newUsername) {
 
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
-// Форматирование времени
 function formatTimeAgo(date) {
   if (!date) return "только что";
   
@@ -3571,7 +4092,6 @@ function formatTimeAgo(date) {
   }
 }
 
-// Форматирование полной даты и времени
 function formatFullDateTime(date) {
   if (!date) return "";
   
@@ -3585,7 +4105,6 @@ function formatFullDateTime(date) {
   });
 }
 
-// Получение метки разделителя времени
 function getTimeDividerLabel(prevDate, currentDate) {
   if (!prevDate || !currentDate) return null;
   
@@ -3614,7 +4133,6 @@ function getTimeDividerLabel(prevDate, currentDate) {
   return null;
 }
 
-// Показ уведомления
 function showNotification(message, duration = 3000) {
   const notification = document.getElementById('notification');
   notification.textContent = message;
@@ -3625,7 +4143,6 @@ function showNotification(message, duration = 3000) {
   }, duration);
 }
 
-// Проверка нужно ли прокрутить к посту
 function checkPostToScroll() {
   const postIdToScroll = localStorage.getItem('scrollToPostId');
   if (postIdToScroll) {
@@ -3646,7 +4163,6 @@ function checkPostToScroll() {
   }
 }
 
-// Увеличение счетчика просмотров
 async function incrementPostViews(postId) {
   if (viewedPosts[postId]) return;
   
@@ -3673,7 +4189,6 @@ async function incrementPostViews(postId) {
   }
 }
 
-// Настройка отслеживания просмотров
 function setupViewTracking() {
   const posts = document.querySelectorAll('.post');
   
@@ -3700,7 +4215,6 @@ function setupViewTracking() {
 
 // ==================== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ====================
 
-// Поиск пользователей
 async function searchUsers(searchTerm) {
   const searchResults = document.getElementById('searchResults');
   
@@ -3764,7 +4278,6 @@ async function searchUsers(searchTerm) {
   }
 }
 
-// Открытие профиля из результатов поиска
 async function openSearchedProfile(userId, username) {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').innerHTML = '';
@@ -3775,7 +4288,6 @@ async function openSearchedProfile(userId, username) {
 
 // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
 
-// Поиск при вводе текста
 document.getElementById("searchInput").addEventListener("input", function(e) {
   const searchTerm = e.target.value.trim();
   
@@ -3793,7 +4305,6 @@ document.getElementById("searchInput").addEventListener("input", function(e) {
   }
 });
 
-// Enter для отправки поста
 document.getElementById("postText").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -3801,7 +4312,6 @@ document.getElementById("postText").addEventListener("keydown", (e) => {
   }
 });
 
-// Enter для смены имени
 document.getElementById("newUsernameInput").addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -3809,7 +4319,6 @@ document.getElementById("newUsernameInput").addEventListener("keypress", (e) => 
   }
 });
 
-// Ctrl+Enter для сохранения описания
 document.getElementById("bioText").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.ctrlKey) {
     e.preventDefault();
@@ -3817,7 +4326,6 @@ document.getElementById("bioText").addEventListener("keydown", (e) => {
   }
 });
 
-// Запуск обновления времени
 function startTimeUpdater() {
   setInterval(() => {
     const timeElement = document.getElementById("time");
@@ -3830,7 +4338,6 @@ function startTimeUpdater() {
   }, 1000);
 }
 
-// Выход из аккаунта
 function logout() {
   if (confirm("Выйти из аккаунта?")) {
     auth.signOut().then(() => {
@@ -3839,15 +4346,11 @@ function logout() {
   }
 }
 
-// Инициализация при загрузке страницы
 window.addEventListener('load', () => {
-  // Проверяем нужно ли открыть профиль при загрузке
   const urlParams = new URLSearchParams(window.location.search);
   const openProfileUserId = urlParams.get('openProfile');
   
   if (openProfileUserId) {
-    // Нужно открыть профиль пользователя
-    // Для этого нужно сначала получить имя пользователя
     db.collection("users").doc(openProfileUserId).get().then(doc => {
       if (doc.exists) {
         const userData = doc.data();

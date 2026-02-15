@@ -22,7 +22,6 @@
   --success:#30d158;
   --online:#30d158;
   --offline:#8e8e93;
-  --views:#8e8e93;
   --message:#5ac8fa;
   --outgoing-message:#667eea;
   --pinned:#ffd60a;
@@ -1341,8 +1340,22 @@ async function testMediaDevices() {
     }
     
     console.log('🎤 Запрос доступа к микрофону...');
-    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioStream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      } 
+    });
     console.log('✅ Доступ к микрофону получен');
+    
+    // Проверяем, что аудио действительно работает
+    const audioTrack = audioStream.getAudioTracks()[0];
+    if (audioTrack) {
+      console.log('🔊 Аудио трек:', audioTrack.label);
+      console.log('🔊 Аудио трек включен:', audioTrack.enabled);
+    }
+    
     audioStream.getTracks().forEach(track => track.stop());
     
     return true;
@@ -1422,7 +1435,16 @@ async function initializeCall() {
     const audioTracks = localStream.getAudioTracks();
     if (audioTracks.length > 0) {
       console.log('🔊 Аудио трек:', audioTracks[0].label);
+      console.log('🔊 Аудио трек включен:', audioTracks[0].enabled);
+      
+      // Принудительно включаем аудио
       audioTracks[0].enabled = true;
+      
+      // Создаем аудио контекст для разблокировки аудио на iOS
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
     } else {
       console.error('❌ Нет аудио трека');
       showNotification('Ошибка: нет доступа к микрофону');
@@ -1456,6 +1478,17 @@ async function initializeCall() {
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
+      
+      // Проверяем аудио треки
+      const remoteAudioTracks = remoteStream.getAudioTracks();
+      if (remoteAudioTracks.length > 0) {
+        console.log('🔊 Получен удаленный аудио трек:', remoteAudioTracks[0].label);
+        console.log('🔊 Удаленный аудио трек включен:', remoteAudioTracks[0].enabled);
+        
+        // Принудительно включаем удаленное аудио
+        remoteAudioTracks[0].enabled = true;
+      }
+      
       const remoteVideo = document.getElementById('remoteVideo');
       if (remoteVideo) {
         remoteVideo.srcObject = remoteStream;
@@ -1572,6 +1605,15 @@ function watchCallStatus(callId) {
         document.getElementById('videoToggleBtn').style.display = 'flex';
       }
       startCallTimer();
+      
+      // Еще раз проверяем аудио
+      if (localStream) {
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks[0].enabled = true;
+          console.log('🔊 Локальное аудио включено');
+        }
+      }
       
     } else if (call.status === 'ended') {
       console.log('Звонок завершен');
@@ -1692,7 +1734,14 @@ async function acceptIncomingCall() {
     
     const audioTracks = localStream.getAudioTracks();
     if (audioTracks.length > 0) {
+      console.log('🔊 Локальный аудио трек:', audioTracks[0].label);
       audioTracks[0].enabled = true;
+      
+      // Создаем аудио контекст для разблокировки на iOS
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
     }
     
     showCallModal('incoming');
@@ -1721,6 +1770,14 @@ async function acceptIncomingCall() {
     peerConnection.ontrack = (event) => {
       console.log('Получен удаленный поток');
       remoteStream = event.streams[0];
+      
+      // Проверяем удаленное аудио
+      const remoteAudioTracks = remoteStream.getAudioTracks();
+      if (remoteAudioTracks.length > 0) {
+        console.log('🔊 Удаленный аудио трек получен');
+        remoteAudioTracks[0].enabled = true;
+      }
+      
       const remoteVideo = document.getElementById('remoteVideo');
       if (remoteVideo) {
         remoteVideo.srcObject = remoteStream;
@@ -1845,9 +1902,10 @@ function startCallTimer() {
 }
 
 function playRingtone() {
-  ringtoneAudio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+  // Используем другой URL для звонка
+  ringtoneAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
   ringtoneAudio.loop = true;
-  ringtoneAudio.play().catch(e => console.log('Не удалось воспроизвести звонок'));
+  ringtoneAudio.play().catch(e => console.log('Не удалось воспроизвести звонок:', e));
 }
 
 function stopRingtone() {
@@ -1864,6 +1922,7 @@ function toggleMute() {
       audioTrack.enabled = !audioTrack.enabled;
       document.getElementById('muteBtn').classList.toggle('muted');
       document.getElementById('muteBtn').innerHTML = audioTrack.enabled ? '🎤' : '🔇';
+      console.log('🔊 Микрофон:', audioTrack.enabled ? 'включен' : 'выключен');
     }
   }
 }

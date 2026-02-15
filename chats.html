@@ -1362,29 +1362,20 @@ async function playRingtone() {
   
   try {
     if (!audioContext) {
-      // Создаем аудио контекст
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     
-    // Если контекст заблокирован, показываем уведомление
     if (audioContext.state === 'suspended') {
       console.log('🔇 Аудио контекст заблокирован, нужно взаимодействие');
-      
-      // Показываем уведомление о звонке
       showNotification('🔔 Входящий звонок! Нажмите для ответа');
       
-      // Создаем кнопку для разблокировки звука
       const unlockBtn = document.createElement('button');
       unlockBtn.innerHTML = '🔔 Входящий звонок! Нажмите для звука';
       unlockBtn.id = 'unlock-audio-btn';
       
       unlockBtn.onclick = async () => {
         await audioContext.resume();
-        
-        // Воспроизводим рингтон после разблокировки
         playRingtonePattern();
-        
-        // Удаляем кнопку через 1 секунду
         setTimeout(() => {
           if (unlockBtn.parentNode) unlockBtn.remove();
         }, 1000);
@@ -1394,7 +1385,6 @@ async function playRingtone() {
       return;
     }
     
-    // Если контекст активен, сразу воспроизводим
     if (audioContext.state === 'running') {
       playRingtonePattern();
     }
@@ -1405,28 +1395,23 @@ async function playRingtone() {
   }
 }
 
-// Функция для воспроизведения паттерна рингтона
 function playRingtonePattern() {
   if (!audioContext || audioContext.state !== 'running') return;
   
-  // Останавливаем предыдущий рингтон
   stopRingtone();
   
-  // Создаем интервал для повторения звука
   ringtoneAudio = setInterval(() => {
     if (!audioContext || audioContext.state !== 'running') {
       stopRingtone();
       return;
     }
     
-    // Воспроизводим короткий звук (2 раза для эффекта "дзынь-дзынь")
-    playBeep(440, 0.15); // Первый звук
-    setTimeout(() => playBeep(440, 0.15), 200); // Второй звук через 200мс
+    playBeep(440, 0.15);
+    setTimeout(() => playBeep(440, 0.15), 200);
     
-  }, 2000); // Повторяем каждые 2 секунды
+  }, 2000);
 }
 
-// Функция для воспроизведения одного звука
 function playBeep(frequency = 440, duration = 0.15) {
   if (!audioContext || audioContext.state !== 'running') return;
   
@@ -1437,7 +1422,6 @@ function playBeep(frequency = 440, duration = 0.15) {
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
     
-    // Плавное затухание
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
     
@@ -1452,7 +1436,6 @@ function playBeep(frequency = 440, duration = 0.15) {
   }
 }
 
-// Функция остановки рингтона
 function stopRingtone() {
   if (ringtoneAudio) {
     if (typeof ringtoneAudio === 'number') {
@@ -1461,21 +1444,17 @@ function stopRingtone() {
     ringtoneAudio = null;
   }
   
-  // Удаляем кнопку разблокировки если есть
   const unlockBtn = document.getElementById('unlock-audio-btn');
   if (unlockBtn) unlockBtn.remove();
 }
 
-// Функция тестирования аудио
 async function testAudioOutput() {
   try {
-    // Создаем аудио контекст
     const testContext = new (window.AudioContext || window.webkitAudioContext)();
     
     if (testContext.state === 'suspended') {
       console.log('🔇 Аудио контекст заблокирован');
       
-      // Создаем кнопку для теста
       const testBtn = document.createElement('button');
       testBtn.innerHTML = '🔊 Проверить звук';
       testBtn.id = 'test-audio-btn';
@@ -1483,7 +1462,6 @@ async function testAudioOutput() {
       testBtn.onclick = async () => {
         await testContext.resume();
         
-        // Воспроизводим тестовый звук
         const oscillator = testContext.createOscillator();
         const gainNode = testContext.createGain();
         
@@ -1639,7 +1617,38 @@ function watchCallStatus(callId) {
     if (!call) return;
     
     console.log('Статус звонка:', call.status);
-    console.log('Документ звонка:', call); // Логируем весь документ для отладки
+    console.log('Документ звонка:', call);
+    
+    // ВАЖНО: Проверяем наличие answer и устанавливаем remote description
+    if (call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+      console.log('📞 Получен ответ, устанавливаем remote description...');
+      
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
+        console.log('✅ Remote description установлен!');
+        
+        // Добавляем все накопленные ICE кандидаты
+        console.log(`📦 Добавление накопленных ICE кандидатов (${pendingIceCandidates.length})...`);
+        for (const candidateData of pendingIceCandidates) {
+          try {
+            const candidate = new RTCIceCandidate({
+              candidate: candidateData.candidate || '',
+              sdpMid: candidateData.sdpMid || '',
+              sdpMLineIndex: candidateData.sdpMLineIndex || 0,
+              usernameFragment: candidateData.usernameFragment || ''
+            });
+            await peerConnection.addIceCandidate(candidate);
+            console.log('✅ Накопленный ICE кандидат добавлен');
+          } catch (e) {
+            console.error('❌ Ошибка добавления накопленного ICE кандидата:', e);
+          }
+        }
+        pendingIceCandidates = [];
+        
+      } catch (e) {
+        console.error('❌ Ошибка установки remote description:', e);
+      }
+    }
     
     if (call.status === 'connected') {
       document.getElementById('outgoingControls').style.display = 'none';
@@ -1657,6 +1666,38 @@ function watchCallStatus(callId) {
         }
       }
       
+      // Проверяем, что remote description установлен
+      if (peerConnection && !peerConnection.currentRemoteDescription) {
+        console.log('⚠️ Статус connected, но remote description не установлен! Пробуем перечитать документ...');
+        
+        setTimeout(async () => {
+          try {
+            const freshDoc = await db.collection('calls').doc(callId).get();
+            const freshCall = freshDoc.data();
+            
+            if (freshCall.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+              console.log('📞 Повторная попытка установки remote description...');
+              await peerConnection.setRemoteDescription(new RTCSessionDescription(freshCall.answer));
+              console.log('✅ Remote description установлен (повторно)!');
+              
+              // Добавляем накопленные ICE кандидаты
+              for (const candidateData of pendingIceCandidates) {
+                try {
+                  const candidate = new RTCIceCandidate(candidateData);
+                  await peerConnection.addIceCandidate(candidate);
+                  console.log('✅ Накопленный ICE кандидат добавлен');
+                } catch (e) {
+                  console.error('❌ Ошибка добавления ICE кандидата:', e);
+                }
+              }
+              pendingIceCandidates = [];
+            }
+          } catch (e) {
+            console.error('❌ Ошибка при повторной попытке:', e);
+          }
+        }, 1000);
+      }
+      
     } else if (call.status === 'ended') {
       console.log('Звонок завершен');
       showNotification('Звонок завершен');
@@ -1666,37 +1707,6 @@ function watchCallStatus(callId) {
       console.log('Звонок отклонен');
       showNotification('Пользователь отклонил звонок');
       cleanupCall();
-      
-    } else if (call.answer && peerConnection) {
-      console.log('Получен ответ');
-      
-      // Устанавливаем remote description если еще не установлен
-      if (!peerConnection.currentRemoteDescription) {
-        try {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
-          console.log('✅ Remote description установлен');
-          
-          // Добавляем накопленные ICE кандидаты
-          console.log('Добавление накопленных ICE кандидатов:', pendingIceCandidates.length);
-          for (const candidateData of pendingIceCandidates) {
-            try {
-              const candidate = new RTCIceCandidate({
-                candidate: candidateData.candidate || '',
-                sdpMid: candidateData.sdpMid || '',
-                sdpMLineIndex: candidateData.sdpMLineIndex || 0,
-                usernameFragment: candidateData.usernameFragment || ''
-              });
-              await peerConnection.addIceCandidate(candidate);
-              console.log('✅ Накопленный ICE кандидат добавлен');
-            } catch (e) {
-              console.error('Ошибка добавления накопленного ICE кандидата:', e);
-            }
-          }
-          pendingIceCandidates = [];
-        } catch (e) {
-          console.error('Ошибка установки remote description:', e);
-        }
-      }
     }
   });
   
@@ -1765,7 +1775,6 @@ async function initializeCall() {
     if (audioTracks.length > 0) {
       console.log('🔊 Аудио трек:', audioTracks[0].label);
       console.log('🔊 Аудио трек включен:', audioTracks[0].enabled);
-      
       audioTracks[0].enabled = true;
     }
     
@@ -1779,13 +1788,11 @@ async function initializeCall() {
     
     peerConnection = new RTCPeerConnection(iceServers);
     
-    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
-    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
@@ -1805,7 +1812,6 @@ async function initializeCall() {
       }
     };
     
-    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -1974,13 +1980,11 @@ async function acceptIncomingCall() {
     
     peerConnection = new RTCPeerConnection(iceServers);
     
-    // Добавляем локальные треки
     localStream.getTracks().forEach(track => {
       console.log('Добавление трека:', track.kind);
       peerConnection.addTrack(track, localStream);
     });
     
-    // Обработка удаленного потока
     peerConnection.ontrack = (event) => {
       console.log('🎥 Получен удаленный поток');
       remoteStream = event.streams[0];
@@ -2000,7 +2004,6 @@ async function acceptIncomingCall() {
       }
     };
     
-    // Обработка ICE кандидатов
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log('📦 Отправка ICE кандидата');
@@ -3211,7 +3214,6 @@ auth.onAuthStateChanged(async (user) => {
   
   await checkForAutoOpenChat();
   
-  // Запускаем тест аудио через 2 секунды
   setTimeout(() => {
     testAudioOutput();
   }, 2000);

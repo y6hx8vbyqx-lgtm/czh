@@ -1103,6 +1103,44 @@ body{
   }
 }
 
+/* Стили для кнопки разблокировки звука */
+#unlock-audio-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 30px;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  cursor: pointer;
+  animation: pulse 2s infinite;
+}
+#unlock-audio-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+#test-audio-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10002;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  animation: pulse 2s infinite;
+}
+#test-audio-btn:hover {
+  transform: scale(1.05);
+}
+
 </style>
 </head>
 
@@ -1302,6 +1340,7 @@ let callStartTime = null;
 let incomingCallListener = null;
 let callStatusListener = null;
 let ringtoneAudio = null;
+let audioContext = null;
 let iceCandidateListener = null;
 let pendingIceCandidates = [];
 
@@ -1316,6 +1355,164 @@ const iceServers = {
 };
 
 // ==================== ФУНКЦИИ ДЛЯ ЗВОНКОВ ====================
+
+// Улучшенная функция воспроизведения рингтона
+async function playRingtone() {
+  console.log('🔔 Попытка воспроизвести рингтон...');
+  
+  try {
+    if (!audioContext) {
+      // Создаем аудио контекст
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    // Если контекст заблокирован, показываем уведомление
+    if (audioContext.state === 'suspended') {
+      console.log('🔇 Аудио контекст заблокирован, нужно взаимодействие');
+      
+      // Показываем уведомление о звонке
+      showNotification('🔔 Входящий звонок! Нажмите для ответа');
+      
+      // Создаем кнопку для разблокировки звука
+      const unlockBtn = document.createElement('button');
+      unlockBtn.innerHTML = '🔔 Входящий звонок! Нажмите для звука';
+      unlockBtn.id = 'unlock-audio-btn';
+      
+      unlockBtn.onclick = async () => {
+        await audioContext.resume();
+        
+        // Воспроизводим рингтон после разблокировки
+        playRingtonePattern();
+        
+        // Удаляем кнопку через 1 секунду
+        setTimeout(() => {
+          if (unlockBtn.parentNode) unlockBtn.remove();
+        }, 1000);
+      };
+      
+      document.body.appendChild(unlockBtn);
+      return;
+    }
+    
+    // Если контекст активен, сразу воспроизводим
+    if (audioContext.state === 'running') {
+      playRingtonePattern();
+    }
+    
+  } catch (e) {
+    console.error('Ошибка воспроизведения:', e);
+    showNotification('🔔 Входящий звонок!');
+  }
+}
+
+// Функция для воспроизведения паттерна рингтона
+function playRingtonePattern() {
+  if (!audioContext || audioContext.state !== 'running') return;
+  
+  // Останавливаем предыдущий рингтон
+  stopRingtone();
+  
+  // Создаем интервал для повторения звука
+  ringtoneAudio = setInterval(() => {
+    if (!audioContext || audioContext.state !== 'running') {
+      stopRingtone();
+      return;
+    }
+    
+    // Воспроизводим короткий звук (2 раза для эффекта "дзынь-дзынь")
+    playBeep(440, 0.15); // Первый звук
+    setTimeout(() => playBeep(440, 0.15), 200); // Второй звук через 200мс
+    
+  }, 2000); // Повторяем каждые 2 секунды
+}
+
+// Функция для воспроизведения одного звука
+function playBeep(frequency = 440, duration = 0.15) {
+  if (!audioContext || audioContext.state !== 'running') return;
+  
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    
+    // Плавное затухание
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + duration);
+    
+  } catch (e) {
+    console.error('Ошибка воспроизведения звука:', e);
+  }
+}
+
+// Функция остановки рингтона
+function stopRingtone() {
+  if (ringtoneAudio) {
+    if (typeof ringtoneAudio === 'number') {
+      clearInterval(ringtoneAudio);
+    }
+    ringtoneAudio = null;
+  }
+  
+  // Удаляем кнопку разблокировки если есть
+  const unlockBtn = document.getElementById('unlock-audio-btn');
+  if (unlockBtn) unlockBtn.remove();
+}
+
+// Функция тестирования аудио
+async function testAudioOutput() {
+  try {
+    // Создаем аудио контекст
+    const testContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    if (testContext.state === 'suspended') {
+      console.log('🔇 Аудио контекст заблокирован');
+      
+      // Создаем кнопку для теста
+      const testBtn = document.createElement('button');
+      testBtn.innerHTML = '🔊 Проверить звук';
+      testBtn.id = 'test-audio-btn';
+      
+      testBtn.onclick = async () => {
+        await testContext.resume();
+        
+        // Воспроизводим тестовый звук
+        const oscillator = testContext.createOscillator();
+        const gainNode = testContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, testContext.currentTime);
+        
+        gainNode.gain.setValueAtTime(0.2, testContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, testContext.currentTime + 0.3);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(testContext.destination);
+        
+        oscillator.start();
+        oscillator.stop(testContext.currentTime + 0.3);
+        
+        testBtn.remove();
+        showNotification('✅ Звук работает!');
+      };
+      
+      document.body.appendChild(testBtn);
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    console.error('Ошибка теста аудио:', e);
+    return false;
+  }
+}
 
 async function testMediaDevices() {
   console.log('🔍 Тест медиаустройств...');
@@ -1905,19 +2102,6 @@ function startCallTimer() {
     document.getElementById('callTimer').textContent = 
       `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, 1000);
-}
-
-function playRingtone() {
-  ringtoneAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-  ringtoneAudio.loop = true;
-  ringtoneAudio.play().catch(e => console.log('Не удалось воспроизвести звонок:', e));
-}
-
-function stopRingtone() {
-  if (ringtoneAudio) {
-    ringtoneAudio.pause();
-    ringtoneAudio = null;
-  }
 }
 
 function toggleMute() {
@@ -2987,6 +3171,11 @@ auth.onAuthStateChanged(async (user) => {
   listenForIncomingCalls();
   
   await checkForAutoOpenChat();
+  
+  // Запускаем тест аудио через 2 секунды
+  setTimeout(() => {
+    testAudioOutput();
+  }, 2000);
   
   setInterval(() => {
     const timeElement = document.getElementById('time');

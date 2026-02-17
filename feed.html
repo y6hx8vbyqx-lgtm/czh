@@ -815,7 +815,6 @@ body{
   color: var(--heart);
 }
 
-/* Стили для разделителя дат */
 .message-date-divider {
   text-align: center;
   color: var(--sub);
@@ -844,7 +843,6 @@ body{
   color: var(--sub);
 }
 
-/* Стили для сообщений о звонках */
 .call-message {
   display: flex;
   align-items: center;
@@ -857,7 +855,6 @@ body{
   font-size: 16px;
 }
 
-/* Стили для сообщений об игре */
 .game-message {
   display: flex;
   align-items: center;
@@ -922,7 +919,6 @@ body{
   line-height: 1.4;
   -webkit-appearance: none;
   appearance: none;
-  font-size: 16px; /* Предотвращает зум на iOS */
 }
 .chat-input:focus {
   outline: none;
@@ -1062,7 +1058,6 @@ body{
   color: var(--heart);
 }
 
-/* Модальные окна */
 .modal {
   position: fixed;
   top: 0;
@@ -1146,7 +1141,6 @@ body{
   font-size: 24px;
 }
 
-/* Стили для игры */
 .game-container {
   display: flex;
   flex-direction: column;
@@ -1273,7 +1267,6 @@ body{
   opacity: 0.9;
 }
 
-/* Стили для календаря */
 .calendar-container {
   display: flex;
   flex-direction: column;
@@ -1514,7 +1507,6 @@ body{
   }
 }
 
-/* Стили для кнопки разблокировки звука */
 #unlock-audio-btn {
   position: fixed;
   bottom: 20px;
@@ -1638,7 +1630,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно меню -->
 <div class="modal" id="menuModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1658,7 +1649,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно игры -->
 <div class="modal" id="gameModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1674,7 +1664,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно календаря -->
 <div class="modal" id="calendarModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1802,18 +1791,15 @@ let pinnedChats = [];
 let replyingToMessage = null;
 let selectedMessageForReaction = null;
 
-// Переменные для игры
 let currentGameId = null;
 let currentGameData = null;
 let gameListener = null;
 
-// Переменные для календаря
 let currentCalendarDate = new Date();
 let calendarEvents = [];
 let calendarListener = null;
 let selectedCalendarDay = null;
 
-// Переменные для звонков
 let currentCall = null;
 let callType = null;
 let localStream = null;
@@ -1838,14 +1824,11 @@ const iceServers = {
   ]
 };
 
-// Предотвращаем зум на iOS при вводе текста
 document.addEventListener('touchstart', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
     e.target.style.fontSize = '16px';
   }
 }, { passive: true });
-
-// ==================== ФУНКЦИИ ДЛЯ МЕНЮ ====================
 
 function showMenuModal() {
   if (!currentChatUserId) {
@@ -1858,8 +1841,6 @@ function showMenuModal() {
 function closeMenuModal() {
   document.getElementById('menuModal').classList.remove('show');
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ИГРЫ ====================
 
 function showGameModal() {
   closeMenuModal();
@@ -1888,7 +1869,6 @@ async function loadOrCreateGame() {
   gameContent.innerHTML = '<div class="loader"><div class="loader-spinner"></div></div>';
   
   try {
-    // Ищем существующую активную игру в этом чате
     const gamesSnap = await db.collection('games')
       .where('chatId', '==', currentChatId)
       .where('status', 'in', ['waiting', 'waiting_word', 'active'])
@@ -1896,14 +1876,12 @@ async function loadOrCreateGame() {
       .get();
     
     if (!gamesSnap.empty) {
-      // Есть активная игра
       const gameDoc = gamesSnap.docs[0];
       currentGameId = gameDoc.id;
       currentGameData = gameDoc.data();
       setupGameListener();
       renderGame();
     } else {
-      // Нет активной игры, показываем кнопку создания
       gameContent.innerHTML = `
         <div style="text-align:center; padding:20px;">
           <p>Нет активной игры</p>
@@ -1926,6 +1904,10 @@ async function loadOrCreateGame() {
 
 async function createNewGame(amISetter) {
   try {
+    if (currentGameId) {
+      await db.collection('games').doc(currentGameId).update({ status: 'ended' }).catch(() => {});
+    }
+    
     const gameId = 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     let gameData = {
@@ -1971,11 +1953,9 @@ function renderGame() {
   
   if (!currentGameData) return;
   
-  const isCreator = currentGameData.creatorId === currentUser.uid;
   const isSetter = currentGameData.wordSetterId === currentUser.uid;
   const isGuesser = currentGameData.guesserId === currentUser.uid;
   
-  // Ожидание второго игрока (тот, кто будет отгадывать, ещё не зашёл)
   if (currentGameData.status === 'waiting') {
     gameInfo.textContent = `Ожидание второго игрока...`;
     gameContent.innerHTML = `
@@ -1990,7 +1970,6 @@ function renderGame() {
     return;
   }
   
-  // Ожидание, когда загадывающий введёт слово
   if (currentGameData.status === 'waiting_word') {
     if (isSetter) {
       gameInfo.textContent = 'Загадайте слово (5 букв)';
@@ -2008,7 +1987,6 @@ function renderGame() {
     return;
   }
   
-  // Активная игра
   if (currentGameData.status === 'active') {
     if (isGuesser) {
       gameInfo.textContent = `Попытки: ${currentGameData.attempts ? currentGameData.attempts.length : 0}/${currentGameData.maxAttempts}`;
@@ -2020,7 +1998,6 @@ function renderGame() {
         const attempt = attempts[i];
         
         if (attempt) {
-          // Отображаем попытку с подсказками
           attemptsHTML += '<div class="attempt-row">';
           for (let j = 0; j < attempt.word.length; j++) {
             const letter = attempt.word[j];
@@ -2034,7 +2011,6 @@ function renderGame() {
           }
           attemptsHTML += '</div>';
         } else {
-          // Пустая строка
           attemptsHTML += '<div class="attempt-row">';
           for (let j = 0; j < currentGameData.wordLength; j++) {
             attemptsHTML += '<div class="attempt-letter"></div>';
@@ -2059,7 +2035,6 @@ function renderGame() {
     return;
   }
   
-  // Игра завершена
   if (currentGameData.status === 'finished') {
     const winner = currentGameData.winner;
     const isWinner = winner === currentUser.uid;
@@ -2070,7 +2045,6 @@ function renderGame() {
       gameInfo.textContent = `😢 Вы проиграли. Загаданное слово: ${currentGameData.word}`;
     }
     
-    // Показываем все попытки
     let attemptsHTML = '<div class="game-attempts">';
     const attempts = currentGameData.attempts || [];
     
@@ -2126,7 +2100,6 @@ async function setSecretWord() {
     });
     input.value = '';
     
-    // Отправляем сообщение в чат о начале игры
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .add({
@@ -2158,12 +2131,10 @@ async function makeGuess() {
   
   const secretWord = currentGameData.word;
   
-  // Анализируем результат
   const result = [];
   const secretLetters = secretWord.split('');
   const guessLetters = guess.split('');
   
-  // Сначала ищем точные совпадения
   for (let i = 0; i < guessLetters.length; i++) {
     if (guessLetters[i] === secretLetters[i]) {
       result[i] = 'correct';
@@ -2172,7 +2143,6 @@ async function makeGuess() {
     }
   }
   
-  // Ищем буквы в других позициях
   for (let i = 0; i < guessLetters.length; i++) {
     if (guessLetters[i] === null) continue;
     
@@ -2198,7 +2168,6 @@ async function makeGuess() {
     status = 'finished';
     winner = currentUser.uid;
     
-    // Отправляем сообщение о победе
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .add({
@@ -2211,7 +2180,6 @@ async function makeGuess() {
     status = 'finished';
     winner = currentGameData.wordSetterId;
     
-    // Отправляем сообщение о проигрыше
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .add({
@@ -2251,8 +2219,6 @@ async function endGame() {
     closeGameModal();
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ КАЛЕНДАРЯ ====================
 
 function showCalendarModal() {
   closeMenuModal();
@@ -2297,6 +2263,9 @@ function loadCalendarEvents() {
         });
       });
       renderCalendar();
+    }, (error) => {
+      console.error('Ошибка загрузки событий:', error);
+      showNotification('Ошибка загрузки календаря. Нужно создать индекс.');
     });
 }
 
@@ -2315,23 +2284,19 @@ function renderCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   
-  // Корректировка для понедельника как первого дня
   let startOffset = firstDay === 0 ? 6 : firstDay - 1;
   
   let calendarHTML = '';
   
-  // Заголовки дней недели
   const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   weekdays.forEach(day => {
     calendarHTML += `<div class="calendar-weekday">${day}</div>`;
   });
   
-  // Пустые ячейки до первого дня
   for (let i = 0; i < startOffset; i++) {
     calendarHTML += '<div class="calendar-day empty"></div>';
   }
   
-  // Дни месяца
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const currentDate = new Date(year, month, day);
@@ -2367,7 +2332,6 @@ function renderCalendar() {
     document.getElementById('eventsList').innerHTML = '<div style="color:var(--sub); text-align:center;">Выберите день</div>';
   }
   
-  // Обновляем состояние кнопки добавления
   updateAddEventButton();
 }
 
@@ -2441,7 +2405,6 @@ async function addCalendarEvent() {
   const [year, month, day] = selectedCalendarDay.split('-').map(Number);
   const eventDate = new Date(year, month-1, day, 12, 0, 0);
   
-  // Проверяем, что дата не в прошлом
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -2485,8 +2448,6 @@ function changeMonth(delta) {
   renderCalendar();
   loadCalendarEvents();
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ЗВОНКОВ ====================
 
 async function playRingtone() {
   console.log('🔔 Попытка воспроизвести рингтон...');
@@ -3215,8 +3176,6 @@ function declineCall() {
   declineIncomingCall();
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
-
 function formatTimeAgo(date) {
   if (!date) return "только что";
   
@@ -3251,7 +3210,6 @@ function formatMessageTime(date) {
   });
 }
 
-// Новая функция для форматирования даты в разделителе
 function formatDateDivider(date) {
   const today = new Date();
   const yesterday = new Date(today);
@@ -3719,7 +3677,6 @@ async function loadChatMessages() {
       const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
       const currentDate = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
       
-      // Добавляем разделитель даты если день изменился
       if (!lastDate || currentDate.getTime() !== lastDate.getTime()) {
         const dateDivider = document.createElement('div');
         dateDivider.className = 'message-date-divider';
@@ -3896,16 +3853,6 @@ function setupChatMessagesListener() {
           const existingMessage = document.querySelector(`[data-message-id="${change.doc.id}"]`);
           
           if (!existingMessage) {
-            // Для новых сообщений добавляем разделитель даты если нужно
-            const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
-            const currentDate = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
-            
-            const lastMessage = document.querySelector('.message:last-child');
-            if (lastMessage) {
-              const lastMsgId = lastMessage.getAttribute('data-message-id');
-              // Здесь можно добавить логику проверки даты, но для простоты просто добавляем сообщение
-            }
-            
             addMessageToUI({ id: change.doc.id, ...msg });
             
             setTimeout(() => {

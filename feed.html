@@ -864,6 +864,9 @@ body{
   gap: 8px;
   font-size: 14px;
   padding: 2px 0;
+  background: rgba(90,200,250,0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
 }
 
 .chat-input-area {
@@ -1253,6 +1256,20 @@ body{
   margin-top: 10px;
 }
 .game-start-btn:hover {
+  opacity: 0.9;
+}
+.game-new-btn {
+  background: var(--success);
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 5px;
+}
+.game-new-btn:hover {
   opacity: 0.9;
 }
 
@@ -1874,7 +1891,7 @@ async function loadOrCreateGame() {
     // Ищем существующую активную игру в этом чате
     const gamesSnap = await db.collection('games')
       .where('chatId', '==', currentChatId)
-      .where('status', 'in', ['waiting', 'active'])
+      .where('status', 'in', ['waiting', 'waiting_word', 'active'])
       .limit(1)
       .get();
     
@@ -1958,11 +1975,12 @@ function renderGame() {
   const isSetter = currentGameData.wordSetterId === currentUser.uid;
   const isGuesser = currentGameData.guesserId === currentUser.uid;
   
-  // Ожидание второго игрока
+  // Ожидание второго игрока (тот, кто будет отгадывать, ещё не зашёл)
   if (currentGameData.status === 'waiting') {
     gameInfo.textContent = `Ожидание второго игрока...`;
     gameContent.innerHTML = `
       <div style="text-align:center; padding:20px;">
+        <p>🎮 Игра создана</p>
         <p>Игрок 1: @${currentChatUsername}</p>
         <p>Игрок 2: Ожидание...</p>
         <p>Противник ещё не зашёл в игру</p>
@@ -2075,13 +2093,13 @@ function renderGame() {
     
     gameContent.innerHTML = attemptsHTML + `
       <div style="text-align:center; margin-top:16px;">
-        <button class="game-start-btn" onclick="createNewGame(true)">
+        <button class="game-new-btn" onclick="createNewGame(true)">
           Новая игра (я загадываю)
         </button>
-        <button class="game-start-btn" style="margin-top:10px; background:var(--call-video);" onclick="createNewGame(false)">
+        <button class="game-new-btn" style="background:var(--call-video);" onclick="createNewGame(false)">
           Новая игра (я отгадываю)
         </button>
-        <button class="game-end-btn" onclick="endGame()">Закрыть</button>
+        <button class="game-end-btn" onclick="closeGameModal()">Закрыть</button>
       </div>
     `;
   }
@@ -2107,6 +2125,17 @@ async function setSecretWord() {
       status: 'active'
     });
     input.value = '';
+    
+    // Отправляем сообщение в чат о начале игры
+    await db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .add({
+        type: 'game',
+        text: `🎮 Игрок @${currentChatUsername} начал игру "Угадай слово"!`,
+        senderId: currentUser.uid,
+        timestamp: new Date()
+      });
+      
   } catch (error) {
     console.error('Ошибка установки слова:', error);
     showNotification('Ошибка');
@@ -2174,7 +2203,7 @@ async function makeGuess() {
       .collection('messages')
       .add({
         type: 'game',
-        text: `🎮 Игрок @${currentChatUsername} угадал слово "${secretWord}"!`,
+        text: `🎉 Игрок @${currentChatUsername} угадал слово "${secretWord}"!`,
         senderId: currentUser.uid,
         timestamp: new Date()
       });

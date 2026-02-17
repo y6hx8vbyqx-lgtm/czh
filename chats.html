@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Личные сообщения - czhmass</title>
 
 <!-- Firebase -->
@@ -41,6 +41,7 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
   height:100vh;
   overflow:hidden;
+  -webkit-text-size-adjust: 100%;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
@@ -814,7 +815,6 @@ body{
   color: var(--heart);
 }
 
-/* Стили для разделителя дат */
 .message-date-divider {
   text-align: center;
   color: var(--sub);
@@ -843,7 +843,6 @@ body{
   color: var(--sub);
 }
 
-/* Стили для сообщений о звонках */
 .call-message {
   display: flex;
   align-items: center;
@@ -854,6 +853,17 @@ body{
 }
 .call-icon {
   font-size: 16px;
+}
+
+.game-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 2px 0;
+  background: rgba(90,200,250,0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
 }
 
 .chat-input-area {
@@ -901,12 +911,14 @@ body{
   border-radius: 20px;
   padding: 10px 14px;
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-family: inherit;
   resize: none;
   min-height: 40px;
   max-height: 100px;
   line-height: 1.4;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .chat-input:focus {
   outline: none;
@@ -1046,7 +1058,6 @@ body{
   color: var(--heart);
 }
 
-/* Модальные окна */
 .modal {
   position: fixed;
   top: 0;
@@ -1130,7 +1141,6 @@ body{
   font-size: 24px;
 }
 
-/* Стили для игры */
 .game-container {
   display: flex;
   flex-direction: column;
@@ -1202,10 +1212,12 @@ body{
 .attempt-letter.correct {
   background: #30d158;
   border-color: #30d158;
+  color: #000;
 }
 .attempt-letter.misplaced {
   background: #ffd60a;
   border-color: #ffd60a;
+  color: #000;
 }
 .attempt-letter.incorrect {
   background: #3a3a3c;
@@ -1226,8 +1238,35 @@ body{
 .game-end-btn:hover {
   opacity: 0.9;
 }
+.game-start-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.game-start-btn:hover {
+  opacity: 0.9;
+}
+.game-new-btn {
+  background: var(--success);
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 5px;
+}
+.game-new-btn:hover {
+  opacity: 0.9;
+}
 
-/* Стили для календаря */
 .calendar-container {
   display: flex;
   flex-direction: column;
@@ -1296,6 +1335,11 @@ body{
 .calendar-day.selected {
   border: 2px solid var(--message);
 }
+.calendar-day.past {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #2c2c2e;
+}
 .events-list {
   margin-top: 16px;
   background: #1c1c1e;
@@ -1338,6 +1382,7 @@ body{
   border-radius: 12px;
   padding: 10px;
   color: #fff;
+  font-size: 16px;
 }
 .add-event input:focus {
   outline: none;
@@ -1355,6 +1400,10 @@ body{
 }
 .add-event button:hover {
   opacity: 0.9;
+}
+.add-event button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -1458,7 +1507,6 @@ body{
   }
 }
 
-/* Стили для кнопки разблокировки звука */
 #unlock-audio-btn {
   position: fixed;
   bottom: 20px;
@@ -1582,7 +1630,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно меню -->
 <div class="modal" id="menuModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1602,7 +1649,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно игры -->
 <div class="modal" id="gameModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1618,7 +1664,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно календаря -->
 <div class="modal" id="calendarModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -1634,8 +1679,8 @@ body{
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="events-list" id="eventsList"></div>
       <div class="add-event">
-        <input type="text" id="eventText" placeholder="Новое событие...">
-        <button onclick="addCalendarEvent()">➕</button>
+        <input type="text" id="eventText" placeholder="Новое событие..." maxlength="100">
+        <button onclick="addCalendarEvent()" id="addEventBtn">➕</button>
       </div>
     </div>
   </div>
@@ -1746,18 +1791,15 @@ let pinnedChats = [];
 let replyingToMessage = null;
 let selectedMessageForReaction = null;
 
-// Переменные для игры
 let currentGameId = null;
 let currentGameData = null;
 let gameListener = null;
 
-// Переменные для календаря
 let currentCalendarDate = new Date();
 let calendarEvents = [];
 let calendarListener = null;
 let selectedCalendarDay = null;
 
-// Переменные для звонков
 let currentCall = null;
 let callType = null;
 let localStream = null;
@@ -1782,7 +1824,11 @@ const iceServers = {
   ]
 };
 
-// ==================== ФУНКЦИИ ДЛЯ МЕНЮ ====================
+document.addEventListener('touchstart', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    e.target.style.fontSize = '16px';
+  }
+}, { passive: true });
 
 function showMenuModal() {
   if (!currentChatUserId) {
@@ -1795,8 +1841,6 @@ function showMenuModal() {
 function closeMenuModal() {
   document.getElementById('menuModal').classList.remove('show');
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ИГРЫ ====================
 
 function showGameModal() {
   closeMenuModal();
@@ -1825,31 +1869,32 @@ async function loadOrCreateGame() {
   gameContent.innerHTML = '<div class="loader"><div class="loader-spinner"></div></div>';
   
   try {
-    // Ищем существующую активную игру в этом чате
     const gamesSnap = await db.collection('games')
       .where('chatId', '==', currentChatId)
-      .where('status', 'in', ['waiting', 'active'])
+      .where('status', 'in', ['waiting', 'waiting_word', 'active'])
       .limit(1)
       .get();
     
     if (!gamesSnap.empty) {
-      // Есть активная игра
       const gameDoc = gamesSnap.docs[0];
       currentGameId = gameDoc.id;
       currentGameData = gameDoc.data();
       setupGameListener();
       renderGame();
     } else {
-      // Нет активной игры, показываем кнопку создания
       gameContent.innerHTML = `
         <div style="text-align:center; padding:20px;">
           <p>Нет активной игры</p>
-          <button class="game-end-btn" style="background:var(--accent); margin-top:10px;" onclick="createNewGame()">
-            Начать новую игру
+          <p>Выберите, кто будет загадывать слово</p>
+          <button class="game-start-btn" onclick="createNewGame(true)">
+            Я загадываю слово
+          </button>
+          <button class="game-start-btn" style="margin-top:10px; background:var(--call-video);" onclick="createNewGame(false)">
+            Я отгадываю слово
           </button>
         </div>
       `;
-      gameInfo.textContent = 'Выберите, кто будет загадывать слово';
+      gameInfo.textContent = 'Начните новую игру';
     }
   } catch (error) {
     console.error('Ошибка загрузки игры:', error);
@@ -1857,17 +1902,24 @@ async function loadOrCreateGame() {
   }
 }
 
-async function createNewGame() {
+async function createNewGame(amISetter) {
   try {
+    if (currentGameId) {
+      await db.collection('games').doc(currentGameId).update({ status: 'ended' }).catch(() => {});
+    }
+    
     const gameId = 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    const gameData = {
+    let gameData = {
       chatId: currentChatId,
       participants: [currentUser.uid, currentChatUserId],
       creatorId: currentUser.uid,
-      status: 'waiting',
+      wordSetterId: amISetter ? currentUser.uid : null,
+      guesserId: amISetter ? currentChatUserId : currentUser.uid,
+      status: amISetter ? 'waiting_word' : 'waiting',
       wordLength: 5,
       maxAttempts: 5,
+      attempts: [],
       createdAt: new Date()
     };
     
@@ -1901,29 +1953,25 @@ function renderGame() {
   
   if (!currentGameData) return;
   
-  const isCreator = currentGameData.creatorId === currentUser.uid;
-  const otherUserId = currentGameData.participants.find(id => id !== currentUser.uid);
+  const isSetter = currentGameData.wordSetterId === currentUser.uid;
+  const isGuesser = currentGameData.guesserId === currentUser.uid;
   
   if (currentGameData.status === 'waiting') {
     gameInfo.textContent = `Ожидание второго игрока...`;
     gameContent.innerHTML = `
       <div style="text-align:center; padding:20px;">
+        <p>🎮 Игра создана</p>
         <p>Игрок 1: @${currentChatUsername}</p>
         <p>Игрок 2: Ожидание...</p>
-        ${isCreator ? `
-          <button class="game-end-btn" style="background:var(--accent);" onclick="setGameWord()">
-            Загадать слово
-          </button>
-        ` : ''}
+        <p>Противник ещё не зашёл в игру</p>
         <button class="game-end-btn" onclick="endGame()">Выйти</button>
       </div>
     `;
-    
-  } else if (currentGameData.status === 'active') {
-    const isGuesser = currentGameData.guesserId === currentUser.uid;
-    const isWordSetter = currentGameData.wordSetterId === currentUser.uid;
-    
-    if (isWordSetter && !currentGameData.word) {
+    return;
+  }
+  
+  if (currentGameData.status === 'waiting_word') {
+    if (isSetter) {
       gameInfo.textContent = 'Загадайте слово (5 букв)';
       gameContent.innerHTML = `
         <div class="game-word-input">
@@ -1932,9 +1980,14 @@ function renderGame() {
         </div>
         <button class="game-end-btn" onclick="endGame()">Выйти</button>
       `;
-      return;
+    } else {
+      gameInfo.textContent = 'Противник загадывает слово...';
+      gameContent.innerHTML = '<button class="game-end-btn" onclick="endGame()">Выйти</button>';
     }
-    
+    return;
+  }
+  
+  if (currentGameData.status === 'active') {
     if (isGuesser) {
       gameInfo.textContent = `Попытки: ${currentGameData.attempts ? currentGameData.attempts.length : 0}/${currentGameData.maxAttempts}`;
       
@@ -1945,7 +1998,6 @@ function renderGame() {
         const attempt = attempts[i];
         
         if (attempt) {
-          // Отображаем попытку с подсказками
           attemptsHTML += '<div class="attempt-row">';
           for (let j = 0; j < attempt.word.length; j++) {
             const letter = attempt.word[j];
@@ -1959,7 +2011,6 @@ function renderGame() {
           }
           attemptsHTML += '</div>';
         } else {
-          // Пустая строка
           attemptsHTML += '<div class="attempt-row">';
           for (let j = 0; j < currentGameData.wordLength; j++) {
             attemptsHTML += '<div class="attempt-letter"></div>';
@@ -1969,52 +2020,62 @@ function renderGame() {
       }
       attemptsHTML += '</div>';
       
-      const gameWon = currentGameData.status === 'finished' && currentGameData.winner === currentUser.uid;
-      const gameLost = currentGameData.status === 'finished' && currentGameData.winner !== currentUser.uid;
+      gameContent.innerHTML = attemptsHTML + `
+        <div class="game-word-input">
+          <input type="text" id="guessWord" maxlength="${currentGameData.wordLength}" placeholder="Ваш вариант...">
+          <button onclick="makeGuess()">➤</button>
+        </div>
+        <button class="game-end-btn" onclick="endGame()">Выйти</button>
+      `;
       
-      if (gameWon) {
-        gameInfo.textContent = '🎉 Вы выиграли!';
-        gameContent.innerHTML = attemptsHTML + '<button class="game-end-btn" onclick="endGame()">Выйти</button>';
-      } else if (gameLost) {
-        gameInfo.textContent = `😢 Вы проиграли. Загаданное слово: ${currentGameData.word}`;
-        gameContent.innerHTML = attemptsHTML + '<button class="game-end-btn" onclick="endGame()">Выйти</button>';
-      } else if (attempts.length >= currentGameData.maxAttempts) {
-        gameInfo.textContent = `😢 Попытки закончились. Слово: ${currentGameData.word}`;
-        gameContent.innerHTML = attemptsHTML + '<button class="game-end-btn" onclick="endGame()">Выйти</button>';
-      } else {
-        gameContent.innerHTML = attemptsHTML + `
-          <div class="game-word-input">
-            <input type="text" id="guessWord" maxlength="${currentGameData.wordLength}" placeholder="Ваш вариант...">
-            <button onclick="makeGuess()">➤</button>
-          </div>
-          <button class="game-end-btn" onclick="endGame()">Выйти</button>
-        `;
-      }
     } else {
       gameInfo.textContent = 'Ожидайте, пока противник отгадывает слово';
       gameContent.innerHTML = '<button class="game-end-btn" onclick="endGame()">Выйти</button>';
     }
-  }
-}
-
-async function setGameWord() {
-  const word = prompt('Введите слово для загадывания (5 букв):');
-  if (!word || word.length !== 5) {
-    showNotification('Слово должно быть ровно 5 букв');
     return;
   }
   
-  try {
-    await db.collection('games').doc(currentGameId).update({
-      word: word.toLowerCase(),
-      wordSetterId: currentUser.uid,
-      guesserId: currentGameData.participants.find(id => id !== currentUser.uid),
-      status: 'active',
-      attempts: []
-    });
-  } catch (error) {
-    console.error('Ошибка установки слова:', error);
-    showNotification('Ошибка');
+  if (currentGameData.status === 'finished') {
+    const winner = currentGameData.winner;
+    const isWinner = winner === currentUser.uid;
+    
+    if (isWinner) {
+      gameInfo.textContent = '🎉 Вы победили!';
+    } else {
+      gameInfo.textContent = `😢 Вы проиграли. Загаданное слово: ${currentGameData.word}`;
+    }
+    
+    let attemptsHTML = '<div class="game-attempts">';
+    const attempts = currentGameData.attempts || [];
+    
+    for (let i = 0; i < attempts.length; i++) {
+      const attempt = attempts[i];
+      attemptsHTML += '<div class="attempt-row">';
+      for (let j = 0; j < attempt.word.length; j++) {
+        const letter = attempt.word[j];
+        const result = attempt.result[j];
+        let className = 'attempt-letter';
+        if (result === 'correct') className += ' correct';
+        else if (result === 'misplaced') className += ' misplaced';
+        else if (result === 'incorrect') className += ' incorrect';
+        
+        attemptsHTML += `<div class="${className}">${letter}</div>`;
+      }
+      attemptsHTML += '</div>';
+    }
+    attemptsHTML += '</div>';
+    
+    gameContent.innerHTML = attemptsHTML + `
+      <div style="text-align:center; margin-top:16px;">
+        <button class="game-new-btn" onclick="createNewGame(true)">
+          Новая игра (я загадываю)
+        </button>
+        <button class="game-new-btn" style="background:var(--call-video);" onclick="createNewGame(false)">
+          Новая игра (я отгадываю)
+        </button>
+        <button class="game-end-btn" onclick="closeGameModal()">Закрыть</button>
+      </div>
+    `;
   }
 }
 
@@ -2027,15 +2088,27 @@ async function setSecretWord() {
     return;
   }
   
+  if (!/^[а-яё]+$/.test(word)) {
+    showNotification('Только русские буквы');
+    return;
+  }
+  
   try {
     await db.collection('games').doc(currentGameId).update({
       word: word,
-      wordSetterId: currentUser.uid,
-      guesserId: currentGameData.participants.find(id => id !== currentUser.uid),
-      status: 'active',
-      attempts: []
+      status: 'active'
     });
     input.value = '';
+    
+    await db.collection('chats').doc(currentChatId)
+      .collection('messages')
+      .add({
+        type: 'game',
+        text: `🎮 Игрок @${currentChatUsername} начал игру "Угадай слово"!`,
+        senderId: currentUser.uid,
+        timestamp: new Date()
+      });
+      
   } catch (error) {
     console.error('Ошибка установки слова:', error);
     showNotification('Ошибка');
@@ -2051,14 +2124,17 @@ async function makeGuess() {
     return;
   }
   
+  if (!/^[а-яё]+$/.test(guess)) {
+    showNotification('Только русские буквы');
+    return;
+  }
+  
   const secretWord = currentGameData.word;
   
-  // Анализируем результат
   const result = [];
   const secretLetters = secretWord.split('');
   const guessLetters = guess.split('');
   
-  // Сначала ищем точные совпадения
   for (let i = 0; i < guessLetters.length; i++) {
     if (guessLetters[i] === secretLetters[i]) {
       result[i] = 'correct';
@@ -2067,7 +2143,6 @@ async function makeGuess() {
     }
   }
   
-  // Ищем буквы в других позициях
   for (let i = 0; i < guessLetters.length; i++) {
     if (guessLetters[i] === null) continue;
     
@@ -2093,19 +2168,18 @@ async function makeGuess() {
     status = 'finished';
     winner = currentUser.uid;
     
-    // Отправляем сообщение о победе
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .add({
         type: 'game',
-        text: `🎮 Игрок @${currentChatUsername} угадал слово "${secretWord}"!`,
+        text: `🎉 Игрок @${currentChatUsername} угадал слово "${secretWord}"!`,
         senderId: currentUser.uid,
         timestamp: new Date()
       });
   } else if (attempts.length >= currentGameData.maxAttempts) {
     status = 'finished';
+    winner = currentGameData.wordSetterId;
     
-    // Отправляем сообщение о проигрыше
     await db.collection('chats').doc(currentChatId)
       .collection('messages')
       .add({
@@ -2145,8 +2219,6 @@ async function endGame() {
     closeGameModal();
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ КАЛЕНДАРЯ ====================
 
 function showCalendarModal() {
   closeMenuModal();
@@ -2191,12 +2263,17 @@ function loadCalendarEvents() {
         });
       });
       renderCalendar();
+    }, (error) => {
+      console.error('Ошибка загрузки событий:', error);
+      showNotification('Ошибка загрузки календаря. Нужно создать индекс.');
     });
 }
 
 function renderCalendar() {
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
   const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -2207,25 +2284,23 @@ function renderCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   
-  // Корректировка для понедельника как первого дня
   let startOffset = firstDay === 0 ? 6 : firstDay - 1;
   
   let calendarHTML = '';
   
-  // Заголовки дней недели
   const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   weekdays.forEach(day => {
     calendarHTML += `<div class="calendar-weekday">${day}</div>`;
   });
   
-  // Пустые ячейки до первого дня
   for (let i = 0; i < startOffset; i++) {
     calendarHTML += '<div class="calendar-day empty"></div>';
   }
   
-  // Дни месяца
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const currentDate = new Date(year, month, day);
+    
     const hasEvent = calendarEvents.some(e => {
       const eDate = e.date.toDate();
       return eDate.getDate() === day && 
@@ -2234,10 +2309,16 @@ function renderCalendar() {
     });
     
     const isSelected = selectedCalendarDay === dateStr;
+    const isPast = currentDate < today;
+    
+    let dayClass = 'calendar-day';
+    if (hasEvent) dayClass += ' has-event';
+    if (isSelected) dayClass += ' selected';
+    if (isPast) dayClass += ' past';
     
     calendarHTML += `
-      <div class="calendar-day ${hasEvent ? 'has-event' : ''} ${isSelected ? 'selected' : ''}" 
-           onclick="selectCalendarDay('${dateStr}', ${day})">
+      <div class="${dayClass}" 
+           onclick="selectCalendarDay('${dateStr}', ${day}, ${isPast})">
         ${day}
       </div>
     `;
@@ -2250,9 +2331,15 @@ function renderCalendar() {
   } else {
     document.getElementById('eventsList').innerHTML = '<div style="color:var(--sub); text-align:center;">Выберите день</div>';
   }
+  
+  updateAddEventButton();
 }
 
-function selectCalendarDay(dateStr, day) {
+function selectCalendarDay(dateStr, day, isPast) {
+  if (isPast) {
+    showNotification('Нельзя выбрать прошедшую дату');
+    return;
+  }
   selectedCalendarDay = dateStr;
   renderCalendar();
   renderEventsForDay(dateStr);
@@ -2286,6 +2373,21 @@ function renderEventsForDay(dateStr) {
   document.getElementById('eventsList').innerHTML = eventsHTML;
 }
 
+function updateAddEventButton() {
+  const addBtn = document.getElementById('addEventBtn');
+  if (!selectedCalendarDay) {
+    addBtn.disabled = true;
+    return;
+  }
+  
+  const [year, month, day] = selectedCalendarDay.split('-').map(Number);
+  const selectedDate = new Date(year, month-1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  addBtn.disabled = selectedDate < today;
+}
+
 async function addCalendarEvent() {
   const input = document.getElementById('eventText');
   const text = input.value.trim();
@@ -2302,6 +2404,14 @@ async function addCalendarEvent() {
   
   const [year, month, day] = selectedCalendarDay.split('-').map(Number);
   const eventDate = new Date(year, month-1, day, 12, 0, 0);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (eventDate < today) {
+    showNotification('Нельзя добавить событие на прошедшую дату');
+    return;
+  }
   
   try {
     await db.collection('calendarEvents').add({
@@ -2338,8 +2448,6 @@ function changeMonth(delta) {
   renderCalendar();
   loadCalendarEvents();
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ЗВОНКОВ ====================
 
 async function playRingtone() {
   console.log('🔔 Попытка воспроизвести рингтон...');
@@ -3068,8 +3176,6 @@ function declineCall() {
   declineIncomingCall();
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
-
 function formatTimeAgo(date) {
   if (!date) return "только что";
   
@@ -3104,7 +3210,6 @@ function formatMessageTime(date) {
   });
 }
 
-// Новая функция для форматирования даты в разделителе
 function formatDateDivider(date) {
   const today = new Date();
   const yesterday = new Date(today);
@@ -3572,7 +3677,6 @@ async function loadChatMessages() {
       const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
       const currentDate = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
       
-      // Добавляем разделитель даты если день изменился
       if (!lastDate || currentDate.getTime() !== lastDate.getTime()) {
         const dateDivider = document.createElement('div');
         dateDivider.className = 'message-date-divider';
@@ -3632,7 +3736,7 @@ function addMessageToUI(msg) {
     
   } else if (msg.type === 'game') {
     contentHTML = `
-      <div class="game-message" style="display:flex; align-items:center; gap:8px;">
+      <div class="game-message">
         <span>🎮</span>
         <span>${msg.text || ''}</span>
       </div>
@@ -3749,16 +3853,6 @@ function setupChatMessagesListener() {
           const existingMessage = document.querySelector(`[data-message-id="${change.doc.id}"]`);
           
           if (!existingMessage) {
-            // Для новых сообщений добавляем разделитель даты если нужно
-            const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : new Date();
-            const currentDate = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
-            
-            const lastMessage = document.querySelector('.message:last-child');
-            if (lastMessage) {
-              const lastMsgId = lastMessage.getAttribute('data-message-id');
-              // Здесь можно добавить логику проверки даты, но для простоты просто добавляем сообщение
-            }
-            
             addMessageToUI({ id: change.doc.id, ...msg });
             
             setTimeout(() => {

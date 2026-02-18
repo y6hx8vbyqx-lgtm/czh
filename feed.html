@@ -14,7 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1048.0/aws-sdk.min.js"></script>
 
 <style>
-/* Все ваши существующие стили остаются без изменений */
+/* Все ваши исходные стили */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -468,6 +468,1094 @@ body{
   color: var(--pin);
 }
 
+/* Контейнер для опроса */
+.poll-container {
+  background: var(--poll-bg);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+
+.poll-question {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.poll-option {
+  background: var(--poll-bar);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.poll-option:hover {
+  background: #3c3c3e;
+}
+
+.poll-option.voted {
+  border: 2px solid var(--poll-voted);
+}
+
+.poll-option-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(90, 200, 250, 0.2), rgba(102, 126, 234, 0.2));
+  transition: width 0.5s ease;
+  z-index: 0;
+}
+
+.poll-option-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+.poll-option-text {
+  font-weight: 500;
+}
+
+.poll-option-percent {
+  color: var(--hashtag);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.poll-option-votes {
+  color: var(--sub);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.poll-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sub);
+  font-size: 13px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.poll-timer-icon {
+  font-size: 14px;
+}
+
+.poll-timer-expired {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.poll-timer-active {
+  color: var(--success);
+}
+
+/* Модальное окно создания опроса */
+.poll-modal {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.poll-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.poll-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.poll-option-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.poll-option-input-field {
+  flex: 1;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.poll-option-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.poll-option-remove:hover {
+  background: rgba(255, 69, 58, 0.1);
+}
+
+.poll-add-option {
+  background: rgba(90, 200, 250, 0.1);
+  border: 1px dashed var(--hashtag);
+  color: var(--hashtag);
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  margin: 12px 0;
+  font-weight: 600;
+}
+
+.poll-add-option:hover {
+  background: rgba(90, 200, 250, 0.2);
+  border-style: solid;
+}
+
+.poll-duration-select {
+  width: 100%;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+.poll-duration-select option {
+  background: #1c1c1e;
+}
+
+.poll-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.poll-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.poll-btn.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.poll-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Индикатор опроса в посте */
+.poll-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(90, 200, 250, 0.1);
+  color: var(--hashtag);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+/* Поиск пользователей */
+.search{
+  background:var(--card);
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+  position:relative;
+}
+.search-input{
+  width:100%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px 16px 14px 44px;
+  color:#fff;
+  font-size:16px;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  border:1px solid var(--border);
+}
+.search-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.search-icon{
+  position:absolute;
+  left:28px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--sub);
+  font-size:18px;
+  pointer-events:none;
+}
+.search-results{
+  margin-top:12px;
+  max-height:200px;
+  overflow-y:auto;
+  display:none;
+}
+.search-results.show{
+  display:block;
+}
+.search-result{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  background:#1c1c1e;
+  margin-bottom:8px;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+.search-result:hover{
+  background:rgba(255,255,255,0.1);
+}
+.search-result:last-child{
+  margin-bottom:0;
+}
+.search-avatar{
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  background:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:16px;
+}
+.search-username{
+  font-weight:600;
+  font-size:15px;
+}
+.no-results{
+  text-align:center;
+  color:var(--sub);
+  padding:20px 0;
+  font-size:14px;
+}
+
+/* Хештеги */
+.hashtag {
+  color: var(--hashtag);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.hashtag:hover {
+  opacity: 0.7;
+}
+
+.back-to-hashtags-btn {
+  width: 100%;
+  background: var(--card);
+  border: none;
+  border-radius: 16px;
+  padding: 12px 16px;
+  color: var(--hashtag);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+.back-to-hashtags-btn:hover {
+  background: rgba(90, 200, 250, 0.1);
+}
+
+.hashtag-header {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.hashtag-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--hashtag);
+  margin-bottom: 8px;
+}
+.hashtag-count {
+  color: var(--sub);
+  font-size: 14px;
+}
+
+.hashtags-list {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.hashtag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.hashtag-item:hover {
+  background: rgba(90, 200, 250, 0.1);
+}
+.hashtag-item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--hashtag);
+}
+.hashtag-item-count {
+  color: var(--sub);
+  font-size: 14px;
+  background: rgba(90, 200, 250, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.no-hashtags {
+  text-align: center;
+  color: var(--sub);
+  padding: 40px 0;
+  font-size: 16px;
+}
+
+.post{
+  background:var(--card);
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+  position:relative;
+  transition:box-shadow 0.3s ease;
+}
+.post.highlighted{
+  box-shadow:0 0 0 2px var(--accent), 0 0 20px rgba(102,126,234,0.3);
+}
+.post-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+.avatar{
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  background:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+}
+.post-user-info{
+  display:flex;
+  flex-direction:column;
+  flex-grow:1;
+}
+.post-user{
+  font-weight:600;
+  cursor:pointer;
+  transition:opacity 0.2s;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.post-user:hover{
+  opacity:0.7;
+}
+.verified-badge{
+  color:#5ac8fa;
+  font-size:14px;
+}
+.post-time{
+  color:var(--sub);
+  font-size:12px;
+  margin-top:2px;
+}
+.post-text{
+  margin:10px 0;
+  line-height:1.4;
+  word-break:break-word;
+}
+.post-actions{
+  display:flex;
+  gap:16px;
+  margin-top:12px;
+}
+.action{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:18px;
+  cursor:pointer;
+  transition:transform 0.2s;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.action:hover{
+  transform:scale(1.1);
+}
+.liked{color:#ff2d55}
+.viewed{color:var(--views)}
+.reposted{color:#64d2ff}
+.trash{
+  margin-left:auto;
+  background:none;border:none;
+  color:var(--danger);font-size:18px;
+  cursor:pointer;
+  padding:0;
+}
+
+/* Кнопка закрепления */
+.pin-btn {
+  background: none;
+  border: none;
+  color: var(--pin);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+.pin-btn:hover {
+  background: rgba(255, 204, 0, 0.1);
+}
+.pin-btn.pinned {
+  color: #fff;
+  background: var(--pin);
+}
+.pin-btn.pinned:hover {
+  background: rgba(255, 204, 0, 0.8);
+}
+.pin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--pin);
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: rgba(255, 204, 0, 0.1);
+}
+
+.reposts-divider {
+  text-align: center;
+  padding: 16px;
+  color: var(--sub);
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  margin: 20px 0;
+}
+.reposts-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 1;
+}
+.reposts-divider span {
+  position: relative;
+  z-index: 2;
+  background: var(--card);
+  padding: 0 16px;
+}
+
+.subscribe-btn{
+  background:var(--accent);
+  border:none;
+  color:#fff;
+  padding:6px 12px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  white-space:nowrap;
+}
+.subscribe-btn:hover{
+  opacity:0.9;
+}
+.subscribe-btn.subscribed{
+  background:var(--sub);
+  color:var(--bg);
+}
+
+.chat-btn {
+  background: #5ac8fa;
+  border: none;
+  color: var(--bg);
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.chat-btn:hover {
+  opacity: 0.9;
+}
+.chat-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.repost-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--sub);
+  font-size: 14px;
+}
+.repost-icon {
+  color: #64d2ff;
+}
+.repost-users-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.repost-user-link {
+  color: var(--hashtag);
+  cursor: pointer;
+  font-weight: 600;
+}
+.repost-user-link:hover {
+  opacity: 0.7;
+}
+.show-more-reposts-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.show-more-reposts-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.hide-reposts-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+.hide-reposts-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sheet{
+  position:fixed;
+  inset:0;
+  background:#000;
+  transform:translateY(100%);
+  transition:.35s ease;
+  z-index:2000;
+  display:flex;
+  flex-direction:column;
+}
+.sheet.show{transform:translateY(0)}
+.sheet-header{
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+}
+.sheet-body{
+  flex:1;
+  overflow:auto;
+  padding:14px;
+}
+.sheet-footer{
+  padding:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:8px;
+}
+.sheet-footer input{
+  flex:1;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px;
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+/* PROFILE SHEET */
+.profile-header{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+  margin-bottom:20px;
+}
+.profile-avatar{
+  width:72px;height:72px;
+  border-radius:22px;
+  background:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:700;
+  flex-shrink:0;
+}
+.profile-info{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:1;
+}
+.profile-name{
+  font-size:18px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.profile-name-with-badge{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.change-name-btn{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:14px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
+  transition:background 0.2s;
+}
+.change-name-btn:hover{
+  background:rgba(255,255,255,0.1);
+}
+
+.profile-page-btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.profile-page-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.profile-stats{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.profile-stat{
+  display:flex;
+  flex-direction:column;
+}
+.profile-stat-value{
+  font-size:16px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.profile-stat-label{
+  color:var(--sub);
+  font-size:12px;
+  margin-top:2px;
+}
+.likes-stat{
+  color:#ff2d55;
+}
+.posts-stat{
+  color:#5ac8fa;
+}
+.subscribers-stat{
+  color:#ff9500;
+}
+.reposts-stat{
+  color:#64d2ff;
+}
+.pinned-stat {
+  color: var(--pin);
+}
+
+.profile-bio{
+  background:var(--card);
+  border-radius:18px;
+  padding:16px;
+  margin-top:16px;
+  margin-bottom:20px;
+  position:relative;
+}
+.profile-bio-text{
+  line-height:1.4;
+  word-break:break-word;
+  white-space:pre-wrap;
+}
+.profile-bio-empty{
+  color:var(--sub);
+  font-style:italic;
+  font-size:14px;
+}
+.profile-bio-edit-btn{
+  position:absolute;
+  top:12px;
+  right:12px;
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:14px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:8px;
+  transition:background 0.2s;
+}
+.profile-bio-edit-btn:hover{
+  background:rgba(255,255,255,0.1);
+}
+.bio-word-counter{
+  text-align:right;
+  font-size:12px;
+  color:var(--sub);
+  margin-top:8px;
+}
+.bio-word-counter.warning{
+  color:#ff9500;
+}
+.bio-word-counter.error{
+  color:#ff453a;
+}
+
+.profile-tabs {
+  display: flex;
+  background: var(--card);
+  border-radius: 18px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.profile-tab {
+  flex: 1;
+  text-align: center;
+  padding: 14px;
+  background: none;
+  border: none;
+  color: var(--sub);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s;
+  position: relative;
+  z-index: 1;
+}
+.profile-tab.active {
+  color: #fff;
+}
+.profile-tab-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 18px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+.profile-tab-slider.to-reposts {
+  transform: translateX(100%);
+}
+
+.profile-posts-container {
+  position: relative;
+  min-height: 200px;
+}
+.profile-posts-content {
+  position: relative;
+  transition: opacity 0.3s;
+}
+.profile-posts-content.hidden {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.notification{
+  position:fixed;
+  top:120px;
+  left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  background:var(--accent);
+  color:white;
+  padding:12px 20px;
+  border-radius:14px;
+  font-weight:600;
+  z-index:1999;
+  opacity:0;
+  transition:opacity 0.3s, transform 0.3s;
+  pointer-events:none;
+  max-width:90%;
+  text-align:center;
+}
+.notification.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:3000;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.3s;
+}
+.modal-overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+.modal{
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  width:90%;
+  max-width:400px;
+  transform:translateY(20px);
+  transition:transform 0.3s;
+}
+.modal-overlay.show .modal{
+  transform:translateY(0);
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+.modal-title{
+  font-size:20px;
+  font-weight:700;
+}
+.modal-close{
+  background:none;
+  border:none;
+  color:var(--sub);
+  font-size:20px;
+  cursor:pointer;
+  padding:0;
+  width:24px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.modal-input{
+  width:100%;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:16px;
+  font-family:inherit;
+}
+.modal-input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.modal-textarea{
+  width:100%;
+  min-height:120px;
+  background:#1c1c1e;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:8px;
+  font-family:inherit;
+  resize:vertical;
+}
+.modal-textarea:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+.modal-buttons{
+  display:flex;
+  gap:12px;
+}
+.modal-btn{
+  flex:1;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-weight:600;
+  cursor:pointer;
+  font-size:16px;
+}
+.modal-btn.primary{
+  background:var(--accent);
+  color:white;
+}
+.modal-btn.secondary{
+  background:rgba(255,255,255,0.1);
+  color:white;
+}
+
+.comment-delete-btn{
+  background:none;
+  border:none;
+  color:var(--danger);
+  cursor:pointer;
+  font-size:14px;
+  padding:4px 8px;
+  border-radius:6px;
+  margin-left:auto;
+}
+.comment-delete-btn:hover{
+  background:rgba(255,69,58,0.1);
+}
+
+/* Модальное окно для просмотра изображения */
+.image-view-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.image-view-modal.show {
+  display: flex;
+}
+
+.image-view-modal img {
+  max-width: 95%;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.image-view-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.image-view-close:hover {
+  background: rgba(255, 69, 58, 0.9);
+  transform: scale(1.1);
+}
+
 /* Прогресс загрузки */
 .upload-progress {
   position: fixed;
@@ -508,10 +1596,6 @@ body{
   font-size: 14px;
   font-weight: 500;
 }
-
-/* Остальные стили (опросы, поиск, профиль и т.д.) остаются без изменений */
-/* ... (весь остальной CSS из вашего исходного файла) ... */
-
 </style>
 </head>
 
@@ -835,18 +1919,10 @@ const auth = firebase.auth();
 // ==================== КОНФИГУРАЦИЯ ЯНДЕКС ОБЛАКА ====================
 // ВАЖНО: Получите эти данные в консоли Яндекс Облака
 const YANDEX_CLOUD = {
-  // Ваш bucket
   bucket: 'czh',
-  
-  // Эндпоинт для S3 API
   endpoint: 'https://storage.yandexcloud.net',
-  
-  // Статический ключ доступа (создаётся в консоли)
-  // https://console.yandex.cloud/folders/<folder-id>/service-accounts
   accessKeyId: 'YOUR_ACCESS_KEY', // ВСТАВЬТЕ СВОЙ КЛЮЧ
   secretAccessKey: 'YOUR_SECRET_KEY', // ВСТАВЬТЕ СВОЙ СЕКРЕТ
-  
-  // Регион (для Яндекс Облака всегда ru-central1)
   region: 'ru-central1'
 };
 
@@ -888,13 +1964,11 @@ document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   
-  // Проверяем размер файла (макс 10MB)
   if (file.size > 10 * 1024 * 1024) {
     showNotification('Файл слишком большой! Максимальный размер 10MB');
     return;
   }
   
-  // Проверяем тип файла
   if (!file.type.startsWith('image/')) {
     showNotification('Пожалуйста, выберите изображение');
     return;
@@ -902,18 +1976,15 @@ document.getElementById('imageUpload').addEventListener('change', function(e) {
   
   currentImageFile = file;
   
-  // Создаем предпросмотр
   const reader = new FileReader();
   reader.onload = function(e) {
     showImagePreview(e.target.result);
   };
   reader.readAsDataURL(file);
   
-  // Меняем цвет кнопки
   document.getElementById('uploadPhotoBtn').classList.add('has-image');
 });
 
-// Показ предпросмотра изображения
 function showImagePreview(imageData) {
   const container = document.getElementById('imagePreviewContainer');
   container.style.display = 'block';
@@ -926,7 +1997,6 @@ function showImagePreview(imageData) {
   currentImagePreview = imageData;
 }
 
-// Удаление изображения
 function removeImage() {
   currentImageFile = null;
   currentImagePreview = null;
@@ -941,43 +2011,36 @@ async function uploadToYandexCloud(file) {
   progressDiv.classList.add('show');
   
   try {
-    // Создаём уникальное имя файла
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const extension = file.name.split('.').pop();
     const fileName = `${timestamp}_${randomString}.${extension}`;
     const filePath = `posts/${currentUser.uid}/${fileName}`;
     
-    // Конвертируем файл в ArrayBuffer для загрузки
     const arrayBuffer = await file.arrayBuffer();
     
-    // Параметры загрузки
     const params = {
       Bucket: YANDEX_CLOUD.bucket,
       Key: filePath,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
-      ACL: 'public-read', // Делаем файл публичным
+      ACL: 'public-read',
       Metadata: {
         'uploaded-by': currentUser.uid,
         'uploaded-at': new Date().toISOString()
       }
     };
     
-    // Загружаем файл
     const data = await s3.upload(params).promise();
     
     progressDiv.classList.remove('show');
     showNotification('Изображение загружено в Яндекс Облако!');
-    
-    // Возвращаем публичный URL
     return data.Location;
     
   } catch (error) {
     console.error('Ошибка загрузки в Яндекс Облако:', error);
     progressDiv.classList.remove('show');
     
-    // Показываем понятную ошибку
     if (error.code === 'NetworkingError') {
       showNotification('Ошибка сети. Проверьте подключение к интернету.');
     } else if (error.code === 'AccessDenied') {
@@ -989,7 +2052,6 @@ async function uploadToYandexCloud(file) {
   }
 }
 
-// Открытие изображения на весь экран
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
   const img = document.getElementById('imageViewImg');
@@ -997,18 +2059,16 @@ function openImageView(imageUrl) {
   modal.classList.add('show');
 }
 
-// Закрытие просмотра изображения
 function closeImageView() {
   document.getElementById('imageViewModal').classList.remove('show');
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
-
-// Открытие модального окна создания опроса
+// (Все ваши исходные функции для опросов остаются здесь)
 function openPollModal() {
   currentPoll = {
     question: '',
-    options: ['', ''] // Минимум 2 опции
+    options: ['', '']
   };
   
   document.getElementById('pollQuestion').value = '';
@@ -1016,12 +2076,10 @@ function openPollModal() {
   document.getElementById('pollModal').classList.add('show');
 }
 
-// Закрытие модального окна создания опроса
 function closePollModal() {
   document.getElementById('pollModal').classList.remove('show');
 }
 
-// Рендеринг опций опроса
 function renderPollOptions() {
   const container = document.getElementById('pollOptionsContainer');
   container.innerHTML = '';
@@ -1043,12 +2101,10 @@ function renderPollOptions() {
   });
 }
 
-// Обновление опции опроса
 function updatePollOption(index, value) {
   currentPoll.options[index] = value;
 }
 
-// Добавление новой опции
 function addPollOption() {
   if (currentPoll.options.length < 10) {
     currentPoll.options.push('');
@@ -1058,13 +2114,11 @@ function addPollOption() {
   }
 }
 
-// Удаление опции
 function removePollOption(index) {
   currentPoll.options.splice(index, 1);
   renderPollOptions();
 }
 
-// Сохранение опроса
 function savePoll() {
   const question = document.getElementById('pollQuestion').value.trim();
   const options = currentPoll.options.filter(opt => opt.trim() !== '');
@@ -1088,25 +2142,21 @@ function savePoll() {
     endsAt: new Date(Date.now() + duration * 1000)
   };
   
-  // Показываем индикатор
   document.getElementById('pollIndicator').style.display = 'block';
   document.getElementById('pollIndicator').innerHTML = `📊 Опрос: "${question.substring(0, 30)}${question.length > 30 ? '...' : ''}" (${options.length} вариантов)`;
   
-  // Меняем цвет кнопки опроса
   document.getElementById('pollBtn').classList.add('has-poll');
   
   closePollModal();
   showNotification('Опрос добавлен к посту');
 }
 
-// Очистка опроса
 function clearPoll() {
   currentPoll = null;
   document.getElementById('pollIndicator').style.display = 'none';
   document.getElementById('pollBtn').classList.remove('has-poll');
 }
 
-// Голосование в опросе
 async function voteInPoll(postId, optionIndex) {
   try {
     const postRef = db.collection("posts").doc(postId);
@@ -1125,7 +2175,6 @@ async function voteInPoll(postId, optionIndex) {
       return;
     }
     
-    // Проверяем, не истек ли опрос
     const endsAt = poll.endsAt.toDate ? poll.endsAt.toDate() : new Date(poll.endsAt);
     if (endsAt < new Date()) {
       showNotification('Голосование завершено');
@@ -1133,7 +2182,6 @@ async function voteInPoll(postId, optionIndex) {
       return;
     }
     
-    // Проверяем, голосовал ли пользователь
     const votedBy = poll.votedBy || [];
     if (votedBy.includes(currentUser.uid)) {
       showNotification('Вы уже голосовали в этом опросе');
@@ -1141,7 +2189,6 @@ async function voteInPoll(postId, optionIndex) {
       return;
     }
     
-    // Обновляем голоса
     const votes = poll.votes || [];
     votes[optionIndex] = (votes[optionIndex] || 0) + 1;
     
@@ -1152,11 +2199,8 @@ async function voteInPoll(postId, optionIndex) {
     });
     
     showNotification('Голос учтен!');
-    
-    // Обновляем отображение
     await showPollResults(postId);
     
-    // Обновляем пост в ленте
     if (postsCache.has(postId)) {
       const cachedPost = postsCache.get(postId);
       cachedPost.poll = {
@@ -1167,7 +2211,6 @@ async function voteInPoll(postId, optionIndex) {
       };
     }
     
-    // Обновляем UI
     updatePollDisplay(postId);
     
   } catch (error) {
@@ -1176,7 +2219,6 @@ async function voteInPoll(postId, optionIndex) {
   }
 }
 
-// Показ результатов опроса
 async function showPollResults(postId) {
   try {
     const postDoc = await db.collection("posts").doc(postId).get();
@@ -1199,7 +2241,6 @@ async function showPollResults(postId) {
     const totalVotes = poll.totalVotes || 0;
     const votes = poll.votes || [];
     const votedBy = poll.votedBy || [];
-    const hasVoted = votedBy.includes(currentUser.uid);
     
     let resultsHTML = '';
     
@@ -1246,12 +2287,10 @@ async function showPollResults(postId) {
   }
 }
 
-// Закрытие модального окна результатов
 function closePollResultsModal() {
   document.getElementById('pollResultsModal').classList.remove('show');
 }
 
-// Обновление отображения опроса в посте
 function updatePollDisplay(postId) {
   const postElement = document.getElementById(`post-${postId}`);
   if (!postElement) return;
@@ -1282,7 +2321,6 @@ function updatePollDisplay(postId) {
     const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
     
     if (isExpired || hasVoted) {
-      // Режим просмотра результатов
       pollHTML += `
         <div class="poll-option">
           <div class="poll-option-bar" style="width: ${percentage}%"></div>
@@ -1296,7 +2334,6 @@ function updatePollDisplay(postId) {
         </div>
       `;
     } else {
-      // Режим голосования
       pollHTML += `
         <div class="poll-option" onclick="voteInPoll('${postId}', ${index})">
           <div class="poll-option-content">
@@ -1324,7 +2361,6 @@ function updatePollDisplay(postId) {
   pollElement.outerHTML = pollHTML;
 }
 
-// Склонение слова "голос"
 function getVotesWord(count) {
   if (count % 10 === 1 && count % 100 !== 11) return 'голос';
   if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'голоса';
@@ -1402,7 +2438,6 @@ function createSnowflakes() {
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
-
 function extractHashtags(text) {
   if (!text) return [];
   const hashtagRegex = /#([а-яА-ЯёЁa-zA-Z0-9_]+)/g;
@@ -2282,16 +3317,13 @@ async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
-    // Получаем пост для проверки наличия изображения
     const postDoc = await db.collection("posts").doc(postId).get();
     const postData = postDoc.data();
     
-    // Если есть изображение в Яндекс Облаке, удаляем его
     if (postData.imageUrl && postData.imageUrl.includes('storage.yandexcloud.net')) {
       try {
-        // Извлекаем ключ файла из URL
         const urlParts = postData.imageUrl.split('/');
-        const key = urlParts.slice(3).join('/'); // Убираем домен
+        const key = urlParts.slice(3).join('/');
         
         const params = {
           Bucket: YANDEX_CLOUD.bucket,
@@ -2851,13 +3883,11 @@ async function refreshProfilePosts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      // Добавляем изображение, если есть
       const imageHTML = post.imageUrl ? 
         `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
            <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
-      // Добавляем индикатор опроса, если он есть
       const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
       
       profilePosts.innerHTML += `
@@ -2979,7 +4009,6 @@ async function refreshProfileReposts(uid) {
         
         const processedText = updateHashtagsInPost(post);
         
-        // Добавляем изображение, если есть
         const imageHTML = post.imageUrl ? 
           `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
              <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
@@ -3062,7 +4091,6 @@ async function refreshProfileReposts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      // Добавляем изображение, если есть
       const imageHTML = post.imageUrl ? 
         `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
            <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
@@ -3185,11 +4213,9 @@ async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
-    // Получаем пост для проверки наличия изображения
     const postDoc = await db.collection("posts").doc(postId).get();
     const postData = postDoc.data();
     
-    // Если есть изображение в Яндекс Облаке, удаляем его
     if (postData.imageUrl && postData.imageUrl.includes('storage.yandexcloud.net')) {
       try {
         const urlParts = postData.imageUrl.split('/');
@@ -3779,7 +4805,6 @@ document.getElementById("bioText").addEventListener("keydown", (e) => {
   }
 });
 
-// Закрытие модального окна изображения по клику на фон
 document.getElementById('imageViewModal').addEventListener('click', function(e) {
   if (e.target === this) {
     closeImageView();

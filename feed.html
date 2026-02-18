@@ -431,8 +431,15 @@ body{
   color:#ff453a;
 }
 
-/* Кнопка добавления опроса */
-.add-poll-btn {
+/* Контейнер для кнопок медиа */
+.media-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.media-btn {
+  flex: 1;
   background: rgba(90, 200, 250, 0.1);
   border: 1px dashed var(--hashtag);
   color: var(--hashtag);
@@ -442,10 +449,21 @@ body{
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-.add-poll-btn:hover {
+
+.media-btn:hover {
   background: rgba(90, 200, 250, 0.2);
   border-style: solid;
+}
+
+.media-btn.has-poll {
+  background: rgba(255, 204, 0, 0.1);
+  border-color: var(--pin);
+  color: var(--pin);
 }
 
 /* Контейнер для опроса */
@@ -1641,10 +1659,19 @@ body{
       <textarea id="postText" placeholder="Что у вас нового? Можно использовать #хештеги..." maxlength="500"></textarea>
       <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
       
-      <!-- Кнопка добавления опроса -->
-      <button class="add-poll-btn" onclick="openPollModal()">
-        📊 Добавить опрос
-      </button>
+      <!-- Контейнер для кнопок медиа -->
+      <div class="media-buttons">
+        <!-- Кнопка загрузки фото -->
+        <input type="file" id="imageUpload" accept="image/*" style="display:none">
+        <button class="media-btn" id="uploadPhotoBtn" onclick="document.getElementById('imageUpload').click()">
+          <span>📷</span> Фото
+        </button>
+        
+        <!-- Кнопка опроса -->
+        <button class="media-btn" id="pollBtn" onclick="openPollModal()">
+          <span>📊</span> Опрос
+        </button>
+      </div>
       
       <!-- Индикатор добавленного опроса -->
       <div id="pollIndicator" style="display:none; margin-top:8px; padding:8px; background:rgba(90,200,250,0.1); border-radius:12px; font-size:14px; color:var(--hashtag);">
@@ -1654,20 +1681,8 @@ body{
       <!-- Контейнер для предпросмотра изображения -->
       <div id="imagePreviewContainer" style="display:none;"></div>
       
-      <!-- Кнопки действий -->
+      <!-- Кнопка публикации -->
       <div class="create-actions">
-        <!-- Кнопка загрузки фото -->
-        <input type="file" id="imageUpload" accept="image/*" style="display:none">
-        <button class="upload-photo-btn" id="uploadPhotoBtn" onclick="document.getElementById('imageUpload').click()">
-          <span>📷</span>
-        </button>
-        
-        <!-- Кнопка опроса (дублируем для мобильной версии) -->
-        <button class="upload-photo-btn" onclick="openPollModal()" style="background:rgba(255,204,0,0.1); border-color:var(--pin); color:var(--pin);">
-          <span>📊</span>
-        </button>
-        
-        <!-- Кнопка публикации -->
         <button class="create-btn" onclick="createPost()">Опубликовать</button>
       </div>
     </div>
@@ -1894,11 +1909,14 @@ firebase.initializeApp({
   apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
   authDomain: "czhmass.firebaseapp.com",
   projectId: "czhmass",
-  storageBucket: "czh" // Для Яндекс Облака используем свой bucket
+  storageBucket: "czh" // Используем ваш bucket
 });
 const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
+
+// Настройка CORS для Storage (решение проблемы)
+const storageRef = storage.ref();
 
 // Глобальные переменные
 let currentUser = null;
@@ -1979,7 +1997,7 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// Загрузка изображения в Яндекс Облако
+// Загрузка изображения в Яндекс Облако через Firebase Storage
 async function uploadImage(file) {
   if (!file) return null;
   
@@ -1995,20 +2013,37 @@ async function uploadImage(file) {
     const filePath = `posts/${currentUser.uid}/${fileName}`;
     
     // Создаем ссылку на файл в хранилище
-    const storageRef = storage.ref(filePath);
+    const imageRef = storage.ref().child(filePath);
+    
+    // Загружаем файл с метаданными для CORS
+    const metadata = {
+      contentType: file.type,
+      cacheControl: 'public,max-age=31536000',
+    };
     
     // Загружаем файл
-    await storageRef.put(file);
+    await imageRef.put(file, metadata);
     
     // Получаем URL для скачивания
-    const downloadURL = await storageRef.getDownloadURL();
+    const downloadURL = await imageRef.getDownloadURL();
     
     progressDiv.classList.remove('show');
     return downloadURL;
     
   } catch (error) {
     console.error('Ошибка при загрузке изображения:', error);
-    showNotification('Ошибка при загрузке изображения: ' + error.message);
+    
+    // Более подробная информация об ошибке
+    if (error.code === 'storage/unauthorized') {
+      showNotification('Ошибка авторизации при загрузке файла');
+    } else if (error.code === 'storage/canceled') {
+      showNotification('Загрузка отменена');
+    } else if (error.code === 'storage/unknown') {
+      showNotification('Неизвестная ошибка при загрузке. Проверьте CORS настройки');
+    } else {
+      showNotification('Ошибка при загрузке изображения: ' + (error.message || 'Неизвестная ошибка'));
+    }
+    
     progressDiv.classList.remove('show');
     return null;
   }
@@ -2117,6 +2152,9 @@ function savePoll() {
   document.getElementById('pollIndicator').style.display = 'block';
   document.getElementById('pollIndicator').innerHTML = `📊 Опрос: "${question.substring(0, 30)}${question.length > 30 ? '...' : ''}" (${options.length} вариантов)`;
   
+  // Меняем цвет кнопки опроса
+  document.getElementById('pollBtn').classList.add('has-poll');
+  
   closePollModal();
   showNotification('Опрос добавлен к посту');
 }
@@ -2125,6 +2163,7 @@ function savePoll() {
 function clearPoll() {
   currentPoll = null;
   document.getElementById('pollIndicator').style.display = 'none';
+  document.getElementById('pollBtn').classList.remove('has-poll');
 }
 
 // Голосование в опросе
@@ -3255,9 +3294,13 @@ async function createPost() {
     
     // Загружаем изображение, если оно есть
     if (currentImageFile) {
+      showNotification("Загрузка изображения...", 2000);
       const imageUrl = await uploadImage(currentImageFile);
       if (imageUrl) {
         postData.imageUrl = imageUrl;
+        showNotification("Изображение загружено!");
+      } else {
+        showNotification("Не удалось загрузить изображение. Пост будет опубликован без фото.");
       }
     }
     
@@ -3306,8 +3349,10 @@ async function deletePost(postId, postUserId) {
     // Если есть изображение, удаляем его из хранилища
     if (postData.imageUrl) {
       try {
+        // Получаем ссылку на файл из URL
         const imageRef = storage.refFromURL(postData.imageUrl);
         await imageRef.delete();
+        console.log("Изображение удалено из хранилища");
       } catch (storageError) {
         console.error("Ошибка при удалении изображения:", storageError);
         // Продолжаем удаление поста даже если не удалось удалить изображение

@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>czhmass - Base64 версия (Исправленная)</title>
+<title>czhmass - Уникальное оформление профиля (Полная версия)</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
-<!-- Cropper.js для обрезки фото -->
+<!-- Cropper.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <style>
-/* ========== ВСЕ СТИЛИ ========== */
+/* ========== ВСЕ ОРИГИНАЛЬНЫЕ СТИЛИ ========== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -32,195 +32,80 @@
   --poll-bar:#2c2c2e;
   --poll-voted:#30d158;
   
-  /* Новые переменные для уникального оформления */
-  --unique-bg-color: #0a2f0a;
-  --unique-text-color: #2ecc71;
-  --unique-font-family: 'Courier New', monospace;
+  /* Переменные для уникального оформления */
+  --unique-bg: #000;
+  --unique-text: #2ecc71;
+  --unique-font: 'Courier New', monospace;
 }
 
-/* Стили для уникального оформления */
-body.unique-theme-active {
-  position: relative;
-  background-color: var(--unique-bg-color) !important;
+/* ========== УНИКАЛЬНОЕ ОФОРМЛЕНИЕ ПРОФИЛЯ ========== */
+#profileSheet.unique-theme-active {
+    position: relative;
+    background: transparent !important;
 }
 
-/* Фоновый паттерн с надписью CZH */
-.unique-bg-pattern {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  opacity: 0.3;
+/* Черный фон с зелеными статичными CZH */
+.unique-profile-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background: #000;
+    border-radius: 22px;
 }
 
-.unique-bg-pattern span {
-  position: absolute;
-  color: var(--unique-text-color);
-  font-family: var(--unique-font-family);
-  font-size: clamp(60px, 15vw, 150px);
-  font-weight: 800;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: rotate(-15deg);
-  opacity: 0.2;
-  user-select: none;
-  animation: patternFloat 20s linear infinite;
+.unique-profile-bg span {
+    position: absolute;
+    color: #2ecc71;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(60px, 15vw, 200px);
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: rotate(-15deg);
+    opacity: 0.2;
+    user-select: none;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+    /* СТАТИЧНО - без анимации */
 }
 
-@keyframes patternFloat {
-  0% {
-    transform: rotate(-15deg) translateX(-100%);
-  }
-  100% {
-    transform: rotate(-15deg) translateX(100%);
-  }
+#profileSheet.unique-theme-active .sheet-body {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+}
+
+#profileSheet.unique-theme-active .post,
+#profileSheet.unique-theme-active .profile-bio,
+#profileSheet.unique-theme-active .profile-tabs {
+    background: rgba(28,28,30,0.95);
+    backdrop-filter: blur(10px);
 }
 
 /* Уникальный шрифт для ника в профиле */
 .unique-username {
-  font-family: var(--unique-font-family) !important;
-  color: var(--unique-text-color) !important;
-  text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-  font-weight: 800;
-  letter-spacing: 2px;
+    font-family: 'Courier New', monospace !important;
+    color: #2ecc71 !important;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.5) !important;
+    font-weight: 800 !important;
+    letter-spacing: 1px;
+    font-size: 20px !important;
 }
 
-/* Уникальный шрифт для ника в ленте постов */
+/* Уникальный шрифт для ника в ленте */
 .post-user.unique-username-in-feed {
-  font-family: var(--unique-font-family) !important;
-  color: var(--unique-text-color) !important;
-  font-weight: 800;
-  letter-spacing: 1px;
+    font-family: 'Courier New', monospace !important;
+    color: #2ecc71 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(46, 204, 113, 0.5) !important;
+    letter-spacing: 1px;
 }
 
-/* Контейнер для контента поверх фона */
-.container.unique-active,
-.profile-posts-container.unique-active,
-#feed.unique-active {
-  position: relative;
-  z-index: 2;
-  background-color: transparent;
-}
-
-/* Модальное окно выбора оформления */
-.theme-selector-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--card);
-  border-radius: 22px;
-  padding: 24px;
-  z-index: 4000;
-  width: 90%;
-  max-width: 320px;
-  border: 1px solid var(--border);
-  display: none;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-}
-
-.theme-selector-modal.show {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
-.theme-selector-modal h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  text-align: center;
-  background: var(--accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.theme-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.05);
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-}
-
-.theme-option:hover {
-  background: rgba(255,255,255,0.1);
-  transform: scale(1.02);
-}
-
-.theme-option.selected {
-  border-color: var(--unique-text-color);
-  background: rgba(46, 204, 113, 0.1);
-}
-
-.theme-preview {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 20px;
-}
-
-.theme-preview.default {
-  background: var(--accent);
-  color: white;
-}
-
-.theme-preview.unique {
-  background: var(--unique-bg-color);
-  color: var(--unique-text-color);
-  font-family: var(--unique-font-family);
-  border: 1px solid var(--unique-text-color);
-}
-
-.theme-info {
-  flex: 1;
-}
-
-.theme-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.theme-desc {
-  font-size: 12px;
-  color: var(--sub);
-}
-
-.theme-close-btn {
-  width: 100%;
-  margin-top: 16px;
-  padding: 14px;
-  background: var(--accent);
-  border: none;
-  border-radius: 16px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.theme-close-btn:hover {
-  opacity: 0.9;
-}
-
-/* ========== ОСНОВНЫЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
+/* ========== БАЗОВЫЕ СТИЛИ ========== */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -229,12 +114,11 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
   overflow-x:hidden;
   position:relative;
-  transition: background-color 0.3s ease;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
 
-/* Снежинки */
+/* ========== СНЕЖИНКИ ========== */
 #snowflakes-container {
   position: fixed;
   top: 0;
@@ -291,6 +175,7 @@ body{
   }
 }
 
+/* ========== НАВИГАЦИЯ ========== */
 .dynamic-island{
   position:fixed;top:12px;left:50%;transform:translateX(-50%);
   width:120px;height:34px;border-radius:20px;
@@ -375,7 +260,7 @@ body{
   }
 }
 
-/* Таб бар */
+/* ========== ТАБ БАР ========== */
 .tab-bar{
   position:fixed;
   bottom:20px;
@@ -418,15 +303,16 @@ body{
   text-align:center;
 }
 
+/* ========== КОНТЕЙНЕР ========== */
 .container{
   max-width:480px;
   margin:auto;
   padding:130px 14px 100px;
   position:relative;
   z-index:2;
-  transition: background-color 0.3s ease;
 }
 
+/* ========== СОЗДАНИЕ ПОСТА ========== */
 .create{
   background:var(--card);
   border-radius:22px;
@@ -620,6 +506,7 @@ body{
   color:#ff453a;
 }
 
+/* ========== МЕДИА КНОПКИ ========== */
 .media-buttons {
   display: flex;
   gap: 8px;
@@ -654,6 +541,7 @@ body{
   color: var(--pin);
 }
 
+/* ========== ОПРОСЫ ========== */
 .poll-container {
   background: var(--poll-bg);
   border-radius: 16px;
@@ -883,6 +771,7 @@ body{
   margin-right: 8px;
 }
 
+/* ========== ПОИСК ========== */
 .search{
   background:var(--card);
   border-radius:22px;
@@ -965,6 +854,7 @@ body{
   font-size:14px;
 }
 
+/* ========== ХЕШТЕГИ ========== */
 .hashtag {
   color: var(--hashtag);
   font-weight: 600;
@@ -1051,808 +941,10 @@ body{
   padding: 40px 0;
   font-size: 16px;
 }
-
-.post{
-  background:var(--card);
-  border-radius:22px;
-  padding:16px;
-  margin-bottom:14px;
-  position:relative;
-  transition:box-shadow 0.3s ease;
-}
-.post.highlighted{
-  box-shadow:0 0 0 2px var(--accent), 0 0 20px rgba(102,126,234,0.3);
-}
-.post-header{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:8px;
-}
-.avatar{
-  width:40px;
-  height:40px;
-  border-radius:14px;
-  background:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  background-size: cover;
-  background-position: center;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-.post-user-info{
-  display:flex;
-  flex-direction:column;
-  flex-grow:1;
-}
-.post-user{
-  font-weight:600;
-  cursor:pointer;
-  transition:opacity 0.2s;
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.post-user:hover{
-  opacity:0.7;
-}
-.verified-badge{
-  color:#5ac8fa;
-  font-size:14px;
-}
-.post-time{
-  color:var(--sub);
-  font-size:12px;
-  margin-top:2px;
-}
-.post-text{
-  margin:10px 0;
-  line-height:1.4;
-  word-break:break-word;
-}
-.post-actions{
-  display:flex;
-  gap:16px;
-  margin-top:12px;
-}
-.action{
-  background:none;
-  border:none;
-  color:var(--sub);
-  font-size:18px;
-  cursor:pointer;
-  transition:transform 0.2s;
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.action:hover{
-  transform:scale(1.1);
-}
-.liked{color:#ff2d55}
-.viewed{color:var(--views)}
-.reposted{color:#64d2ff}
-.trash{
-  margin-left:auto;
-  background:none;border:none;
-  color:var(--danger);font-size:18px;
-  cursor:pointer;
-  padding:0;
-}
-
-.pin-btn {
-  background: none;
-  border: none;
-  color: var(--pin);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
-  margin-left: 8px;
-}
-.pin-btn:hover {
-  background: rgba(255, 204, 0, 0.1);
-}
-.pin-btn.pinned {
-  color: #fff;
-  background: var(--pin);
-}
-.pin-btn.pinned:hover {
-  background: rgba(255, 204, 0, 0.8);
-}
-.pin-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pinned-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--pin);
-  font-size: 12px;
-  font-weight: 600;
-  margin-left: 8px;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background: rgba(255, 204, 0, 0.1);
-}
-
-.reposts-divider {
-  text-align: center;
-  padding: 16px;
-  color: var(--sub);
-  font-size: 14px;
-  font-weight: 600;
-  position: relative;
-  margin: 20px 0;
-}
-.reposts-divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--border);
-  z-index: 1;
-}
-.reposts-divider span {
-  position: relative;
-  z-index: 2;
-  background: var(--card);
-  padding: 0 16px;
-}
-
-.subscribe-btn{
-  background:var(--accent);
-  border:none;
-  color:#fff;
-  padding:6px 12px;
-  border-radius:12px;
-  font-size:13px;
-  font-weight:600;
-  cursor:pointer;
-  transition:all 0.2s;
-  white-space:nowrap;
-}
-.subscribe-btn:hover{
-  opacity:0.9;
-}
-.subscribe-btn.subscribed{
-  background:var(--sub);
-  color:var(--bg);
-}
-
-.chat-btn {
-  background: #5ac8fa;
-  border: none;
-  color: var(--bg);
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  margin-left: 8px;
-}
-.chat-btn:hover {
-  opacity: 0.9;
-}
-.chat-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.repost-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: var(--sub);
-  font-size: 14px;
-}
-.repost-icon {
-  color: #64d2ff;
-}
-.repost-users-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-}
-.repost-user-link {
-  color: var(--hashtag);
-  cursor: pointer;
-  font-weight: 600;
-}
-.repost-user-link:hover {
-  opacity: 0.7;
-}
-.show-more-reposts-btn {
-  background: none;
-  border: none;
-  color: var(--sub);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-.show-more-reposts-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-.hide-reposts-btn {
-  background: none;
-  border: none;
-  color: var(--sub);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: background 0.2s;
-  margin-top: 4px;
-}
-.hide-reposts-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.sheet{
-  position:fixed;
-  inset:0;
-  background:#000;
-  transform:translateY(100%);
-  transition:.35s ease;
-  z-index:2000;
-  display:flex;
-  flex-direction:column;
-}
-.sheet.show{transform:translateY(0)}
-.sheet-header{
-  padding:14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border-bottom:1px solid var(--border);
-}
-.sheet-body{
-  flex:1;
-  overflow:auto;
-  padding:14px;
-}
-.sheet-footer{
-  padding:12px;
-  border-top:1px solid var(--border);
-  display:flex;
-  gap:8px;
-}
-.sheet-footer input{
-  flex:1;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px;
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
-
-.profile-header{
-  display:flex;
-  align-items:flex-start;
-  gap:16px;
-  margin-bottom:20px;
-}
-.profile-avatar{
-  width:72px;
-  height:72px;
-  border-radius:22px;
-  background:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:28px;
-  font-weight:700;
-  flex-shrink:0;
-  background-size: cover;
-  background-position: center;
-  cursor: pointer;
-  transition: opacity 0.3s;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.profile-avatar:hover {
-  opacity: 0.8;
-}
-.profile-info{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  flex:1;
-}
-.profile-name{
-  font-size:18px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:wrap;
-}
-.profile-name-with-badge{
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.change-name-btn{
-  background:none;
-  border:none;
-  color:var(--sub);
-  font-size:14px;
-  cursor:pointer;
-  padding:4px 8px;
-  border-radius:8px;
-  transition:background 0.2s;
-}
-.change-name-btn:hover{
-  background:rgba(255,255,255,0.1);
-}
-
-.profile-page-btn {
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  margin-left: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.profile-page-btn:hover {
-  opacity: 0.9;
-  transform: scale(1.05);
-}
-
-.profile-stats{
-  display:flex;
-  gap:16px;
-  flex-wrap:wrap;
-}
-.profile-stat{
-  display:flex;
-  flex-direction:column;
-}
-.profile-stat-value{
-  font-size:16px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.profile-stat-label{
-  color:var(--sub);
-  font-size:12px;
-  margin-top:2px;
-}
-.likes-stat{
-  color:#ff2d55;
-}
-.posts-stat{
-  color:#5ac8fa;
-}
-.subscribers-stat{
-  color:#ff9500;
-}
-.reposts-stat{
-  color:#64d2ff;
-}
-/* Счетчик закрепленных репостов скрыт */
-.pinned-stat {
-  display: none !important;
-}
-
-.profile-bio{
-  background:var(--card);
-  border-radius:18px;
-  padding:16px;
-  margin-top:16px;
-  margin-bottom:20px;
-  position:relative;
-}
-.profile-bio-text{
-  line-height:1.4;
-  word-break:break-word;
-  white-space:pre-wrap;
-}
-.profile-bio-empty{
-  color:var(--sub);
-  font-style:italic;
-  font-size:14px;
-}
-.profile-bio-edit-btn{
-  position:absolute;
-  top:12px;
-  right:12px;
-  background:none;
-  border:none;
-  color:var(--sub);
-  font-size:14px;
-  cursor:pointer;
-  padding:4px 8px;
-  border-radius:8px;
-  transition:background 0.2s;
-}
-.profile-bio-edit-btn:hover{
-  background:rgba(255,255,255,0.1);
-}
-.bio-word-counter{
-  text-align:right;
-  font-size:12px;
-  color:var(--sub);
-  margin-top:8px;
-}
-.bio-word-counter.warning{
-  color:#ff9500;
-}
-.bio-word-counter.error{
-  color:#ff453a;
-}
-
-.profile-tabs {
-  display: flex;
-  background: var(--card);
-  border-radius: 18px;
-  margin-bottom: 16px;
-  overflow: hidden;
-  position: relative;
-}
-.profile-tab {
-  flex: 1;
-  text-align: center;
-  padding: 14px;
-  background: none;
-  border: none;
-  color: var(--sub);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.3s;
-  position: relative;
-  z-index: 1;
-}
-.profile-tab.active {
-  color: #fff;
-}
-.profile-tab-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: var(--accent);
-  border-radius: 18px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 0;
-}
-.profile-tab-slider.to-reposts {
-  transform: translateX(100%);
-}
-
-.profile-posts-container {
-  position: relative;
-  min-height: 200px;
-}
-.profile-posts-content {
-  position: relative;
-  transition: opacity 0.3s;
-}
-.profile-posts-content.hidden {
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-}
-
-.notification{
-  position:fixed;
-  top:120px;
-  left:50%;
-  transform:translateX(-50%) translateY(-20px);
-  background:var(--accent);
-  color:white;
-  padding:12px 20px;
-  border-radius:14px;
-  font-weight:600;
-  z-index:1999;
-  opacity:0;
-  transition:opacity 0.3s, transform 0.3s;
-  pointer-events:none;
-  max-width:90%;
-  text-align:center;
-}
-.notification.show{
-  opacity:1;
-  transform:translateX(-50%) translateY(0);
-}
-
-.modal-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.8);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:3000;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.3s;
-}
-.modal-overlay.show{
-  opacity:1;
-  pointer-events:auto;
-}
-.modal{
-  background:var(--card);
-  border-radius:20px;
-  padding:24px;
-  width:90%;
-  max-width:400px;
-  transform:translateY(20px);
-  transition:transform 0.3s;
-}
-.modal-overlay.show .modal{
-  transform:translateY(0);
-}
-.modal-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
-}
-.modal-title{
-  font-size:20px;
-  font-weight:700;
-}
-.modal-close{
-  background:none;
-  border:none;
-  color:var(--sub);
-  font-size:20px;
-  cursor:pointer;
-  padding:0;
-  width:24px;
-  height:24px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.modal-input{
-  width:100%;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:14px;
-  color:#fff;
-  font-size:16px;
-  margin-bottom:16px;
-  font-family:inherit;
-}
-.modal-input:focus{
-  outline:none;
-  border-color:var(--accent);
-}
-.modal-textarea{
-  width:100%;
-  min-height:120px;
-  background:#1c1c1e;
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:14px;
-  color:#fff;
-  font-size:16px;
-  margin-bottom:8px;
-  font-family:inherit;
-  resize:vertical;
-}
-.modal-textarea:focus{
-  outline:none;
-  border-color:var(--accent);
-}
-.modal-buttons{
-  display:flex;
-  gap:12px;
-}
-.modal-btn{
-  flex:1;
-  padding:14px;
-  border:none;
-  border-radius:14px;
-  font-weight:600;
-  cursor:pointer;
-  font-size:16px;
-}
-.modal-btn.primary{
-  background:var(--accent);
-  color:white;
-}
-.modal-btn.secondary{
-  background:rgba(255,255,255,0.1);
-  color:white;
-}
-
-.comment-delete-btn{
-  background:none;
-  border:none;
-  color:var(--danger);
-  cursor:pointer;
-  font-size:14px;
-  padding:4px 8px;
-  border-radius:6px;
-  margin-left:auto;
-}
-.comment-delete-btn:hover{
-  background:rgba(255,69,58,0.1);
-}
-
-.upload-progress {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--card);
-  border-radius: 20px;
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 2000;
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border);
-  display: none;
-}
-
-.upload-progress.show {
-  display: flex;
-}
-
-.upload-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--sub);
-  border-top-color: var(--hashtag);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.upload-progress-text {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* Стили для модального окна обрезки */
-.crop-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 5000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  padding: 20px;
-  touch-action: none;
-}
-
-.crop-modal.show {
-  display: flex;
-}
-
-.crop-container {
-  width: 100%;
-  max-width: 500px;
-  max-height: 70vh;
-  background: #1c1c1e;
-  border-radius: 20px;
-  overflow: hidden;
-  margin-bottom: 20px;
-  touch-action: none;
-}
-
-.crop-image {
-  max-width: 100%;
-  display: block;
-  touch-action: none;
-}
-
-.crop-controls {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-  touch-action: manipulation;
-}
-
-.crop-btn {
-  background: var(--accent);
-  border: none;
-  color: white;
-  padding: 12px 30px;
-  border-radius: 30px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s;
-  min-width: 120px;
-  touch-action: manipulation;
-}
-
-.crop-btn.cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text);
-}
-
-.crop-btn:hover {
-  transform: scale(1.05);
-}
-
-.crop-btn:active {
-  transform: scale(0.95);
-}
-
-.crop-instructions {
-  color: var(--sub);
-  font-size: 14px;
-  margin-bottom: 15px;
-  text-align: center;
-  touch-action: none;
-}
 </style>
 </head>
 <body>
-
-<!-- Фоновый паттерн для уникального оформления -->
-<div class="unique-bg-pattern" id="uniqueBgPattern" style="display: none;"></div>
-
-<!-- Модальное окно выбора оформления -->
-<div class="theme-selector-modal" id="themeSelectorModal">
-  <h3>Выберите оформление</h3>
-  <div class="theme-options">
-    <div class="theme-option selected" data-theme="default" id="defaultThemeOption">
-      <div class="theme-preview default">C</div>
-      <div class="theme-info">
-        <div class="theme-name">Обычное</div>
-        <div class="theme-desc">Стандартное оформление как во всей соцсети</div>
-      </div>
-    </div>
-    <div class="theme-option" data-theme="unique" id="uniqueThemeOption">
-      <div class="theme-preview unique">CZH</div>
-      <div class="theme-info">
-        <div class="theme-name">Уникальное</div>
-        <div class="theme-desc">Зеленый стиль в духе Phasmophobia</div>
-      </div>
-    </div>
-  </div>
-  <button class="theme-close-btn" onclick="closeThemeSelector()">Применить</button>
-</div>
-
-<!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА -->
+  <!-- ========== ЧАСТЬ 2/4: HTML РАЗМЕТКА ========== -->
 <div id="snowflakes-container"></div>
 
 <div class="dynamic-island" id="time"></div>
@@ -2134,6 +1226,7 @@ body{
 </div>
 
 <script>
+// ==================== ЧАСТЬ 3/4: JAVASCRIPT НАЧАЛО ====================
 // ==================== ИНИЦИАЛИЗАЦИЯ FIREBASE ====================
 firebase.initializeApp({
   apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
@@ -2163,15 +1256,167 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
+// ==================== ПЕРЕМЕННЫЕ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
 let repostClickCount = 0;
 let lastRepostClickTime = 0;
-let uniqueThemeUnlocked = false;
-let uniqueThemeActive = false;
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
 let currentCropFile = null;
+
+// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
+
+// Функция отслеживания нажатий на репост
+function handleRepostClick() {
+  const now = Date.now();
+  
+  // Сброс счетчика если прошло больше 2 секунд
+  if (now - lastRepostClickTime > 2000) {
+    repostClickCount = 0;
+  }
+  
+  repostClickCount++;
+  lastRepostClickTime = now;
+  
+  if (repostClickCount < 3) {
+    showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
+  }
+  
+  if (repostClickCount === 3) {
+    showNotification('✅ Комбо активировано! Теперь нажмите на свой никнейм', 2000);
+  }
+}
+
+// Обработчик нажатия на никнейм
+async function handleNicknameClick() {
+  if (repostClickCount === 3) {
+    // Разблокируем тему и сохраняем в Firebase
+    await db.collection("users").doc(currentUser.uid).update({
+      themeUnlocked: true,
+      themeActive: true
+    });
+    
+    userData.themeUnlocked = true;
+    userData.themeActive = true;
+    
+    repostClickCount = 0;
+    applyProfileTheme(true);
+    showNotification('🎉 Уникальное оформление активировано!', 3000);
+  } else {
+    // Проверяем, может уже разблокировано
+    if (userData?.themeUnlocked) {
+      // Если уже разблокировано, просто переключаем
+      const newState = !userData.themeActive;
+      await db.collection("users").doc(currentUser.uid).update({
+        themeActive: newState
+      });
+      userData.themeActive = newState;
+      applyProfileTheme(newState);
+      showNotification(newState ? '✨ Тема включена' : 'Тема выключена', 2000);
+    } else {
+      showNotification(`Нужно нажать на репост 3 раза! Сейчас: ${repostClickCount}`, 2000);
+    }
+  }
+}
+
+// Применение темы в профиле
+function applyProfileTheme(active) {
+  const profileSheet = document.getElementById('profileSheet');
+  const profileName = document.getElementById('profileName');
+  
+  if (active) {
+    profileSheet.classList.add('unique-theme-active');
+    if (profileName) profileName.classList.add('unique-username');
+    
+    // Создаем статичный черный фон с зелеными CZH
+    createProfileBackground();
+  } else {
+    profileSheet.classList.remove('unique-theme-active');
+    if (profileName) profileName.classList.remove('unique-username');
+    removeProfileBackground();
+  }
+  
+  // Обновляем ник в ленте
+  updateFeedUsername();
+}
+
+// Создание черного фона с зелеными статичными надписями CZH
+function createProfileBackground() {
+  removeProfileBackground();
+  
+  const profileSheet = document.getElementById('profileSheet');
+  const bgDiv = document.createElement('div');
+  bgDiv.id = 'uniqueProfileBg';
+  bgDiv.className = 'unique-profile-bg';
+  
+  // Создаем 35 статичных надписей CZH для лучшего покрытия
+  for (let i = 0; i < 35; i++) {
+    const span = document.createElement('span');
+    span.textContent = 'CZH';
+    
+    // Рандомные позиции, размеры и прозрачность
+    const left = Math.random() * 100;
+    const top = Math.random() * 100;
+    const size = 60 + Math.random() * 180;
+    const opacity = 0.1 + Math.random() * 0.25;
+    const rotation = -15 + (Math.random() * 10 - 5); // небольшое отклонение от -15 градусов
+    
+    span.style.left = left + '%';
+    span.style.top = top + '%';
+    span.style.fontSize = size + 'px';
+    span.style.opacity = opacity.toString();
+    span.style.transform = `rotate(${rotation}deg) scale(${0.7 + Math.random() * 0.6})`;
+    
+    bgDiv.appendChild(span);
+  }
+  
+  profileSheet.insertBefore(bgDiv, profileSheet.firstChild);
+}
+
+function removeProfileBackground() {
+  const existingBg = document.getElementById('uniqueProfileBg');
+  if (existingBg) existingBg.remove();
+}
+
+// Обновление ника в ленте постов
+function updateFeedUsername() {
+  document.querySelectorAll('.post-user').forEach(element => {
+    const userId = element.dataset.userid;
+    if (userId === currentUser?.uid) {
+      if (userData?.themeActive) {
+        element.classList.add('unique-username-in-feed');
+      } else {
+        element.classList.remove('unique-username-in-feed');
+      }
+    }
+  });
+}
+
+// Загрузка темы пользователя при открытии профиля
+async function loadUserTheme(uid) {
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (userDoc.exists) {
+      const data = userDoc.data();
+      
+      if (uid === currentUser?.uid) {
+        // Свой профиль
+        if (data.themeActive) {
+          applyProfileTheme(true);
+        }
+      } else {
+        // Чужой профиль - показываем его тему если она активна
+        if (data.themeActive) {
+          document.getElementById('profileSheet').classList.add('unique-theme-active');
+          createProfileBackground();
+          document.getElementById('profileName').classList.add('unique-username');
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки темы:', error);
+  }
+}
 
 // ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО ====================
 
@@ -2390,6 +1635,7 @@ async function applyCrop() {
     console.error("Ошибка при обновлении аватара:", error);
   }
 }
+  // ==================== ЧАСТЬ 3/4: JAVASCRIPT ПРОДОЛЖЕНИЕ ====================
 
 async function updateUserAvatarInAllContent(userId, newAvatar) {
   try {
@@ -2472,149 +1718,6 @@ function setupAvatarChange() {
       openImageView(avatarUrl);
     }
   });
-}
-
-// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
-
-function handleRepostClick() {
-  const now = Date.now();
-  
-  if (now - lastRepostClickTime > 2000) {
-    repostClickCount = 0;
-  }
-  
-  repostClickCount++;
-  lastRepostClickTime = now;
-  
-  if (repostClickCount < 3) {
-    showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
-  }
-  
-  if (repostClickCount === 3) {
-    showNotification('✅ Комбо активировано! Теперь нажмите на свой никнейм', 2000);
-  }
-}
-
-function handleNicknameClick() {
-  if (repostClickCount === 3) {
-    uniqueThemeUnlocked = true;
-    localStorage.setItem('uniqueThemeUnlocked', 'true');
-    repostClickCount = 0;
-    showNotification('🎉 Уникальное оформление разблокировано!', 2000);
-    openThemeSelector();
-  } else if (uniqueThemeUnlocked) {
-    openThemeSelector();
-  }
-}
-
-function openThemeSelector() {
-  const modal = document.getElementById('themeSelectorModal');
-  const defaultOption = document.getElementById('defaultThemeOption');
-  const uniqueOption = document.getElementById('uniqueThemeOption');
-  
-  if (uniqueThemeActive) {
-    defaultOption.classList.remove('selected');
-    uniqueOption.classList.add('selected');
-  } else {
-    defaultOption.classList.add('selected');
-    uniqueOption.classList.remove('selected');
-  }
-  
-  modal.classList.add('show');
-}
-
-function closeThemeSelector() {
-  const modal = document.getElementById('themeSelectorModal');
-  const selectedOption = document.querySelector('.theme-option.selected');
-  
-  if (selectedOption) {
-    const theme = selectedOption.dataset.theme;
-    applyTheme(theme === 'unique');
-  }
-  
-  modal.classList.remove('show');
-}
-
-function applyTheme(useUnique) {
-  uniqueThemeActive = useUnique && uniqueThemeUnlocked;
-  
-  const body = document.body;
-  const bgPattern = document.getElementById('uniqueBgPattern');
-  const profileName = document.getElementById('profileName');
-  const mainContainer = document.getElementById('mainContainer');
-  const feed = document.getElementById('feed');
-  
-  if (uniqueThemeActive) {
-    body.classList.add('unique-theme-active');
-    mainContainer.classList.add('unique-active');
-    if (feed) feed.classList.add('unique-active');
-    
-    createBackgroundPattern();
-    bgPattern.style.display = 'block';
-    
-    if (profileName) {
-      profileName.classList.add('unique-username');
-    }
-    
-    updateUsernamesInFeed(true);
-    localStorage.setItem('uniqueThemeActive', 'true');
-    showNotification('✨ Уникальное оформление включено!');
-  } else {
-    body.classList.remove('unique-theme-active');
-    mainContainer.classList.remove('unique-active');
-    if (feed) feed.classList.remove('unique-active');
-    bgPattern.style.display = 'none';
-    bgPattern.innerHTML = '';
-    
-    if (profileName) {
-      profileName.classList.remove('unique-username');
-    }
-    
-    updateUsernamesInFeed(false);
-    localStorage.setItem('uniqueThemeActive', 'false');
-    showNotification('Обычное оформление включено');
-  }
-}
-
-function createBackgroundPattern() {
-  const bgPattern = document.getElementById('uniqueBgPattern');
-  bgPattern.innerHTML = '';
-  
-  for (let i = 0; i < 30; i++) {
-    const span = document.createElement('span');
-    span.textContent = 'CZH';
-    span.style.left = Math.random() * 100 + '%';
-    span.style.top = Math.random() * 100 + '%';
-    span.style.animationDelay = Math.random() * 20 + 's';
-    span.style.animationDuration = 15 + Math.random() * 10 + 's';
-    span.style.fontSize = (80 + Math.random() * 100) + 'px';
-    span.style.opacity = (0.1 + Math.random() * 0.2).toString();
-    bgPattern.appendChild(span);
-  }
-}
-
-function updateUsernamesInFeed(useUnique) {
-  const usernameElements = document.querySelectorAll('.post-user');
-  
-  usernameElements.forEach(element => {
-    const userId = element.dataset.userid;
-    
-    if (userId === currentUser?.uid) {
-      if (useUnique) {
-        element.classList.add('unique-username-in-feed');
-      } else {
-        element.classList.remove('unique-username-in-feed');
-      }
-    }
-  });
-}
-
-function setupNicknameClickHandler() {
-  const profileName = document.getElementById('profileName');
-  if (profileName) {
-    profileName.removeEventListener('click', handleNicknameClick);
-    profileName.addEventListener('click', handleNicknameClick);
-  }
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
@@ -2794,7 +1897,6 @@ async function showPollResults(postId) {
     const isExpired = endsAt < now;
     const totalVotes = poll.totalVotes || 0;
     const votes = poll.votes || [];
-    const votedBy = poll.votedBy || [];
     
     let resultsHTML = '';
     
@@ -2921,7 +2023,7 @@ function getVotesWord(count) {
   return 'голосов';
 }
 
-// ==================== ОПТИМИЗИРОВАННЫЕ СНЕЖИНКИ ====================
+// ==================== СНЕЖИНКИ ====================
 let snowflakeAnimationFrame = null;
 let snowflakes = [];
 let snowflakeContainer = null;
@@ -2981,7 +2083,7 @@ function animateSnowflakes() {
   update();
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
+// ==================== ХЕШТЕГИ ====================
 
 function extractHashtags(text) {
   if (!text) return [];
@@ -3081,6 +2183,14 @@ async function loadAllHashtags() {
     
     hashtagsHTML += '</div>';
     feed.innerHTML = hashtagsHTML;
+    
+    // Добавляем обработчики для клика по хештегу
+    document.querySelectorAll('.hashtag-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const tag = item.dataset.hashtag;
+        if (tag) openHashtagFeed(tag);
+      });
+    });
     
   } catch (error) {
     console.error("Ошибка при загрузке хештегов:", error);
@@ -3199,7 +2309,7 @@ function declinePosts(count) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЛАЙКОВ ====================
+// ==================== ЛАЙКИ ====================
 
 async function toggleLike(postId, button) {
   const post = postsCache.get(postId);
@@ -3255,128 +2365,6 @@ async function toggleLike(postId, button) {
 
 // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
 
-function setupEventDelegation() {
-  const feed = document.getElementById('feed');
-  if (!feed) return;
-  
-  feed.addEventListener('click', (e) => {
-    const target = e.target;
-    
-    const likeBtn = target.closest('[data-like]');
-    if (likeBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      const postId = likeBtn.dataset.like;
-      if (postId) toggleLike(postId, likeBtn);
-      return;
-    }
-    
-    const commentBtn = target.closest('[data-comment]');
-    if (commentBtn) {
-      e.preventDefault();
-      const postId = commentBtn.dataset.comment;
-      if (postId) openComments(postId);
-      return;
-    }
-    
-    const repostBtn = target.closest('[data-repost]');
-    if (repostBtn) {
-      e.preventDefault();
-      const postId = repostBtn.dataset.repost;
-      if (postId) {
-        handleRepostClick();
-        toggleRepost(postId, repostBtn);
-      }
-      return;
-    }
-    
-    const userLink = target.closest('.post-user');
-    if (userLink) {
-      e.preventDefault();
-      const userId = userLink.dataset.userid;
-      const username = userLink.dataset.username;
-      if (userId && username) openProfile(userId, username);
-      return;
-    }
-    
-    const subBtn = target.closest('.subscribe-btn');
-    if (subBtn) {
-      e.preventDefault();
-      const userId = subBtn.dataset.userid;
-      const username = subBtn.dataset.username;
-      if (userId && username) toggleSubscribe(userId, username);
-      return;
-    }
-    
-    const trashBtn = target.closest('.trash');
-    if (trashBtn) {
-      e.preventDefault();
-      const postId = trashBtn.dataset.postid;
-      if (postId && confirm('Удалить пост?')) deletePost(postId);
-      return;
-    }
-    
-    const hashtag = target.closest('.hashtag');
-    if (hashtag) {
-      e.preventDefault();
-      const tag = hashtag.dataset.hashtag;
-      if (tag) openHashtagFeed(tag);
-      return;
-    }
-    
-    const hashtagItem = target.closest('.hashtag-item');
-    if (hashtagItem) {
-      e.preventDefault();
-      const tag = hashtagItem.dataset.hashtag;
-      if (tag) openHashtagFeed(tag);
-      return;
-    }
-    
-    const pollOption = target.closest('[data-poll]');
-    if (pollOption) {
-      e.preventDefault();
-      const postId = pollOption.dataset.poll;
-      const optionIndex = parseInt(pollOption.dataset.option);
-      if (postId && !isNaN(optionIndex)) voteInPoll(postId, optionIndex);
-      return;
-    }
-    
-    const pollResults = target.closest('[data-pollresults]');
-    if (pollResults) {
-      e.preventDefault();
-      const postId = pollResults.dataset.pollresults;
-      if (postId) showPollResults(postId);
-      return;
-    }
-    
-    const showMoreReposts = target.closest('.show-more-reposts-btn');
-    if (showMoreReposts) {
-      e.preventDefault();
-      const postId = showMoreReposts.dataset.postid;
-      if (postId) toggleRepostUsers(postId, true);
-      return;
-    }
-    
-    const hideReposts = target.closest('.hide-reposts-btn');
-    if (hideReposts) {
-      e.preventDefault();
-      const postId = hideReposts.closest('.post')?.id.replace('post-', '');
-      if (postId) toggleRepostUsers(postId, false);
-      return;
-    }
-    
-    const postImage = target.closest('.post-image');
-    if (postImage) {
-      e.preventDefault();
-      const img = postImage.querySelector('img');
-      if (img && img.src) {
-        openImageView(img.src);
-      }
-      return;
-    }
-  });
-}
-
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -3405,13 +2393,6 @@ auth.onAuthStateChanged(async (user) => {
     setTimeout(checkPostToScroll, 1000);
     
     startTimeUpdater();
-    
-    uniqueThemeUnlocked = localStorage.getItem('uniqueThemeUnlocked') === 'true';
-    const savedTheme = localStorage.getItem('uniqueThemeActive');
-    if (savedTheme === 'true' && uniqueThemeUnlocked) {
-      uniqueThemeActive = true;
-      applyTheme(true);
-    }
     
   } catch (error) {
     console.error('Ошибка инициализации:', error);
@@ -3463,11 +2444,28 @@ async function loadUserData() {
         bio: "",
         blockedUsers: [],
         reposts: [],
-        pinnedReposts: []
+        pinnedReposts: [],
+        themeUnlocked: false,
+        themeActive: false
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
       userData = snap.data();
+      
+      // Добавляем поля для темы если их нет
+      if (userData.themeUnlocked === undefined) {
+        await db.collection("users").doc(currentUser.uid).update({
+          themeUnlocked: false
+        });
+        userData.themeUnlocked = false;
+      }
+      if (userData.themeActive === undefined) {
+        await db.collection("users").doc(currentUser.uid).update({
+          themeActive: false
+        });
+        userData.themeActive = false;
+      }
+      
       if (!userData.reposts) {
         userData.reposts = [];
         await db.collection("users").doc(currentUser.uid).update({
@@ -3514,6 +2512,7 @@ async function loadAdminUsers() {
     console.error("Ошибка загрузки админов:", error);
   }
 }
+  // ==================== ЧАСТЬ 4/4: JAVASCRIPT ФИНАЛ ====================
 
 async function loadSubscriptions() {
   try {
@@ -3876,7 +2875,8 @@ async function displayPosts(posts, isHashtagFeed = false) {
       pollHTML += '</div>';
     }
     
-    const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+    // Добавляем класс уникального стиля для ника текущего пользователя
+    const usernameClass = (post.userId === currentUser?.uid && userData?.themeActive) ? ' unique-username-in-feed' : '';
     
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}" data-postid="${postId}">
@@ -4102,6 +3102,9 @@ async function deletePost(postId) {
 }
 
 async function toggleRepost(postId, button) {
+  // Отслеживаем нажатие для разблокировки темы
+  handleRepostClick();
+  
   const post = postsCache.get(postId);
   if (!post) return;
   
@@ -4215,6 +3218,9 @@ async function openProfile(uid, name) {
   
   document.getElementById("profileName").textContent = "@" + name;
   
+  // Удаляем старый фон перед загрузкой
+  removeProfileBackground();
+  
   const avatarElement = document.getElementById("profileAvatar");
   let userAvatar = null;
   
@@ -4222,9 +3228,32 @@ async function openProfile(uid, name) {
     const userDoc = await db.collection("users").doc(uid).get();
     if (userDoc.exists) {
       userAvatar = userDoc.data().avatar;
+      
+      // Загружаем тему пользователя
+      const themeActive = userDoc.data().themeActive || false;
+      
+      if (uid === currentUser.uid) {
+        // Свой профиль
+        if (themeActive) {
+          applyProfileTheme(true);
+        }
+        
+        // Добавляем обработчик на ник
+        const profileName = document.getElementById('profileName');
+        profileName.style.cursor = 'pointer';
+        profileName.title = 'Нажмите для управления темой';
+        profileName.onclick = handleNicknameClick;
+      } else {
+        // Чужой профиль - показываем его тему если она активна
+        if (themeActive) {
+          document.getElementById('profileSheet').classList.add('unique-theme-active');
+          createProfileBackground();
+          document.getElementById('profileName').classList.add('unique-username');
+        }
+      }
     }
   } catch (error) {
-    console.error("Ошибка загрузки аватара:", error);
+    console.error("Ошибка загрузки профиля:", error);
   }
   
   const firstLetter = name?.[0]?.toUpperCase() || "A";
@@ -4244,14 +3273,6 @@ async function openProfile(uid, name) {
     } else {
       avatarElement.style.backgroundImage = '';
       avatarElement.textContent = firstLetter;
-    }
-    
-    setupNicknameClickHandler();
-    
-    const savedTheme = localStorage.getItem('uniqueThemeActive');
-    if (savedTheme === 'true' && uniqueThemeUnlocked) {
-      uniqueThemeActive = true;
-      applyTheme(true);
     }
   } else if (userAvatar) {
     avatarElement.style.backgroundImage = `url('${userAvatar}')`;
@@ -4597,7 +3618,7 @@ async function refreshProfilePosts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      const usernameClass = (post.userId === currentUser?.uid && userData?.themeActive) ? ' unique-username-in-feed' : '';
       
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
@@ -4734,7 +3755,7 @@ async function refreshProfileReposts(uid) {
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
         const authorLetter = post.username?.[0]?.toUpperCase() || "A";
         
-        const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+        const usernameClass = (post.userId === currentUser?.uid && userData?.themeActive) ? ' unique-username-in-feed' : '';
         
         profileReposts.innerHTML += `
           <div class="post fade" id="repost-${post.id}">
@@ -4818,7 +3839,7 @@ async function refreshProfileReposts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      const usernameClass = (post.userId === currentUser?.uid && userData?.themeActive) ? ' unique-username-in-feed' : '';
       
       profileReposts.innerHTML += `
         <div class="post fade" id="repost-${post.id}">
@@ -5044,7 +4065,7 @@ async function loadComments() {
       const authorAvatarStyle = comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = comment.username?.[0]?.toUpperCase() || "A";
       
-      const usernameClass = (comment.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      const usernameClass = (comment.userId === currentUser?.uid && userData?.themeActive) ? ' unique-username-in-feed' : '';
       
       commentsBody.innerHTML += `
         <div class="post fade">
@@ -5483,22 +4504,129 @@ function logout() {
   }
 }
 
-window.addEventListener('load', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const openProfileUserId = urlParams.get('openProfile');
+function setupEventDelegation() {
+  const feed = document.getElementById('feed');
+  if (!feed) return;
   
-  if (openProfileUserId) {
-    db.collection("users").doc(openProfileUserId).get().then(doc => {
-      if (doc.exists) {
-        const userData = doc.data();
-        setTimeout(() => {
-          openProfile(openProfileUserId, userData.username);
-        }, 1000);
+  feed.addEventListener('click', (e) => {
+    const target = e.target;
+    
+    const likeBtn = target.closest('[data-like]');
+    if (likeBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const postId = likeBtn.dataset.like;
+      if (postId) toggleLike(postId, likeBtn);
+      return;
+    }
+    
+    const commentBtn = target.closest('[data-comment]');
+    if (commentBtn) {
+      e.preventDefault();
+      const postId = commentBtn.dataset.comment;
+      if (postId) openComments(postId);
+      return;
+    }
+    
+    const repostBtn = target.closest('[data-repost]');
+    if (repostBtn) {
+      e.preventDefault();
+      const postId = repostBtn.dataset.repost;
+      if (postId) {
+        // handleRepostClick вызывается внутри toggleRepost
+        toggleRepost(postId, repostBtn);
       }
-    });
-  }
-});
+      return;
+    }
+    
+    const userLink = target.closest('.post-user');
+    if (userLink) {
+      e.preventDefault();
+      const userId = userLink.dataset.userid;
+      const username = userLink.dataset.username;
+      if (userId && username) openProfile(userId, username);
+      return;
+    }
+    
+    const subBtn = target.closest('.subscribe-btn');
+    if (subBtn) {
+      e.preventDefault();
+      const userId = subBtn.dataset.userid;
+      const username = subBtn.dataset.username;
+      if (userId && username) toggleSubscribe(userId, username);
+      return;
+    }
+    
+    const trashBtn = target.closest('.trash');
+    if (trashBtn) {
+      e.preventDefault();
+      const postId = trashBtn.dataset.postid;
+      if (postId && confirm('Удалить пост?')) deletePost(postId);
+      return;
+    }
+    
+    const hashtag = target.closest('.hashtag');
+    if (hashtag) {
+      e.preventDefault();
+      const tag = hashtag.dataset.hashtag;
+      if (tag) openHashtagFeed(tag);
+      return;
+    }
+    
+    const hashtagItem = target.closest('.hashtag-item');
+    if (hashtagItem) {
+      e.preventDefault();
+      const tag = hashtagItem.dataset.hashtag;
+      if (tag) openHashtagFeed(tag);
+      return;
+    }
+    
+    const pollOption = target.closest('[data-poll]');
+    if (pollOption) {
+      e.preventDefault();
+      const postId = pollOption.dataset.poll;
+      const optionIndex = parseInt(pollOption.dataset.option);
+      if (postId && !isNaN(optionIndex)) voteInPoll(postId, optionIndex);
+      return;
+    }
+    
+    const pollResults = target.closest('[data-pollresults]');
+    if (pollResults) {
+      e.preventDefault();
+      const postId = pollResults.dataset.pollresults;
+      if (postId) showPollResults(postId);
+      return;
+    }
+    
+    const showMoreReposts = target.closest('.show-more-reposts-btn');
+    if (showMoreReposts) {
+      e.preventDefault();
+      const postId = showMoreReposts.dataset.postid;
+      if (postId) toggleRepostUsers(postId, true);
+      return;
+    }
+    
+    const hideReposts = target.closest('.hide-reposts-btn');
+    if (hideReposts) {
+      e.preventDefault();
+      const postId = hideReposts.closest('.post')?.id.replace('post-', '');
+      if (postId) toggleRepostUsers(postId, false);
+      return;
+    }
+    
+    const postImage = target.closest('.post-image');
+    if (postImage) {
+      e.preventDefault();
+      const img = postImage.querySelector('img');
+      if (img && img.src) {
+        openImageView(img.src);
+      }
+      return;
+    }
+  });
+}
 
+// Добавляем обработчики для комментариев и удаления
 document.addEventListener('click', (e) => {
   const deleteCommentBtn = e.target.closest('.comment-delete-btn');
   if (deleteCommentBtn) {
@@ -5526,241 +4654,42 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Добавляем обработчики для модального окна выбора темы
-document.getElementById('defaultThemeOption').addEventListener('click', function() {
-  document.getElementById('defaultThemeOption').classList.add('selected');
-  document.getElementById('uniqueThemeOption').classList.remove('selected');
-});
-
-document.getElementById('uniqueThemeOption').addEventListener('click', function() {
-  document.getElementById('uniqueThemeOption').classList.add('selected');
-  document.getElementById('defaultThemeOption').classList.remove('selected');
-});
-</script>// ==================== УНИКАЛЬНОЕ ОФОРМЛЕНИЕ ПРОФИЛЯ (ДОБАВИТЬ В КОНЕЦ SCRIPT) ====================
-
-// Переменные для отслеживания нажатий
-let repostClickCount = 0;
-let lastRepostClickTime = 0;
-
-// Функция отслеживания нажатий на репост
-function handleRepostClick() {
-    const now = Date.now();
-    if (now - lastRepostClickTime > 2000) repostClickCount = 0;
-    
-    repostClickCount++;
-    lastRepostClickTime = now;
-    
-    if (repostClickCount < 3) {
-        showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
-    }
-    
-    if (repostClickCount === 3) {
-        showNotification('✅ Комбо! Теперь нажми на свой никнейм', 2000);
-    }
-}
-
-// Обработчик нажатия на ник
-async function handleNicknameClick() {
-    if (repostClickCount === 3) {
-        // Разблокируем тему в Firebase
-        await db.collection("users").doc(currentUser.uid).update({
-            themeUnlocked: true,
-            themeActive: true
-        });
-        
-        // Обновляем локальные данные
-        userData.themeUnlocked = true;
-        userData.themeActive = true;
-        
-        repostClickCount = 0;
-        applyProfileTheme(true);
-        showNotification('🎉 Уникальное оформление активировано!', 3000);
-    }
-}
-
-// Применение темы в профиле
-function applyProfileTheme(active) {
-    const profileSheet = document.getElementById('profileSheet');
-    const profileName = document.getElementById('profileName');
-    
-    if (active) {
-        profileSheet.classList.add('unique-profile');
-        if (profileName) profileName.classList.add('unique-username');
-        
-        // Создаем статичный черный фон с зелеными CZH
-        createStaticCZHBackground();
-    } else {
-        profileSheet.classList.remove('unique-profile');
-        if (profileName) profileName.classList.remove('unique-username');
-        removeCZHBackground();
-    }
-    
-    // Обновляем ник в ленте
-    updateFeedUsername();
-}
-
-// Создание статичного фона (ЧЕРНЫЙ фон, ЗЕЛЕНЫЕ надписи CZH)
-function createStaticCZHBackground() {
-    removeCZHBackground();
-    
-    const bgDiv = document.createElement('div');
-    bgDiv.id = 'czh-static-bg';
-    bgDiv.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        overflow: hidden;
-        background: #000;
-        border-radius: 22px;
-    `;
-    
-    // Создаем 30 статичных надписей CZH
-    for (let i = 0; i < 30; i++) {
-        const span = document.createElement('span');
-        span.textContent = 'CZH';
-        span.style.cssText = `
-            position: absolute;
-            color: #2ecc71;
-            font-family: 'Courier New', monospace;
-            font-size: ${80 + Math.random() * 150}px;
-            font-weight: 800;
-            left: ${Math.random() * 100}%;
-            top: ${Math.random() * 100}%;
-            transform: rotate(-15deg);
-            opacity: ${0.1 + Math.random() * 0.2};
-            white-space: nowrap;
-            text-shadow: 0 0 10px rgba(46,204,113,0.3);
-            user-select: none;
-        `;
-        bgDiv.appendChild(span);
-    }
-    
-    document.getElementById('profileSheet').insertBefore(bgDiv, document.getElementById('profileSheet').firstChild);
-}
-
-function removeCZHBackground() {
-    const old = document.getElementById('czh-static-bg');
-    if (old) old.remove();
-}
-
-// Обновление ника в ленте
-function updateFeedUsername() {
-    document.querySelectorAll('.post-user').forEach(el => {
-        if (el.dataset.userid === currentUser?.uid) {
-            if (userData?.themeActive) {
-                el.classList.add('unique-username');
-            } else {
-                el.classList.remove('unique-username');
-            }
-        }
-    });
-}
-
-// Загружаем тему пользователя при открытии профиля
-async function loadUserTheme(uid) {
-    try {
-        const userDoc = await db.collection("users").doc(uid).get();
-        if (userDoc.exists) {
-            const themeActive = userDoc.data().themeActive || false;
-            
-            if (uid === currentUser?.uid) {
-                // Свой профиль
-                if (themeActive) applyProfileTheme(true);
-            } else {
-                // Чужой профиль - показываем его тему
-                if (themeActive) {
-                    document.getElementById('profileSheet').classList.add('unique-profile');
-                    createStaticCZHBackground();
-                    document.getElementById('profileName').classList.add('unique-username');
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки темы:', error);
-    }
-}
-
-// Добавляем CSS стили (вставь это в <style>)
-const themeStyles = `
-    /* Уникальное оформление профиля */
-    #profileSheet.unique-profile {
-        position: relative;
-        background: transparent !important;
-    }
-    
-    #profileSheet.unique-profile .sheet-body {
-        position: relative;
-        z-index: 2;
-        background: transparent;
-    }
-    
-    #profileSheet.unique-profile .post,
-    #profileSheet.unique-profile .profile-bio,
-    #profileSheet.unique-profile .profile-tabs {
-        background: rgba(28,28,30,0.95);
-        backdrop-filter: blur(10px);
-    }
-    
-    .unique-username {
-        font-family: 'Courier New', monospace !important;
-        color: #2ecc71 !important;
-        text-shadow: 0 0 10px rgba(46,204,113,0.5) !important;
-        font-weight: 800 !important;
-    }
-`;
-
-// Добавляем стили в head
-const styleSheet = document.createElement("style");
-styleSheet.textContent = themeStyles;
-document.head.appendChild(styleSheet);
-
-// МОДИФИЦИРУЕМ СУЩЕСТВУЮЩУЮ ФУНКЦИЮ openProfile
-const originalOpenProfile = openProfile;
-openProfile = async function(uid, name) {
-    await originalOpenProfile(uid, name);
-    await loadUserTheme(uid);
-    
-    // Добавляем обработчик на ник
-    if (uid === currentUser?.uid) {
-        const profileName = document.getElementById('profileName');
-        profileName.style.cursor = 'pointer';
-        profileName.title = 'Нажми для активации темы';
-        profileName.onclick = handleNicknameClick;
-    }
-};
-
-// МОДИФИЦИРУЕМ ОБРАБОТЧИК КЛИКА ПО РЕПОСТУ
-// Найди в коде функцию toggleRepost и добавь в начало:
-// handleRepostClick();
-
-// Пример: 
-// async function toggleRepost(postId, button) {
-//     handleRepostClick(); // <-- ДОБАВЬ ЭТУ СТРОКУ
-//     ... остальной код ...
-// }
-
-// Если не можешь найти функцию, добавь глобальный обработчик:
-document.addEventListener('click', function(e) {
-    if (e.target.closest('[data-repost]')) {
-        handleRepostClick();
-    }
-});
-
-// Для консоли (если нужно принудительно):
-window.forceUnlockTheme = async function() {
-    await db.collection("users").doc(currentUser.uid).update({
-        themeUnlocked: true,
-        themeActive: true
-    });
-    userData.themeUnlocked = true;
-    userData.themeActive = true;
-    applyProfileTheme(true);
-    showNotification('✅ Тема принудительно активирована!');
-};
+window.addEventListener('load', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const openProfileUserId = urlParams.get('openProfile');
   
+  if (openProfileUserId) {
+    db.collection("users").doc(openProfileUserId).get().then(doc => {
+      if (doc.exists) {
+        const userData = doc.data();
+        setTimeout(() => {
+          openProfile(openProfileUserId, userData.username);
+        }, 1000);
+      }
+    });
+  }
+});
+
+// Функция для консоли (принудительная разблокировка)
+window.forceUnlockTheme = async function() {
+  if (!currentUser) {
+    console.log('❌ Пользователь не авторизован');
+    return;
+  }
+  await db.collection("users").doc(currentUser.uid).update({
+    themeUnlocked: true,
+    themeActive: true
+  });
+  userData.themeUnlocked = true;
+  userData.themeActive = true;
+  applyProfileTheme(true);
+  showNotification('✅ Тема принудительно активирована!');
+  console.log('✅ Тема разблокирована!');
+};
+
+console.log('✅ Уникальное оформление профиля загружено!');
+console.log('📝 Инструкция: 3 нажатия на репост → нажать на ник в профиле');
+console.log('💻 Для принудительной активации введи: forceUnlockTheme()');
+</script>
 </body>
 </html>

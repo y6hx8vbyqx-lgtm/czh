@@ -880,6 +880,8 @@ body{
   align-items:center;
   justify-content:center;
   font-weight:700;
+  background-size: cover;
+  background-position: center;
 }
 .post-user-info{
   display:flex;
@@ -1156,6 +1158,13 @@ body{
   font-size:28px;
   font-weight:700;
   flex-shrink:0;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+.profile-avatar:hover {
+  opacity: 0.8;
 }
 .profile-info{
   display:flex;
@@ -1244,8 +1253,9 @@ body{
 .reposts-stat{
   color:#64d2ff;
 }
+/* Счетчик закрепленных репостов скрыт */
 .pinned-stat {
-  color: var(--pin);
+  display: none !important;
 }
 
 .profile-bio{
@@ -1774,13 +1784,7 @@ body{
             </div>
             <div class="profile-stat-label">репостов</div>
           </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value pinned-stat">
-              <span>📌</span>
-              <span id="profilePinnedCount">0</span>
-            </div>
-            <div class="profile-stat-label">закреплено</div>
-          </div>
+          <!-- Счетчик закрепленных репостов удален -->
         </div>
       </div>
     </div>
@@ -1957,6 +1961,67 @@ async function compressToBase64(file) {
     reader.onerror = () => reject(new Error('Ошибка чтения файла'));
     reader.readAsDataURL(file);
   });
+}
+
+// ==================== ФУНКЦИЯ ДЛЯ СМЕНЫ АВАТАРА ====================
+function setupAvatarChange() {
+  const avatarElement = document.getElementById('profileAvatar');
+  if (!avatarElement) return;
+
+  avatarElement.style.cursor = 'pointer';
+  avatarElement.title = 'Нажмите чтобы изменить аватар';
+  
+  avatarElement.onclick = async () => {
+    // Только для своего профиля
+    if (currentProfileUserId !== currentUser.uid) {
+      showNotification('Вы можете изменить только свой аватар');
+      return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          document.getElementById('uploadProgress').classList.add('show');
+          document.querySelector('.upload-progress-text').textContent = 'Сжатие изображения...';
+          
+          const base64Avatar = await compressToBase64(file);
+          
+          document.querySelector('.upload-progress-text').textContent = 'Сохранение...';
+          
+          // Сохраняем в localStorage
+          localStorage.setItem('userAvatar', base64Avatar);
+          
+          // Сохраняем в Firestore
+          await db.collection("users").doc(currentUser.uid).update({
+            avatar: base64Avatar
+          });
+          
+          // Обновляем аватар в интерфейсе
+          avatarElement.style.backgroundImage = `url('${base64Avatar}')`;
+          avatarElement.style.backgroundSize = 'cover';
+          avatarElement.style.backgroundPosition = 'center';
+          avatarElement.textContent = ''; // Убираем букву
+          
+          // Обновляем аватар в userData
+          if (userData) {
+            userData.avatar = base64Avatar;
+          }
+          
+          document.getElementById('uploadProgress').classList.remove('show');
+          showNotification("✅ Аватар обновлен!");
+          
+        } catch (error) {
+          document.getElementById('uploadProgress').classList.remove('show');
+          showNotification("❌ Ошибка: " + error.message);
+        }
+      }
+    };
+    input.click();
+  };
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
@@ -2964,6 +3029,12 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
+    // Получаем аватар автора поста
+    let authorAvatar = '';
+    if (post.userAvatar) {
+      authorAvatar = `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"`;
+    }
+    
     // Генерируем HTML для изображения, если оно есть (Base64)
     let imageHTML = '';
     if (post.imageBase64) {
@@ -3042,7 +3113,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
     <div class="post fade" id="post-${postId}">
       ${repostHTML}
       <div class="post-header">
-        <div class="avatar">${post.username?.[0]||"A"}</div>
+        <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
         <div class="post-user-info">
           <div class="post-user" onclick="openProfile('${post.userId}','${post.username}')">
             @${post.username}
@@ -3157,6 +3228,7 @@ async function createPost() {
       text: text || "",
       userId: currentUser.uid,
       username: username,
+      userAvatar: localStorage.getItem('userAvatar') || null,
       createdAt: new Date(),
       likes: 0,
       views: 0,
@@ -3405,8 +3477,7 @@ async function togglePinRepost(postId, forcePin = null) {
       userData.pinnedReposts = userData.pinnedReposts?.filter(id => id !== postId) || [];
     }
     
-    const newPinnedCount = userData.pinnedReposts?.length || 0;
-    document.getElementById('profilePinnedCount').textContent = newPinnedCount;
+    // Счетчик закрепленных репостов больше не обновляем и не показываем
     
     showNotification(shouldPin ? "Репост закреплен!" : "Репост откреплен");
     
@@ -3428,7 +3499,48 @@ async function openProfile(uid, name) {
   document.getElementById("profileSheet").classList.add("show");
   
   document.getElementById("profileName").textContent = "@" + name;
-  document.getElementById("profileAvatar").textContent = name?.[0] || "A";
+  
+  // Загружаем аватар пользователя
+  const avatarElement = document.getElementById("profileAvatar");
+  let userAvatar = null;
+  
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (userDoc.exists) {
+      userAvatar = userDoc.data().avatar;
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки аватара:", error);
+  }
+  
+  if (uid === currentUser.uid) {
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+      avatarElement.style.backgroundImage = `url('${savedAvatar}')`;
+      avatarElement.style.backgroundSize = 'cover';
+      avatarElement.style.backgroundPosition = 'center';
+      avatarElement.textContent = '';
+    } else if (userAvatar) {
+      avatarElement.style.backgroundImage = `url('${userAvatar}')`;
+      avatarElement.style.backgroundSize = 'cover';
+      avatarElement.style.backgroundPosition = 'center';
+      avatarElement.textContent = '';
+    } else {
+      avatarElement.style.backgroundImage = '';
+      avatarElement.textContent = name?.[0]?.toUpperCase() || "A";
+    }
+  } else if (userAvatar) {
+    avatarElement.style.backgroundImage = `url('${userAvatar}')`;
+    avatarElement.style.backgroundSize = 'cover';
+    avatarElement.style.backgroundPosition = 'center';
+    avatarElement.textContent = '';
+  } else {
+    avatarElement.style.backgroundImage = '';
+    avatarElement.textContent = name?.[0]?.toUpperCase() || "A";
+  }
+  
+  // Настраиваем смену аватара
+  setupAvatarChange();
   
   switchProfileTab('posts');
   
@@ -3447,7 +3559,8 @@ async function openProfile(uid, name) {
   updateProfileChatButton(uid);
   await updateProfileSubscribersCount(uid);
   await updateProfileRepostsCount(uid);
-  await updateProfilePinnedCount(uid);
+  // Не вызываем updateProfilePinnedCount - счетчик скрыт
+  
   await loadUserBio(uid);
   
   document.getElementById("profilePosts").innerHTML = `
@@ -3605,19 +3718,6 @@ async function updateProfileRepostsCount(userId) {
     }
   } catch (error) {
     console.error("Ошибка получения количества репостов:", error);
-  }
-}
-
-async function updateProfilePinnedCount(userId) {
-  try {
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (userDoc.exists) {
-      const user = userDoc.data();
-      const count = (user.pinnedReposts || []).length;
-      document.getElementById('profilePinnedCount').textContent = count;
-    }
-  } catch (error) {
-    console.error("Ошибка получения количества закрепленных репостов:", error);
   }
 }
 
@@ -3909,7 +4009,7 @@ async function refreshProfileReposts(uid) {
               ` : ''}
             </div>
             <div class="post-header">
-              <div class="avatar">${post.username?.[0]||"A"}</div>
+              <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
               <div class="post-user-info">
                 <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
                   @${post.username}
@@ -3990,7 +4090,7 @@ async function refreshProfileReposts(uid) {
             ` : ''}
           </div>
           <div class="post-header">
-            <div class="avatar">${post.username?.[0]||"A"}</div>
+            <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
             <div class="post-user-info">
               <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
                 @${post.username}
@@ -4210,7 +4310,7 @@ async function loadComments() {
       commentsBody.innerHTML += `
         <div class="post fade">
           <div class="post-header">
-            <div class="avatar">${comment.username?.[0]||"A"}</div>
+            <div class="avatar" ${comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${comment.username?.[0]||"A"}</div>
             <div class="post-user-info">
               <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}</strong>
               <div class="post-time">${timeAgo}</div>
@@ -4250,6 +4350,7 @@ async function addComment() {
         text: text,
         userId: currentUser.uid,
         username: username,
+        userAvatar: localStorage.getItem('userAvatar') || null,
         createdAt: new Date()
       });
     
@@ -4346,7 +4447,7 @@ async function changeUsername() {
       
       if (currentProfileUserId === currentUser.uid) {
         document.getElementById("profileName").textContent = "@" + newUsername;
-        document.getElementById("profileAvatar").textContent = newUsername[0]?.toUpperCase() || "U";
+        // Аватар не меняем, только имя
       }
       
       closeChangeNameModal();
@@ -4594,7 +4695,7 @@ async function searchUsers(searchTerm) {
       
       resultsHTML += `
         <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
-          <div class="search-avatar">${user.username?.[0]?.toUpperCase() || "U"}</div>
+          <div class="search-avatar" ${user.avatar ? `style="background-image: url('${user.avatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${user.username?.[0]?.toUpperCase() || "U"}</div>
           <div class="search-username">
             @${user.username}
             ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}

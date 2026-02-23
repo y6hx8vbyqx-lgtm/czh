@@ -2031,18 +2031,20 @@ async function uploadToYandexCloud(file) {
       }
     };
     
-https://storage.yandexcloud.net/czh/posts/VRnLHsifb7QIN2y64ZTCeIAtW9L2/1771851402441_zhy8y5mm01.png
-function openImageView(imageUrl) {
-  const modal = document.getElementById('imageViewModal');
-  const img = document.getElementById('imageViewImg');
-  img.src = imageUrl;
-  modal.classList.add('show');
+    await s3.upload(params).promise();
+    
+    progressDiv.classList.remove('show');
+    showNotification('Изображение загружено в Яндекс Облако!');
+    
+    return `https://storage.yandexcloud.net/${YANDEX_CLOUD.bucket}/${filePath}`;
+    
+  } catch (error) {
+    progressDiv.classList.remove('show');
+    console.error('Ошибка загрузки:', error);
+    showNotification('Ошибка: ' + error.message);
+    return null;
+  }
 }
-
-function closeImageView() {
-  document.getElementById('imageViewModal').classList.remove('show');
-}
-
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 // (Все ваши исходные функции для опросов остаются здесь)
 function openPollModal() {

@@ -5536,6 +5536,231 @@ document.getElementById('uniqueThemeOption').addEventListener('click', function(
   document.getElementById('uniqueThemeOption').classList.add('selected');
   document.getElementById('defaultThemeOption').classList.remove('selected');
 });
-</script>
+</script>// ==================== УНИКАЛЬНОЕ ОФОРМЛЕНИЕ ПРОФИЛЯ (ДОБАВИТЬ В КОНЕЦ SCRIPT) ====================
+
+// Переменные для отслеживания нажатий
+let repostClickCount = 0;
+let lastRepostClickTime = 0;
+
+// Функция отслеживания нажатий на репост
+function handleRepostClick() {
+    const now = Date.now();
+    if (now - lastRepostClickTime > 2000) repostClickCount = 0;
+    
+    repostClickCount++;
+    lastRepostClickTime = now;
+    
+    if (repostClickCount < 3) {
+        showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
+    }
+    
+    if (repostClickCount === 3) {
+        showNotification('✅ Комбо! Теперь нажми на свой никнейм', 2000);
+    }
+}
+
+// Обработчик нажатия на ник
+async function handleNicknameClick() {
+    if (repostClickCount === 3) {
+        // Разблокируем тему в Firebase
+        await db.collection("users").doc(currentUser.uid).update({
+            themeUnlocked: true,
+            themeActive: true
+        });
+        
+        // Обновляем локальные данные
+        userData.themeUnlocked = true;
+        userData.themeActive = true;
+        
+        repostClickCount = 0;
+        applyProfileTheme(true);
+        showNotification('🎉 Уникальное оформление активировано!', 3000);
+    }
+}
+
+// Применение темы в профиле
+function applyProfileTheme(active) {
+    const profileSheet = document.getElementById('profileSheet');
+    const profileName = document.getElementById('profileName');
+    
+    if (active) {
+        profileSheet.classList.add('unique-profile');
+        if (profileName) profileName.classList.add('unique-username');
+        
+        // Создаем статичный черный фон с зелеными CZH
+        createStaticCZHBackground();
+    } else {
+        profileSheet.classList.remove('unique-profile');
+        if (profileName) profileName.classList.remove('unique-username');
+        removeCZHBackground();
+    }
+    
+    // Обновляем ник в ленте
+    updateFeedUsername();
+}
+
+// Создание статичного фона (ЧЕРНЫЙ фон, ЗЕЛЕНЫЕ надписи CZH)
+function createStaticCZHBackground() {
+    removeCZHBackground();
+    
+    const bgDiv = document.createElement('div');
+    bgDiv.id = 'czh-static-bg';
+    bgDiv.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+        background: #000;
+        border-radius: 22px;
+    `;
+    
+    // Создаем 30 статичных надписей CZH
+    for (let i = 0; i < 30; i++) {
+        const span = document.createElement('span');
+        span.textContent = 'CZH';
+        span.style.cssText = `
+            position: absolute;
+            color: #2ecc71;
+            font-family: 'Courier New', monospace;
+            font-size: ${80 + Math.random() * 150}px;
+            font-weight: 800;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            transform: rotate(-15deg);
+            opacity: ${0.1 + Math.random() * 0.2};
+            white-space: nowrap;
+            text-shadow: 0 0 10px rgba(46,204,113,0.3);
+            user-select: none;
+        `;
+        bgDiv.appendChild(span);
+    }
+    
+    document.getElementById('profileSheet').insertBefore(bgDiv, document.getElementById('profileSheet').firstChild);
+}
+
+function removeCZHBackground() {
+    const old = document.getElementById('czh-static-bg');
+    if (old) old.remove();
+}
+
+// Обновление ника в ленте
+function updateFeedUsername() {
+    document.querySelectorAll('.post-user').forEach(el => {
+        if (el.dataset.userid === currentUser?.uid) {
+            if (userData?.themeActive) {
+                el.classList.add('unique-username');
+            } else {
+                el.classList.remove('unique-username');
+            }
+        }
+    });
+}
+
+// Загружаем тему пользователя при открытии профиля
+async function loadUserTheme(uid) {
+    try {
+        const userDoc = await db.collection("users").doc(uid).get();
+        if (userDoc.exists) {
+            const themeActive = userDoc.data().themeActive || false;
+            
+            if (uid === currentUser?.uid) {
+                // Свой профиль
+                if (themeActive) applyProfileTheme(true);
+            } else {
+                // Чужой профиль - показываем его тему
+                if (themeActive) {
+                    document.getElementById('profileSheet').classList.add('unique-profile');
+                    createStaticCZHBackground();
+                    document.getElementById('profileName').classList.add('unique-username');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки темы:', error);
+    }
+}
+
+// Добавляем CSS стили (вставь это в <style>)
+const themeStyles = `
+    /* Уникальное оформление профиля */
+    #profileSheet.unique-profile {
+        position: relative;
+        background: transparent !important;
+    }
+    
+    #profileSheet.unique-profile .sheet-body {
+        position: relative;
+        z-index: 2;
+        background: transparent;
+    }
+    
+    #profileSheet.unique-profile .post,
+    #profileSheet.unique-profile .profile-bio,
+    #profileSheet.unique-profile .profile-tabs {
+        background: rgba(28,28,30,0.95);
+        backdrop-filter: blur(10px);
+    }
+    
+    .unique-username {
+        font-family: 'Courier New', monospace !important;
+        color: #2ecc71 !important;
+        text-shadow: 0 0 10px rgba(46,204,113,0.5) !important;
+        font-weight: 800 !important;
+    }
+`;
+
+// Добавляем стили в head
+const styleSheet = document.createElement("style");
+styleSheet.textContent = themeStyles;
+document.head.appendChild(styleSheet);
+
+// МОДИФИЦИРУЕМ СУЩЕСТВУЮЩУЮ ФУНКЦИЮ openProfile
+const originalOpenProfile = openProfile;
+openProfile = async function(uid, name) {
+    await originalOpenProfile(uid, name);
+    await loadUserTheme(uid);
+    
+    // Добавляем обработчик на ник
+    if (uid === currentUser?.uid) {
+        const profileName = document.getElementById('profileName');
+        profileName.style.cursor = 'pointer';
+        profileName.title = 'Нажми для активации темы';
+        profileName.onclick = handleNicknameClick;
+    }
+};
+
+// МОДИФИЦИРУЕМ ОБРАБОТЧИК КЛИКА ПО РЕПОСТУ
+// Найди в коде функцию toggleRepost и добавь в начало:
+// handleRepostClick();
+
+// Пример: 
+// async function toggleRepost(postId, button) {
+//     handleRepostClick(); // <-- ДОБАВЬ ЭТУ СТРОКУ
+//     ... остальной код ...
+// }
+
+// Если не можешь найти функцию, добавь глобальный обработчик:
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-repost]')) {
+        handleRepostClick();
+    }
+});
+
+// Для консоли (если нужно принудительно):
+window.forceUnlockTheme = async function() {
+    await db.collection("users").doc(currentUser.uid).update({
+        themeUnlocked: true,
+        themeActive: true
+    });
+    userData.themeUnlocked = true;
+    userData.themeActive = true;
+    applyProfileTheme(true);
+    showNotification('✅ Тема принудительно активирована!');
+};
+  
 </body>
 </html>

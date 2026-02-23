@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>czhmass - Стили профиля (Финальные правки)</title>
+<title>czhmass - Стили профиля (Только для своих)</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -1634,31 +1634,30 @@ body{
 }
 
 /* ========== НОВЫЕ СТИЛИ ДЛЯ ОФОРМЛЕНИЯ ПРОФИЛЯ ========== */
-/* Стили для темы Phasmophobia - применяются только к постам и профилю конкретного пользователя */
-.user-theme-phasmo .post-user,
-.user-theme-phasmo .profile-name,
-.user-theme-phasmo .search-username,
-.user-theme-phasmo .repost-user-link {
+/* Стили для темы Phasmophobia - применяются ТОЛЬКО К СВОИМ постам и профилю */
+.own-post-theme-phasmo .post-user,
+.own-post-theme-phasmo .profile-name,
+.own-post-theme-phasmo .repost-user-link {
   color: #4ade80 !important;
   font-family: 'Courier New', monospace !important;
   font-weight: 600 !important;
   text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
-.user-theme-phasmo .profile-bio,
-.user-theme-phasmo .profile-header,
-.user-theme-phasmo .profile-stats,
-.user-theme-phasmo .profile-tabs,
-.user-theme-phasmo .post {
+.own-post-theme-phasmo .profile-bio,
+.own-post-theme-phasmo .profile-header,
+.own-post-theme-phasmo .profile-stats,
+.own-post-theme-phasmo .profile-tabs,
+.own-post-theme-phasmo .post {
   position: relative;
   overflow: hidden;
 }
 
-.user-theme-phasmo .profile-bio::before,
-.user-theme-phasmo .profile-header::before,
-.user-theme-phasmo .profile-stats::before,
-.user-theme-phasmo .profile-tabs::before,
-.user-theme-phasmo .post::before {
+.own-post-theme-phasmo .profile-bio::before,
+.own-post-theme-phasmo .profile-header::before,
+.own-post-theme-phasmo .profile-stats::before,
+.own-post-theme-phasmo .profile-tabs::before,
+.own-post-theme-phasmo .post::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1676,27 +1675,27 @@ body{
   z-index: 0;
 }
 
-.user-theme-phasmo .profile-bio > *,
-.user-theme-phasmo .profile-header > *,
-.user-theme-phasmo .profile-stats > *,
-.user-theme-phasmo .profile-tabs > *,
-.user-theme-phasmo .post > * {
+.own-post-theme-phasmo .profile-bio > *,
+.own-post-theme-phasmo .profile-header > *,
+.own-post-theme-phasmo .profile-stats > *,
+.own-post-theme-phasmo .profile-tabs > *,
+.own-post-theme-phasmo .post > * {
   position: relative;
   z-index: 1;
 }
 
-.user-theme-phasmo .profile-avatar {
+.own-post-theme-phasmo .profile-avatar {
   border: 2px solid #4ade80;
   box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
 }
 
 /* Фон с текстом CZH для профиля */
-.user-theme-phasmo #profileSheet .sheet-body {
+.own-post-theme-phasmo #profileSheet .sheet-body {
   position: relative;
   overflow: hidden;
 }
 
-.user-theme-phasmo #profileSheet .sheet-body::before {
+.own-post-theme-phasmo #profileSheet .sheet-body::before {
   content: "CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH";
   position: absolute;
   top: 0;
@@ -1720,13 +1719,13 @@ body{
   animation: none;
 }
 
-/* Для постов в ленте */
-.user-theme-phasmo .post {
+/* Для своих постов в ленте */
+.own-post-theme-phasmo .post {
   position: relative;
   overflow: hidden;
 }
 
-.user-theme-phasmo .post::after {
+.own-post-theme-phasmo .post::after {
   content: "CZH";
   position: absolute;
   bottom: 5px;
@@ -1741,9 +1740,122 @@ body{
 }
 
 /* Для комментариев */
-.user-theme-phasmo .comment .post-user {
+.own-post-theme-phasmo .comment .post-user {
   color: #4ade80 !important;
   font-family: 'Courier New', monospace !important;
+}
+
+/* Стили для модального окна выбора темы */
+.theme-modal .modal {
+  max-width: 450px;
+}
+
+.theme-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.theme-option {
+  background: #1c1c1e;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.theme-option:hover {
+  border-color: var(--hashtag);
+  transform: scale(1.02);
+}
+
+.theme-option.selected {
+  border-color: var(--success);
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.theme-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.theme-preview.base {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.theme-preview.phasmo {
+  background: #1a2a1a;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(74, 222, 128, 0.3);
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 0 5px #4ade80;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(74, 222, 128, 0.1) 0px,
+    rgba(74, 222, 128, 0.1) 20px,
+    rgba(74, 222, 128, 0.2) 20px,
+    rgba(74, 222, 128, 0.2) 40px
+  );
+}
+
+.theme-preview.phasmo::after {
+  content: "CZH CZH CZH";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  white-space: nowrap;
+  font-size: 12px;
+  color: #4ade80;
+  opacity: 0.5;
+}
+
+.theme-info {
+  flex: 1;
+}
+
+.theme-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.theme-desc {
+  font-size: 13px;
+  color: var(--sub);
+}
+
+.theme-code-input {
+  width: 100%;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  margin: 16px 0 8px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.theme-code-input:focus {
+  outline: none;
+  border-color: var(--success);
 }
 </style>
 </head>
@@ -1863,7 +1975,7 @@ body{
   </div>
 </div>
 
-<!-- НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ТЕМЫ (без подсказки) -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ТЕМЫ (ИСПРАВЛЕНО) -->
 <div class="modal-overlay" id="themeModal">
   <div class="modal theme-modal">
     <div class="modal-header">
@@ -1881,7 +1993,7 @@ body{
         </div>
       </div>
       
-      <!-- Тема Phasmophobia (требует код) -->
+      <!-- Тема Phasmophobia -->
       <div class="theme-option" id="themePhasmoOption" onclick="selectTheme('phasmo')">
         <div class="theme-preview phasmo"></div>
         <div class="theme-info">
@@ -1891,9 +2003,9 @@ body{
       </div>
     </div>
     
-    <div id="phasmoCodeSection" style="display:none;">
+    <!-- Поле для ввода кода (всегда видно при выборе темы) -->
+    <div id="phasmoCodeSection">
       <input type="text" class="theme-code-input" id="themeCodeInput" placeholder="Введите код" maxlength="20">
-      <!-- Подсказка удалена -->
     </div>
     
     <div class="modal-buttons">
@@ -1991,7 +2103,6 @@ body{
           <div class="profile-name-with-badge">
             <span id="profileName">@anon</span>
             <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
-            <!-- Кнопка палитры УДАЛЕНА, тема открывается по клику на ник -->
           </div>
           <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
           <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
@@ -2029,7 +2140,6 @@ body{
             </div>
             <div class="profile-stat-label">репостов</div>
           </div>
-          <!-- Счетчик закрепленных репостов удален -->
         </div>
       </div>
     </div>
@@ -2104,13 +2214,12 @@ let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ТЕМЫ ====================
 let selectedTheme = 'base'; // 'base' или 'phasmo'
-let themeCodeAttempt = '';
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
 let currentCropFile = null;
 
-// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (ИСПРАВЛЕНЫ) ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО ====================
 
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
@@ -2128,7 +2237,6 @@ function closeImageView() {
   }
 }
 
-// ИСПРАВЛЕНО: обработчик загрузки фото
 document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2174,7 +2282,6 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// ==================== СЖАТИЕ И КОНВЕРТАЦИЯ В BASE64 ====================
 async function compressToBase64(file) {
   return new Promise((resolve, reject) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -2418,13 +2525,10 @@ function setupAvatarChange() {
 // ==================== НОВЫЕ ФУНКЦИИ ДЛЯ ТЕМЫ ====================
 
 function openThemeModal() {
-  // Сбрасываем выбор
-  document.getElementById('phasmoCodeSection').style.display = 'none';
+  // Сбрасываем выделение
+  document.getElementById('themeBaseOption').classList.remove('selected');
+  document.getElementById('themePhasmoOption').classList.remove('selected');
   document.getElementById('themeCodeInput').value = '';
-  
-  // Подсвечиваем текущую выбранную тему
-  document.getElementById('themeBaseOption').classList.toggle('selected', selectedTheme === 'base');
-  document.getElementById('themePhasmoOption').classList.toggle('selected', selectedTheme === 'phasmo');
   
   // Показываем модальное окно
   document.getElementById('themeModal').classList.add('show');
@@ -2439,13 +2543,6 @@ function selectTheme(theme) {
   document.getElementById('themeBaseOption').classList.toggle('selected', theme === 'base');
   document.getElementById('themePhasmoOption').classList.toggle('selected', theme === 'phasmo');
   
-  // Если выбрана phasmo, показываем поле для ввода кода
-  if (theme === 'phasmo') {
-    document.getElementById('phasmoCodeSection').style.display = 'block';
-  } else {
-    document.getElementById('phasmoCodeSection').style.display = 'none';
-  }
-  
   // Сохраняем выбранную тему временно
   window.tempSelectedTheme = theme;
 }
@@ -2456,7 +2553,7 @@ async function applyTheme() {
   // Если выбрана phasmo, проверяем код
   if (themeToApply === 'phasmo') {
     const code = document.getElementById('themeCodeInput').value.trim().toUpperCase();
-    const validCode = 'CZHMASS'; // Код для активации
+    const validCode = 'CZHMASS';
     
     if (code !== validCode) {
       showNotification('❌ Неверный код');
@@ -2473,20 +2570,28 @@ async function applyTheme() {
       theme: selectedTheme
     });
     
-    // Обновляем классы для текущего пользователя
-    document.body.classList.remove('user-theme-phasmo');
-    if (selectedTheme === 'phasmo') {
-      document.body.classList.add('user-theme-phasmo');
-    }
-    
     showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : 'Базовая'}" применена!`);
     closeThemeModal();
+    
+    // Обновляем класс на body для своих постов
+    document.body.classList.remove('own-post-theme-phasmo');
+    if (selectedTheme === 'phasmo') {
+      document.body.classList.add('own-post-theme-phasmo');
+    }
     
     // Перезагружаем посты для обновления отображения
     if (currentTab === 'hashtags') {
       loadAllHashtags();
     } else {
       loadPosts();
+    }
+    
+    // Если открыт свой профиль, обновляем его
+    if (currentProfileUserId === currentUser.uid) {
+      document.getElementById('profileSheet').classList.remove('own-post-theme-phasmo');
+      if (selectedTheme === 'phasmo') {
+        document.getElementById('profileSheet').classList.add('own-post-theme-phasmo');
+      }
     }
     
   } catch (error) {
@@ -2501,41 +2606,12 @@ async function loadUserTheme(userId) {
     const userDoc = await db.collection("users").doc(userId).get();
     if (userDoc.exists) {
       const user = userDoc.data();
-      const theme = user.theme || 'base';
-      
-      // Если это текущий пользователь, обновляем глобальную переменную и класс на body
-      if (userId === currentUser.uid) {
-        selectedTheme = theme;
-        document.body.classList.remove('user-theme-phasmo');
-        if (theme === 'phasmo') {
-          document.body.classList.add('user-theme-phasmo');
-        }
-      }
-      
-      return theme;
+      return user.theme || 'base';
     }
   } catch (error) {
     console.error("Ошибка загрузки темы пользователя:", error);
   }
   return 'base';
-}
-
-// Функция для получения класса темы для конкретного пользователя
-async function getUserThemeClass(userId) {
-  if (userId === currentUser?.uid) {
-    return selectedTheme === 'phasmo' ? 'user-theme-phasmo' : '';
-  }
-  
-  try {
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (userDoc.exists) {
-      const user = userDoc.data();
-      return user.theme === 'phasmo' ? 'user-theme-phasmo' : '';
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки темы пользователя:", error);
-  }
-  return '';
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
@@ -3313,8 +3389,13 @@ auth.onAuthStateChanged(async (user) => {
       loadBlockedUsers()
     ]);
     
-    // Загружаем тему пользователя
-    await loadUserTheme(currentUser.uid);
+    // Загружаем тему пользователя и применяем класс к body
+    const theme = await loadUserTheme(currentUser.uid);
+    selectedTheme = theme;
+    document.body.classList.remove('own-post-theme-phasmo');
+    if (theme === 'phasmo') {
+      document.body.classList.add('own-post-theme-phasmo');
+    }
     
     loadPosts();
     setupEventDelegation();
@@ -3376,7 +3457,7 @@ async function loadUserData() {
         blockedUsers: [],
         reposts: [],
         pinnedReposts: [],
-        theme: 'base' // Тема по умолчанию
+        theme: 'base'
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -3648,13 +3729,9 @@ async function displayPosts(posts, isHashtagFeed = false) {
       return a.username.localeCompare(b.username);
     });
     
-    // Загружаем тему автора поста
-    const authorThemeClass = await getUserThemeClass(post.userId);
-    
     return {
       ...post,
-      repostingUsers: allRepostingUsers,
-      authorThemeClass: authorThemeClass
+      repostingUsers: allRepostingUsers
     };
   }));
   
@@ -3799,8 +3876,12 @@ async function displayPosts(posts, isHashtagFeed = false) {
       pollHTML += '</div>';
     }
     
+    // Применяем класс темы ТОЛЬКО если это пост текущего пользователя
+    const isOwnPost = post.userId === currentUser.uid;
+    const themeClass = isOwnPost && selectedTheme === 'phasmo' ? 'own-post-theme-phasmo' : '';
+    
     feed.innerHTML += `
-    <div class="post fade ${post.authorThemeClass}" id="post-${postId}" data-postid="${postId}">
+    <div class="post fade ${themeClass}" id="post-${postId}" data-postid="${postId}">
       ${repostHTML}
       <div class="post-header">
         <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
@@ -3889,10 +3970,6 @@ function toggleRepostUsers(postId, showAll = false) {
       ` : ''}
     `;
   }
-}
-
-async function openProfileFromRepost(userId, username) {
-  await openProfile(userId, username);
 }
 
 async function createPost() {
@@ -4148,13 +4225,13 @@ async function openProfile(uid, name) {
     profileNameElement.onclick = null;
   }
   
-  // Загружаем тему пользователя
+  // Загружаем тему пользователя для применения класса к профилю
   const userTheme = await loadUserTheme(uid);
   
-  // Применяем класс темы к профилю
-  document.getElementById('profileSheet').classList.remove('user-theme-phasmo');
-  if (userTheme === 'phasmo') {
-    document.getElementById('profileSheet').classList.add('user-theme-phasmo');
+  // Применяем класс темы ТОЛЬКО если это профиль текущего пользователя
+  document.getElementById('profileSheet').classList.remove('own-post-theme-phasmo');
+  if (uid === currentUser.uid && userTheme === 'phasmo') {
+    document.getElementById('profileSheet').classList.add('own-post-theme-phasmo');
   }
   
   const avatarElement = document.getElementById("profileAvatar");
@@ -4503,9 +4580,6 @@ async function refreshProfilePosts(uid) {
     
     const userPosts = await getUserPosts(uid);
     
-    // Загружаем тему пользователя для применения класса
-    const userThemeClass = await getUserThemeClass(uid);
-    
     userPosts.forEach(post => {
       const canDelete = post.userId === currentUser.uid || userData?.isAdmin;
       
@@ -4534,8 +4608,11 @@ async function refreshProfilePosts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
+      // Применяем класс темы ТОЛЬКО для своих постов
+      const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      
       profilePosts.innerHTML += `
-        <div class="post fade ${userThemeClass}" id="profile-post-${post.id}">
+        <div class="post fade ${themeClass}" id="profile-post-${post.id}">
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
@@ -4639,9 +4716,6 @@ async function refreshProfileReposts(uid) {
     
     profileReposts.innerHTML = "";
     
-    // Загружаем тему пользователя
-    const userThemeClass = await getUserThemeClass(uid);
-    
     if (pinnedPosts.length > 0) {
       pinnedPosts.forEach(post => {
         const isAdmin = adminUsers.has(post.userId);
@@ -4672,8 +4746,11 @@ async function refreshProfileReposts(uid) {
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
         const authorLetter = post.username?.[0]?.toUpperCase() || "A";
         
+        // Применяем класс темы ТОЛЬКО для своих репостов (оригинальный пост может быть чужим)
+        const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+        
         profileReposts.innerHTML += `
-          <div class="post fade ${userThemeClass}" id="repost-${post.id}">
+          <div class="post fade ${themeClass}" id="repost-${post.id}">
             <div class="repost-info">
               <span class="repost-icon">🔄</span>
               <span>Репостнул <strong>@${user.username}</strong></span>
@@ -4754,8 +4831,11 @@ async function refreshProfileReposts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
+      // Применяем класс темы ТОЛЬКО для своих репостов
+      const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      
       profileReposts.innerHTML += `
-        <div class="post fade ${userThemeClass}" id="repost-${post.id}">
+        <div class="post fade ${themeClass}" id="repost-${post.id}">
           <div class="repost-info">
             <span class="repost-icon">🔄</span>
             <span>Репостнул <strong>@${user.username}</strong></span>
@@ -4959,14 +5039,9 @@ async function loadComments() {
     
     commentsBody.innerHTML = "";
     
-    // Загружаем темы для каждого автора комментария
-    const commentsWithThemes = await Promise.all(snap.docs.map(async (doc) => {
+    snap.forEach(doc => {
       const comment = doc.data();
-      const themeClass = await getUserThemeClass(comment.userId);
-      return { ...comment, id: doc.id, themeClass };
-    }));
-    
-    commentsWithThemes.forEach(comment => {
+      
       let timeAgo = "только что";
       try {
         if (comment.createdAt) {
@@ -4983,8 +5058,11 @@ async function loadComments() {
       const authorAvatarStyle = comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = comment.username?.[0]?.toUpperCase() || "A";
       
+      // Применяем класс темы ТОЛЬКО для своих комментариев
+      const themeClass = (comment.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      
       commentsBody.innerHTML += `
-        <div class="post fade ${comment.themeClass}">
+        <div class="post fade ${themeClass}">
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
@@ -4994,7 +5072,7 @@ async function loadComments() {
               </div>
               <div class="post-time">${timeAgo}</div>
             </div>
-            ${canDelete ? `<button class="comment-delete-btn" data-commentid="${comment.id}">🗑</button>` : ''}
+            ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
           </div>
           <div class="post-text">${comment.text}</div>
         </div>`;

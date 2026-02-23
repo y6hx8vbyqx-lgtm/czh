@@ -10,11 +10,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
-<!-- AWS SDK для S3 (Яндекс Облако использует S3-совместимое API) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1048.0/aws-sdk.min.js"></script>
-
 <style>
-/* Все ваши исходные стили */
+/* Все ваши исходные стили остаются без изменений */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -1708,7 +1705,7 @@ body{
 <!-- Прогресс загрузки -->
 <div class="upload-progress" id="uploadProgress">
   <div class="upload-spinner"></div>
-  <div class="upload-progress-text">Загрузка в Яндекс Облако...</div>
+  <div class="upload-progress-text">Обработка изображения...</div>
 </div>
 
 <!-- Модальное окно для просмотра изображения -->
@@ -1916,28 +1913,6 @@ firebase.initializeApp({
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// ==================== КОНФИГУРАЦИЯ ЯНДЕКС ОБЛАКА ====================
-// ВАЖНО: Получите эти данные в консоли Яндекс Облака
-const YANDEX_CLOUD = {
-  bucket: 'czh',
-  endpoint: 'https://storage.yandexcloud.net',
-  accessKeyId: 'YOUR_ACCESS_KEY', // ВСТАВЬТЕ СВОЙ КЛЮЧ
-  secretAccessKey: 'YOUR_SECRET_KEY', // ВСТАВЬТЕ СВОЙ СЕКРЕТ
-  region: 'ru-central1'
-};
-
-// Настройка AWS SDK для работы с Яндекс Облаком
-AWS.config.update({
-  accessKeyId: YANDEX_CLOUD.accessKeyId,
-  secretAccessKey: YANDEX_CLOUD.secretAccessKey,
-  region: YANDEX_CLOUD.region,
-  endpoint: YANDEX_CLOUD.endpoint,
-  s3ForcePathStyle: true,
-  signatureVersion: 'v4'
-});
-
-const s3 = new AWS.S3();
-
 // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
 let currentUser = null;
 let userData = null;
@@ -1954,18 +1929,19 @@ let currentHashtag = null;
 let hashtagsCache = new Map();
 let currentPoll = null;
 let currentImageFile = null;
-let currentImagePreview = null;
+let currentImageBase64 = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ФУНКЦИИ ДЛЯ ЗАГРУЗКИ В ЯНДЕКС ОБЛАКО ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ИЗОБРАЖЕНИЯМИ (BASE64) ====================
 
 // Обработчик выбора файла
 document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   
-  if (file.size > 10 * 1024 * 1024) {
-    showNotification('Файл слишком большой! Максимальный размер 10MB');
+  // Проверяем размер файла (макс 500KB для Base64)
+  if (file.size > 500 * 1024) {
+    showNotification('Файл слишком большой! Максимальный размер 500KB для Base64');
     return;
   }
   
@@ -1976,14 +1952,44 @@ document.getElementById('imageUpload').addEventListener('change', function(e) {
   
   currentImageFile = file;
   
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    showImagePreview(e.target.result);
-  };
-  reader.readAsDataURL(file);
+  // Конвертируем в Base64
+  convertToBase64(file);
   
   document.getElementById('uploadPhotoBtn').classList.add('has-image');
 });
+
+function convertToBase64(file) {
+  const progressDiv = document.getElementById('uploadProgress');
+  progressDiv.classList.add('show');
+  document.querySelector('.upload-progress-text').textContent = 'Конвертация изображения...';
+  
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    const base64Data = e.target.result;
+    currentImageBase64 = base64Data;
+    
+    // Проверяем размер Base64 строки (Firestore лимит ~1MB)
+    if (base64Data.length > 900 * 1024) {
+      showNotification('Изображение слишком большое после конвертации!');
+      currentImageBase64 = null;
+      currentImageFile = null;
+      progressDiv.classList.remove('show');
+      return;
+    }
+    
+    showImagePreview(base64Data);
+    progressDiv.classList.remove('show');
+    showNotification('Изображение готово к публикации!');
+  };
+  
+  reader.onerror = function() {
+    progressDiv.classList.remove('show');
+    showNotification('Ошибка при чтении файла');
+  };
+  
+  reader.readAsDataURL(file);
+}
 
 function showImagePreview(imageData) {
   const container = document.getElementById('imagePreviewContainer');
@@ -1994,62 +2000,14 @@ function showImagePreview(imageData) {
       <button class="remove-image-btn" onclick="removeImage()">✕</button>
     </div>
   `;
-  currentImagePreview = imageData;
 }
 
 function removeImage() {
   currentImageFile = null;
-  currentImagePreview = null;
+  currentImageBase64 = null;
   document.getElementById('imagePreviewContainer').style.display = 'none';
   document.getElementById('imageUpload').value = '';
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
-}
-
-// Загрузка в Яндекс Облако
-async function uploadToYandexCloud(file) {
-  const progressDiv = document.getElementById('uploadProgress');
-  progressDiv.classList.add('show');
-  
-  try {
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const extension = file.name.split('.').pop();
-    const fileName = `${timestamp}_${randomString}.${extension}`;
-    const filePath = `posts/${currentUser.uid}/${fileName}`;
-    
-    const arrayBuffer = await file.arrayBuffer();
-    
-    const params = {
-      Bucket: YANDEX_CLOUD.bucket,
-      Key: filePath,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
-      ACL: 'public-read',
-      Metadata: {
-        'uploaded-by': currentUser.uid,
-        'uploaded-at': new Date().toISOString()
-      }
-    };
-    
-    const data = await s3.upload(params).promise();
-    
-    progressDiv.classList.remove('show');
-    showNotification('Изображение загружено в Яндекс Облако!');
-    return data.Location;
-    
-  } catch (error) {
-    console.error('Ошибка загрузки в Яндекс Облако:', error);
-    progressDiv.classList.remove('show');
-    
-    if (error.code === 'NetworkingError') {
-      showNotification('Ошибка сети. Проверьте подключение к интернету.');
-    } else if (error.code === 'AccessDenied') {
-      showNotification('Ошибка доступа к Яндекс Облаку. Проверьте ключи доступа.');
-    } else {
-      showNotification('Ошибка загрузки: ' + (error.message || 'Неизвестная ошибка'));
-    }
-    return null;
-  }
 }
 
 function openImageView(imageUrl) {
@@ -2064,7 +2022,6 @@ function closeImageView() {
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
-// (Все ваши исходные функции для опросов остаются здесь)
 function openPollModal() {
   currentPoll = {
     question: '',
@@ -3071,12 +3028,12 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
-    // Генерируем HTML для изображения, если оно есть
+    // Генерируем HTML для изображения, если оно есть (Base64)
     let imageHTML = '';
-    if (post.imageUrl) {
+    if (post.imageBase64) {
       imageHTML = `
-        <div class="post-image" onclick="openImageView('${post.imageUrl}')">
-          <img src="${post.imageUrl}" alt="Изображение к посту" loading="lazy">
+        <div class="post-image" onclick="openImageView('${post.imageBase64}')">
+          <img src="${post.imageBase64}" alt="Изображение к посту" loading="lazy">
         </div>
       `;
     }
@@ -3240,7 +3197,7 @@ async function createPost() {
   const postText = document.getElementById("postText");
   const text = postText.value.trim();
   
-  if (!text && !currentImageFile) {
+  if (!text && !currentImageBase64) {
     showNotification("Напишите что-нибудь или добавьте изображение!");
     return;
   }
@@ -3267,16 +3224,9 @@ async function createPost() {
       commentsCount: 0
     };
     
-    // Загружаем изображение в Яндекс Облако, если оно есть
-    if (currentImageFile) {
-      showNotification("Загрузка в Яндекс Облако...", 2000);
-      const imageUrl = await uploadToYandexCloud(currentImageFile);
-      if (imageUrl) {
-        postData.imageUrl = imageUrl;
-        showNotification("Изображение загружено!");
-      } else {
-        showNotification("Не удалось загрузить изображение. Пост будет опубликован без фото.");
-      }
+    // Добавляем Base64 изображение, если оно есть
+    if (currentImageBase64) {
+      postData.imageBase64 = currentImageBase64;
     }
     
     // Добавляем опрос, если он есть
@@ -3317,26 +3267,7 @@ async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
-    const postDoc = await db.collection("posts").doc(postId).get();
-    const postData = postDoc.data();
-    
-    if (postData.imageUrl && postData.imageUrl.includes('storage.yandexcloud.net')) {
-      try {
-        const urlParts = postData.imageUrl.split('/');
-        const key = urlParts.slice(3).join('/');
-        
-        const params = {
-          Bucket: YANDEX_CLOUD.bucket,
-          Key: key
-        };
-        
-        await s3.deleteObject(params).promise();
-        console.log("Изображение удалено из Яндекс Облака");
-      } catch (storageError) {
-        console.error("Ошибка при удалении изображения из Яндекс Облака:", storageError);
-      }
-    }
-    
+    // Просто удаляем пост из Firestore (изображение уже в Base64 внутри документа)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();
@@ -3883,9 +3814,9 @@ async function refreshProfilePosts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      const imageHTML = post.imageUrl ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-           <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+      const imageHTML = post.imageBase64 ? 
+        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
       const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
@@ -4009,9 +3940,9 @@ async function refreshProfileReposts(uid) {
         
         const processedText = updateHashtagsInPost(post);
         
-        const imageHTML = post.imageUrl ? 
-          `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-             <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+        const imageHTML = post.imageBase64 ? 
+          `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+             <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
            </div>` : '';
         
         profileReposts.innerHTML += `
@@ -4091,9 +4022,9 @@ async function refreshProfileReposts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      const imageHTML = post.imageUrl ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-           <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+      const imageHTML = post.imageBase64 ? 
+        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
       profileReposts.innerHTML += `
@@ -4213,26 +4144,7 @@ async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
-    const postDoc = await db.collection("posts").doc(postId).get();
-    const postData = postDoc.data();
-    
-    if (postData.imageUrl && postData.imageUrl.includes('storage.yandexcloud.net')) {
-      try {
-        const urlParts = postData.imageUrl.split('/');
-        const key = urlParts.slice(3).join('/');
-        
-        const params = {
-          Bucket: YANDEX_CLOUD.bucket,
-          Key: key
-        };
-        
-        await s3.deleteObject(params).promise();
-        console.log("Изображение удалено из Яндекс Облака");
-      } catch (storageError) {
-        console.error("Ошибка при удалении изображения:", storageError);
-      }
-    }
-    
+    // Просто удаляем пост (изображение уже в Base64)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();

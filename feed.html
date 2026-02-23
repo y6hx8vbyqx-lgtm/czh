@@ -2031,7 +2031,61 @@ async function uploadToYandexCloud(file) {
       }
     };
     
-    const data = await s3.upload(params).promise();
+   // Загрузка в Яндекс Облако
+async function uploadToYandexCloud(file) {
+  const progressDiv = document.getElementById('uploadProgress');
+  progressDiv.classList.add('show');
+  
+  try {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const extension = file.name.split('.').pop();
+    const fileName = `${timestamp}_${randomString}.${extension}`;
+    const filePath = `posts/${currentUser.uid}/${fileName}`; // Убедитесь, что currentUser.uid существует
+    
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // 1. Загружаем файл
+    const params = {
+      Bucket: YANDEX_CLOUD.bucket,
+      Key: filePath,
+      Body: new Uint8Array(arrayBuffer),
+      ContentType: file.type,
+      Metadata: {
+        'uploaded-by': currentUser.uid,
+        'uploaded-at': new Date().toISOString()
+      }
+    };
+    
+    await s3.upload(params).promise();
+    
+    // 2. Явно делаем файл публичным после загрузки (ЭТО КЛЮЧЕВОЙ ШАГ)
+    await s3.putObjectAcl({
+      Bucket: YANDEX_CLOUD.bucket,
+      Key: filePath,
+      ACL: 'public-read'
+    }).promise();
+    
+    progressDiv.classList.remove('show');
+    showNotification('Изображение загружено в Яндекс Облако!');
+    
+    // 3. Возвращаем правильный URL
+    return `https://storage.yandexcloud.net/${YANDEX_CLOUD.bucket}/${filePath}`;
+    
+  } catch (error) {
+    progressDiv.classList.remove('show');
+    console.error('Ошибка загрузки в Яндекс Облако:', error);
+    
+    if (error.code === 'NetworkingError') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету.');
+    } else if (error.code === 'AccessDenied') {
+      showNotification('Ошибка доступа к Яндекс Облаку. Проверьте ключи.');
+    } else {
+      showNotification('Ошибка загрузки: ' + (error.message || 'Неизвестная ошибка'));
+    }
+    return null;
+  }
+}
     
     progressDiv.classList.remove('show');
     showNotification('Изображение загружено в Яндекс Облако!');

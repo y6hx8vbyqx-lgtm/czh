@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>czhmass - Base64 версия (Оптимизированная)</title>
+<title>czhmass - Base64 версия (Исправленная)</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -1919,10 +1919,7 @@ body{
 </div>
 
 <script>
-// ==================== ОПТИМИЗИРОВАННЫЙ JAVASCRIPT ====================
-// ВЕСЬ ВАШ КОД СОХРАНЕН, ДОБАВЛЕНЫ ОПТИМИЗАЦИИ
-
-// Firebase инициализация
+// ==================== ИНИЦИАЛИЗАЦИЯ FIREBASE ====================
 firebase.initializeApp({
   apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
   authDomain: "czhmass.firebaseapp.com",
@@ -1932,7 +1929,7 @@ firebase.initializeApp({
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (ВСЕ СОХРАНЕНЫ) ====================
+// ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
 let currentUser = null;
 let userData = null;
 let postsCache = new Map();
@@ -1951,401 +1948,75 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ОПТИМИЗАЦИЯ 1: ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ====================
-function setupEventDelegation() {
-  const feed = document.getElementById('feed');
-  if (!feed) return;
+// ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
+let cropper = null;
+let currentCropFile = null;
+
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (ИСПРАВЛЕНЫ) ====================
+
+function openImageView(imageUrl) {
+  const modal = document.getElementById('imageViewModal');
+  const img = document.getElementById('imageViewImg');
+  if (modal && img) {
+    img.src = imageUrl;
+    modal.classList.add('show');
+  }
+}
+
+function closeImageView() {
+  const modal = document.getElementById('imageViewModal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+// ИСПРАВЛЕНО: обработчик загрузки фото
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
   
-  feed.addEventListener('click', (e) => {
-    const target = e.target;
-    
-    // Лайки
-    if (target.closest('.action') && target.closest('.action').innerHTML.includes('❤️') || target.closest('.action')?.innerHTML.includes('🤍')) {
-      const postId = target.closest('.post')?.id.replace('post-', '');
-      if (postId) toggleLike(postId);
-    }
-    
-    // Комментарии
-    else if (target.closest('.action') && target.closest('.action').innerHTML.includes('💬')) {
-      const postId = target.closest('.post')?.id.replace('post-', '');
-      if (postId) openComments(postId);
-    }
-    
-    // Репосты
-    else if (target.closest('.action') && target.closest('.action').innerHTML.includes('🔄')) {
-      const postId = target.closest('.post')?.id.replace('post-', '');
-      if (postId) toggleRepost(postId);
-    }
-    
-    // Открытие профиля
-    else if (target.closest('.post-user')) {
-      const userId = target.closest('.post-user').dataset.userid;
-      const username = target.closest('.post-user').dataset.username;
-      if (userId && username) openProfile(userId, username);
-    }
-    
-    // Подписка
-    else if (target.closest('.subscribe-btn')) {
-      const btn = target.closest('.subscribe-btn');
-      const userId = btn.dataset.userid;
-      const username = btn.dataset.username;
-      if (userId && username) toggleSubscribe(userId, username);
-    }
-    
-    // Удаление поста
-    else if (target.closest('.trash')) {
-      const postId = target.closest('.trash').dataset.postid;
-      if (postId && confirm('Удалить пост?')) deletePost(postId);
-    }
-    
-    // Хештеги
-    else if (target.closest('.hashtag')) {
-      const hashtag = target.closest('.hashtag').textContent.replace('#', '');
-      if (hashtag) openHashtagFeed(hashtag);
-    }
-    
-    // Голосование в опросе
-    else if (target.closest('.poll-option') && !target.closest('.poll-option').querySelector('.poll-option-bar')) {
-      const postId = target.closest('.post')?.id.replace('post-', '');
-      const options = Array.from(target.closest('.poll-options').children);
-      const index = options.indexOf(target.closest('.poll-option'));
-      if (postId && index !== -1) voteInPoll(postId, index);
-    }
-  });
+  if (file.size > 10 * 1024 * 1024) {
+    showNotification('Файл слишком большой! Максимальный размер 10MB');
+    return;
+  }
   
-  // Добавляем dataset атрибуты при создании постов
-  const originalDisplayPosts = displayPosts;
-  window.displayPosts = function(posts, isHashtagFeed) {
-    originalDisplayPosts(posts, isHashtagFeed);
-    
-    // Добавляем data атрибуты после отображения
-    document.querySelectorAll('.post-user').forEach(el => {
-      const text = el.textContent;
-      const match = text.match(/@(\w+)/);
-      if (match && !el.dataset.username) {
-        el.dataset.username = match[1];
-        // Здесь нужно получить userId, но это сложно, оставляем как есть
-      }
-    });
-    
-    document.querySelectorAll('.subscribe-btn').forEach(el => {
-      const post = el.closest('.post');
-      if (post) {
-        const userId = post.querySelector('.post-user')?.dataset.userid;
-        const username = post.querySelector('.post-user')?.dataset.username;
-        if (userId) el.dataset.userid = userId;
-        if (username) el.dataset.username = username;
-      }
-    });
-    
-    document.querySelectorAll('.trash').forEach(el => {
-      const postId = el.closest('.post')?.id.replace('post-', '');
-      if (postId) el.dataset.postid = postId;
-    });
+  if (!file.type.startsWith('image/')) {
+    showNotification('Пожалуйста, выберите изображение');
+    return;
+  }
+  
+  currentImageFile = file;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    showImagePreview(e.target.result);
   };
-}
-
-// ==================== ОПТИМИЗАЦИЯ 2: ОПТИМИЗИРОВАННЫЕ СНЕЖИНКИ ====================
-let snowflakeInterval = null;
-let snowflakeAnimationFrame = null;
-let snowflakes = [];
-let snowflakeContainer = null;
-
-function createOptimizedSnowflakes() {
-  snowflakeContainer = document.getElementById('snowflakes-container');
-  if (!snowflakeContainer) return;
+  reader.readAsDataURL(file);
   
-  const count = 20; // Уменьшаем количество для производительности
-  
-  for (let i = 0; i < count; i++) {
-    const flake = document.createElement('div');
-    const size = 2 + Math.random() * 4;
-    flake.className = 'snowflake';
-    flake.style.width = size + 'px';
-    flake.style.height = size + 'px';
-    flake.style.backgroundColor = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
-    flake.style.left = Math.random() * 100 + '%';
-    flake.style.top = -10 + Math.random() * 20 + '%';
-    flake.style.opacity = '0';
-    flake.style.transform = 'translate3d(0,0,0)';
-    flake.style.willChange = 'transform, opacity';
-    snowflakeContainer.appendChild(flake);
-    
-    snowflakes.push({
-      element: flake,
-      x: parseFloat(flake.style.left),
-      y: parseFloat(flake.style.top),
-      speed: 1 + Math.random() * 2,
-      size: size,
-      opacity: 0.3 + Math.random() * 0.5,
-      delay: Math.random() * 5000
-    });
-  }
-  
-  animateSnowflakes();
-}
-
-function animateSnowflakes() {
-  const startTime = Date.now();
-  
-  function update() {
-    const now = Date.now();
-    const delta = (now - startTime) / 1000;
-    
-    snowflakes.forEach(flake => {
-      // Простая анимация без requestAnimationFrame для экономии
-      const y = parseFloat(flake.element.style.top) || 0;
-      let newY = y + flake.speed * 0.05;
-      
-      if (newY > 110) {
-        newY = -10;
-        flake.element.style.left = Math.random() * 100 + '%';
-      }
-      
-      flake.element.style.top = newY + '%';
-      flake.element.style.opacity = flake.opacity;
-    });
-    
-    snowflakeAnimationFrame = requestAnimationFrame(update);
-  }
-  
-  update();
-}
-
-// Заменяем оригинальную функцию
-window.createSnowflakes = createOptimizedSnowflakes;
-
-// ==================== ОПТИМИЗАЦИЯ 3: КЭШИРОВАНИЕ ИЗОБРАЖЕНИЙ ====================
-const imageCache = new Map();
-let imageLoadQueue = [];
-let isProcessingImages = false;
-
-async function processImageQueue() {
-  if (isProcessingImages) return;
-  isProcessingImages = true;
-  
-  while (imageLoadQueue.length > 0) {
-    const batch = imageLoadQueue.splice(0, 3);
-    
-    await Promise.all(batch.map(async ({ url, element }) => {
-      if (imageCache.has(url)) {
-        element.src = imageCache.get(url);
-        return;
-      }
-      
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        
-        reader.onloadend = () => {
-          const base64 = reader.result;
-          imageCache.set(url, base64);
-          element.src = base64;
-        };
-        
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error('Ошибка загрузки изображения:', error);
-      }
-    }));
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-  
-  isProcessingImages = false;
-}
-
-// Перехватываем создание изображений
-const originalCreatePostElement = window.createPostElement || function() {};
-window.createPostElement = function(post) {
-  const element = originalCreatePostElement(post);
-  
-  if (post.imageBase64 && element) {
-    const img = element.querySelector('img');
-    if (img) {
-      imageLoadQueue.push({ url: post.imageBase64, element: img });
-      processImageQueue();
-    }
-  }
-  
-  return element;
-};
-
-// ==================== ОПТИМИЗАЦИЯ 4: DEBOUNCE ДЛЯ ПОИСКА ====================
-function debounce(func, wait) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-const debouncedSearch = debounce(function(term) {
-  searchUsers(term);
-}, 300);
-
-// Заменяем обработчик поиска
-document.getElementById('searchInput')?.addEventListener('input', function(e) {
-  const term = e.target.value.trim();
-  
-  if (term.length >= 2) {
-    debouncedSearch(term);
-  } else {
-    document.getElementById('searchResults').innerHTML = '';
-    document.getElementById('searchResults').classList.remove('show');
-  }
+  document.getElementById('uploadPhotoBtn').classList.add('has-image');
 });
 
-// ==================== ОПТИМИЗАЦИЯ 5: ТРОТТЛИНГ ДЛЯ SCROLL ====================
-function throttle(func, limit) {
-  let inThrottle;
-  return function(...args) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
+function showImagePreview(imageData) {
+  const container = document.getElementById('imagePreviewContainer');
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div class="image-preview">
+      <img src="${imageData}" alt="Предпросмотр">
+      <button class="remove-image-btn" onclick="removeImage()">✕</button>
+    </div>
+  `;
+  currentImagePreview = imageData;
 }
 
-const throttledViewTracking = throttle(function() {
-  setupViewTracking();
-}, 500);
-
-// ==================== ОПТИМИЗАЦИЯ 6: ПУЛ ЭЛЕМЕНТОВ ====================
-const elementPool = {
-  posts: new Map(),
-  getPost(id) {
-    return this.posts.get(id);
-  },
-  setPost(id, element) {
-    this.posts.set(id, element);
-  },
-  clear() {
-    this.posts.clear();
-  }
-};
-
-// ==================== ОПТИМИЗАЦИЯ 7: ЛЕНИВАЯ ЗАГРУЗКА ПОСТОВ ====================
-let postsObserver = null;
-let currentPage = 1;
-const POSTS_PER_PAGE = 20;
-let isLoadingPosts = false;
-let hasMorePosts = true;
-
-function setupInfiniteScroll() {
-  if (postsObserver) postsObserver.disconnect();
-  
-  postsObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && !isLoadingPosts && hasMorePosts) {
-        loadMorePosts();
-      }
-    });
-  }, { rootMargin: '200px', threshold: 0.1 });
-  
-  const lastPost = document.querySelector('.post:last-child');
-  if (lastPost) postsObserver.observe(lastPost);
+function removeImage() {
+  currentImageFile = null;
+  currentImagePreview = null;
+  document.getElementById('imagePreviewContainer').style.display = 'none';
+  document.getElementById('imageUpload').value = '';
+  document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-async function loadMorePosts() {
-  if (isLoadingPosts || !hasMorePosts) return;
-  
-  isLoadingPosts = true;
-  currentPage++;
-  
-  try {
-    const snap = await db.collection("posts")
-      .orderBy("createdAt", "desc")
-      .limit(POSTS_PER_PAGE * currentPage)
-      .get();
-    
-    const posts = [];
-    snap.forEach(doc => {
-      const postData = doc.data();
-      if (!blockedUsers.has(postData.userId)) {
-        posts.push({ id: doc.id, ...postData });
-      }
-    });
-    
-    hasMorePosts = posts.length === POSTS_PER_PAGE * currentPage;
-    
-    // Отображаем только новые посты
-    const existingIds = new Set();
-    document.querySelectorAll('.post').forEach(el => {
-      existingIds.add(el.id.replace('post-', ''));
-    });
-    
-    const newPosts = posts.filter(p => !existingIds.has(p.id));
-    if (newPosts.length > 0) {
-      displayPosts(newPosts, true);
-    }
-    
-  } catch (error) {
-    console.error('Ошибка загрузки еще постов:', error);
-  } finally {
-    isLoadingPosts = false;
-    setupInfiniteScroll();
-  }
-}
-
-// Перехватываем displayPosts для добавления infinite scroll
-const originalDisplayPosts = displayPosts;
-displayPosts = function(posts, isHashtagFeed = false, append = false) {
-  originalDisplayPosts(posts, isHashtagFeed);
-  
-  if (!isHashtagFeed && !append) {
-    setTimeout(setupInfiniteScroll, 500);
-  }
-};
-
-// ==================== ОПТИМИЗАЦИЯ 8: КЭШИРОВАНИЕ ФОРМАТИРОВАНИЯ ВРЕМЕНИ ====================
-const timeCache = new Map();
-
-function formatTimeAgo(date) {
-  if (!date) return 'только что';
-  
-  const key = date.getTime();
-  if (timeCache.has(key)) return timeCache.get(key);
-  
-  const now = new Date();
-  const diff = now - date;
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  
-  let result;
-  if (days > 7) {
-    result = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ', ' + 
-             date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  } else if (days > 0) {
-    result = days + ' д назад';
-  } else if (hours > 0) {
-    result = hours + ' ч назад';
-  } else if (minutes > 0) {
-    result = minutes + ' мин назад';
-  } else {
-    result = 'только что';
-  }
-  
-  timeCache.set(key, result);
-  if (timeCache.size > 100) {
-    const firstKey = timeCache.keys().next().value;
-    timeCache.delete(firstKey);
-  }
-  
-  return result;
-}
-
-// ==================== ВЕСЬ ВАШ ОРИГИНАЛЬНЫЙ КОД НИЖЕ ====================
-// (Все функции из вашего скрипта: compressToBase64, openCropModal, applyCrop,
-//  setupAvatarChange, openPollModal, voteInPoll, loadAllHashtags, openHashtagFeed,
-//  loadPosts, displayPosts, toggleLike, toggleRepost, openProfile, и т.д.)
-// СОХРАНЯЕМ ИХ ПОЛНОСТЬЮ БЕЗ ИЗМЕНЕНИЙ
-
-// ==================== ВАША ФУНКЦИЯ compressToBase64 ====================
+// ==================== СЖАТИЕ И КОНВЕРТАЦИЯ В BASE64 ====================
 async function compressToBase64(file) {
   return new Promise((resolve, reject) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -2393,7 +2064,8 @@ async function compressToBase64(file) {
   });
 }
 
-// ==================== ВАША ФУНКЦИЯ openCropModal ====================
+// ==================== ФУНКЦИИ ДЛЯ ОБРЕЗКИ АВАТАРА ====================
+
 function openCropModal(imageUrl, file) {
   const modal = document.getElementById('cropModal');
   const image = document.getElementById('cropImage');
@@ -2425,7 +2097,6 @@ function openCropModal(imageUrl, file) {
   };
 }
 
-// ==================== ВАША ФУНКЦИЯ closeCropModal ====================
 function closeCropModal() {
   const modal = document.getElementById('cropModal');
   modal.classList.remove('show');
@@ -2439,7 +2110,6 @@ function closeCropModal() {
   currentCropFile = null;
 }
 
-// ==================== ВАША ФУНКЦИЯ applyCrop ====================
 async function applyCrop() {
   if (!cropper || !currentCropFile) {
     closeCropModal();
@@ -2504,7 +2174,6 @@ async function applyCrop() {
   }
 }
 
-// ==================== ВАША ФУНКЦИЯ updateUserAvatarInAllContent ====================
 async function updateUserAvatarInAllContent(userId, newAvatar) {
   try {
     const postsSnap = await db.collection("posts")
@@ -2542,7 +2211,6 @@ async function updateUserAvatarInAllContent(userId, newAvatar) {
   }
 }
 
-// ==================== ВАША ФУНКЦИЯ setupAvatarChange ====================
 function setupAvatarChange() {
   const avatarElement = document.getElementById('profileAvatar');
   if (!avatarElement) return;
@@ -2589,7 +2257,7 @@ function setupAvatarChange() {
   });
 }
 
-// ==================== ВАША ФУНКЦИЯ openPollModal ====================
+// ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 function openPollModal() {
   currentPoll = {
     question: '',
@@ -2892,6 +2560,66 @@ function getVotesWord(count) {
   return 'голосов';
 }
 
+// ==================== ОПТИМИЗИРОВАННЫЕ СНЕЖИНКИ ====================
+let snowflakeAnimationFrame = null;
+let snowflakes = [];
+let snowflakeContainer = null;
+
+function createOptimizedSnowflakes() {
+  snowflakeContainer = document.getElementById('snowflakes-container');
+  if (!snowflakeContainer) return;
+  
+  const count = 20;
+  
+  for (let i = 0; i < count; i++) {
+    const flake = document.createElement('div');
+    const size = 2 + Math.random() * 4;
+    flake.className = 'snowflake';
+    flake.style.width = size + 'px';
+    flake.style.height = size + 'px';
+    flake.style.backgroundColor = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
+    flake.style.left = Math.random() * 100 + '%';
+    flake.style.top = -10 + Math.random() * 20 + '%';
+    flake.style.opacity = '0';
+    flake.style.transform = 'translate3d(0,0,0)';
+    flake.style.willChange = 'transform, opacity';
+    snowflakeContainer.appendChild(flake);
+    
+    snowflakes.push({
+      element: flake,
+      x: parseFloat(flake.style.left),
+      y: parseFloat(flake.style.top),
+      speed: 1 + Math.random() * 2,
+      size: size,
+      opacity: 0.3 + Math.random() * 0.5
+    });
+  }
+  
+  animateSnowflakes();
+}
+
+function animateSnowflakes() {
+  function update() {
+    snowflakes.forEach(flake => {
+      let newY = flake.y + flake.speed * 0.05;
+      
+      if (newY > 110) {
+        newY = -10;
+        flake.element.style.left = Math.random() * 100 + '%';
+        flake.x = parseFloat(flake.element.style.left);
+      }
+      
+      flake.y = newY;
+      flake.element.style.top = newY + '%';
+      flake.element.style.opacity = flake.opacity;
+    });
+    
+    snowflakeAnimationFrame = requestAnimationFrame(update);
+  }
+  
+  update();
+}
+
 // ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
 function extractHashtags(text) {
   if (!text) return [];
@@ -2910,7 +2638,7 @@ function updateHashtagsInPost(post) {
   hashtags.forEach(tag => {
     const regex = new RegExp(`#${tag}`, 'gi');
     processedText = processedText.replace(regex, 
-      `<span class="hashtag" onclick="openHashtagFeed('${tag}')">#${tag}</span>`
+      `<span class="hashtag" data-hashtag="${tag}">#${tag}</span>`
     );
   });
   
@@ -2982,7 +2710,7 @@ async function loadAllHashtags() {
     
     sortedHashtags.forEach(([tag, count]) => {
       hashtagsHTML += `
-        <div class="hashtag-item" onclick="openHashtagFeed('${tag}')">
+        <div class="hashtag-item" data-hashtag="${tag}">
           <div class="hashtag-item-name">#${tag}</div>
           <div class="hashtag-item-count">${count}</div>
         </div>
@@ -3107,6 +2835,179 @@ function declinePosts(count) {
   } else {
     return 'постов';
   }
+}
+
+// ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ЛАЙКОВ ====================
+async function toggleLike(postId, button) {
+  const post = postsCache.get(postId);
+  if (!post) return;
+  
+  if (button.classList.contains('processing')) return;
+  button.classList.add('processing');
+  
+  const liked = post.likedBy?.includes(currentUser.uid);
+  const increment = liked ? -1 : 1;
+  
+  try {
+    post.likes = (post.likes || 0) + increment;
+    if (liked) {
+      post.likedBy = post.likedBy?.filter(id => id !== currentUser.uid) || [];
+    } else {
+      post.likedBy = [...(post.likedBy || []), currentUser.uid];
+    }
+    
+    button.classList.toggle('liked', !liked);
+    const likesSpan = button.querySelector('span');
+    if (likesSpan) {
+      likesSpan.textContent = post.likes;
+    }
+    
+    await db.collection("posts").doc(postId).update({
+      likes: firebase.firestore.FieldValue.increment(increment),
+      likedBy: liked 
+        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+    });
+    
+  } catch (error) {
+    post.likes = (post.likes || 0) - increment;
+    if (liked) {
+      post.likedBy = [...(post.likedBy || []), currentUser.uid];
+    } else {
+      post.likedBy = post.likedBy?.filter(id => id !== currentUser.uid) || [];
+    }
+    
+    button.classList.toggle('liked', liked);
+    const likesSpan = button.querySelector('span');
+    if (likesSpan) {
+      likesSpan.textContent = post.likes;
+    }
+    
+    console.error("Ошибка при лайке:", error);
+    showNotification("Ошибка: " + error.message);
+  } finally {
+    button.classList.remove('processing');
+  }
+}
+
+// ==================== ИСПРАВЛЕННОЕ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ====================
+function setupEventDelegation() {
+  const feed = document.getElementById('feed');
+  if (!feed) return;
+  
+  feed.addEventListener('click', (e) => {
+    const target = e.target;
+    
+    const likeBtn = target.closest('[data-like]');
+    if (likeBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const postId = likeBtn.dataset.like;
+      if (postId) toggleLike(postId, likeBtn);
+      return;
+    }
+    
+    const commentBtn = target.closest('[data-comment]');
+    if (commentBtn) {
+      e.preventDefault();
+      const postId = commentBtn.dataset.comment;
+      if (postId) openComments(postId);
+      return;
+    }
+    
+    const repostBtn = target.closest('[data-repost]');
+    if (repostBtn) {
+      e.preventDefault();
+      const postId = repostBtn.dataset.repost;
+      if (postId) toggleRepost(postId, repostBtn);
+      return;
+    }
+    
+    const userLink = target.closest('.post-user');
+    if (userLink) {
+      e.preventDefault();
+      const userId = userLink.dataset.userid;
+      const username = userLink.dataset.username;
+      if (userId && username) openProfile(userId, username);
+      return;
+    }
+    
+    const subBtn = target.closest('.subscribe-btn');
+    if (subBtn) {
+      e.preventDefault();
+      const userId = subBtn.dataset.userid;
+      const username = subBtn.dataset.username;
+      if (userId && username) toggleSubscribe(userId, username);
+      return;
+    }
+    
+    const trashBtn = target.closest('.trash');
+    if (trashBtn) {
+      e.preventDefault();
+      const postId = trashBtn.dataset.postid;
+      if (postId && confirm('Удалить пост?')) deletePost(postId);
+      return;
+    }
+    
+    const hashtag = target.closest('.hashtag');
+    if (hashtag) {
+      e.preventDefault();
+      const tag = hashtag.dataset.hashtag;
+      if (tag) openHashtagFeed(tag);
+      return;
+    }
+    
+    const hashtagItem = target.closest('.hashtag-item');
+    if (hashtagItem) {
+      e.preventDefault();
+      const tag = hashtagItem.dataset.hashtag;
+      if (tag) openHashtagFeed(tag);
+      return;
+    }
+    
+    const pollOption = target.closest('[data-poll]');
+    if (pollOption) {
+      e.preventDefault();
+      const postId = pollOption.dataset.poll;
+      const optionIndex = parseInt(pollOption.dataset.option);
+      if (postId && !isNaN(optionIndex)) voteInPoll(postId, optionIndex);
+      return;
+    }
+    
+    const pollResults = target.closest('[data-pollresults]');
+    if (pollResults) {
+      e.preventDefault();
+      const postId = pollResults.dataset.pollresults;
+      if (postId) showPollResults(postId);
+      return;
+    }
+    
+    const showMoreReposts = target.closest('.show-more-reposts-btn');
+    if (showMoreReposts) {
+      e.preventDefault();
+      const postId = showMoreReposts.dataset.postid;
+      if (postId) toggleRepostUsers(postId, true);
+      return;
+    }
+    
+    const hideReposts = target.closest('.hide-reposts-btn');
+    if (hideReposts) {
+      e.preventDefault();
+      const postId = hideReposts.closest('.post')?.id.replace('post-', '');
+      if (postId) toggleRepostUsers(postId, false);
+      return;
+    }
+    
+    const postImage = target.closest('.post-image');
+    if (postImage) {
+      e.preventDefault();
+      const img = postImage.querySelector('img');
+      if (img && img.src) {
+        openImageView(img.src);
+      }
+      return;
+    }
+  });
 }
 
 // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
@@ -3514,10 +3415,10 @@ async function displayPosts(posts, isHashtagFeed = false) {
       repostHTML = `
         <div class="repost-info" id="repost-info-${postId}">
           <span class="repost-icon">🔄</span>
-          <span>Репостнул <strong class="repost-user-link" onclick="openProfileFromRepost('${mainUser.userId}', '${mainUser.username}')">@${mainUser.username}</strong></span>
+          <span>Репостнул <strong class="repost-user-link" data-userid="${mainUser.userId}" data-username="${mainUser.username}">@${mainUser.username}</strong></span>
           ${otherUsersCount > 0 ? `
             <span> и </span>
-            <button class="show-more-reposts-btn" onclick="toggleRepostUsers('${postId}', true)">
+            <button class="show-more-reposts-btn" data-postid="${postId}">
               ${otherUsersCount} ${getOtherUsersText(otherUsersCount)}
             </button>
           ` : ''}
@@ -3534,13 +3435,13 @@ async function displayPosts(posts, isHashtagFeed = false) {
     let imageHTML = '';
     if (post.imageBase64) {
       imageHTML = `
-        <div class="post-image" onclick="openImageView('${post.imageBase64}')">
+        <div class="post-image" data-image="${post.imageBase64}">
           <img src="${post.imageBase64}" alt="Изображение к посту" loading="lazy">
         </div>
       `;
     } else if (post.imageUrl) {
       imageHTML = `
-        <div class="post-image" onclick="openImageView('${post.imageUrl}')">
+        <div class="post-image" data-image="${post.imageUrl}">
           <img src="${post.imageUrl}" alt="Изображение к посту" loading="lazy">
         </div>
       `;
@@ -3579,7 +3480,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
           `;
         } else {
           pollHTML += `
-            <div class="poll-option" onclick="voteInPoll('${postId}', ${index})">
+            <div class="poll-option" data-poll="${postId}" data-option="${index}">
               <div class="poll-option-content">
                 <span class="poll-option-text">${option}</span>
               </div>
@@ -3595,7 +3496,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
           <span class="${isExpired ? 'poll-timer-expired' : 'poll-timer-active'}">
             ${isExpired ? 'Опрос завершен' : 'Голосование активно'}
           </span>
-          <span style="margin-left:auto; color:var(--sub);" onclick="showPollResults('${postId}')" style="cursor:pointer;">
+          <span style="margin-left:auto; color:var(--sub);" data-pollresults="${postId}">
             ${totalVotes} ${getVotesWord(totalVotes)}
           </span>
         </div>
@@ -3604,47 +3505,46 @@ async function displayPosts(posts, isHashtagFeed = false) {
     }
     
     feed.innerHTML += `
-    <div class="post fade" id="post-${postId}">
+    <div class="post fade" id="post-${postId}" data-postid="${postId}">
       ${repostHTML}
       <div class="post-header">
         <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
         <div class="post-user-info">
-          <div class="post-user" onclick="openProfile('${post.userId}','${post.username}')">
+          <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
             @${post.username}
-            ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+            ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
           </div>
           <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
         </div>
         ${post.userId !== currentUser.uid ? 
           `<button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
-                  onclick="toggleSubscribe('${post.userId}', '${post.username}')"
-                  style="margin-right:8px">
+                   data-userid="${post.userId}" data-username="${post.username}">
             ${isSubscribed ? 'В подписках' : 'Подписаться'}
           </button>` : ''}
         ${(post.userId === currentUser.uid || userData?.isAdmin) ?
-          `<button class="trash" onclick="deletePost('${postId}', '${post.userId}')">🗑</button>` : ""}
+          `<button class="trash" data-postid="${postId}">🗑</button>` : ""}
       </div>
       <div class="post-text">${processedText}</div>
       ${imageHTML}
       ${pollHTML}
       <div class="post-actions">
-        <button class="action ${liked ? "liked" : ""}" onclick="toggleLike('${postId}')">
-          ${liked ? "❤️" : "🤍"} <span id="likes-${postId}">${post.likes || 0}</span>
+        <button class="action ${liked ? "liked" : ""}" data-like="${postId}">
+          ${liked ? "❤️" : "🤍"} <span class="likes-count">${post.likes || 0}</span>
         </button>
-        <button class="action" onclick="openComments('${postId}')">
-          💬 ${post.commentsCount || 0}
+        <button class="action" data-comment="${postId}">
+          💬 <span class="comments-count">${post.commentsCount || 0}</span>
         </button>
-        <button class="action ${isReposted ? "reposted" : ""}" onclick="toggleRepost('${postId}')">
-          🔄 <span id="reposts-${postId}">${post.reposts || 0}</span>
+        <button class="action ${isReposted ? "reposted" : ""}" data-repost="${postId}">
+          🔄 <span class="reposts-count">${post.reposts || 0}</span>
         </button>
         <button class="action viewed" title="Просмотры">
-          👁️ ${post.views || 0}
+          👁️ <span class="views-count">${post.views || 0}</span>
         </button>
       </div>
     </div>`;
   });
   
-  setTimeout(throttledViewTracking, 500);
+  setTimeout(setupViewTracking, 500);
   setTimeout(checkPostToScroll, 100);
 }
 
@@ -3665,7 +3565,7 @@ function toggleRepostUsers(postId, showAll = false) {
     let usersHTML = '';
     post.repostingUsers.forEach((user, index) => {
       usersHTML += `
-        <span class="repost-user-link" onclick="openProfileFromRepost('${user.userId}', '${user.username}')">
+        <span class="repost-user-link" data-userid="${user.userId}" data-username="${user.username}">
           @${user.username}
         </span>
         ${index < post.repostingUsers.length - 1 ? ', ' : ''}
@@ -3685,10 +3585,10 @@ function toggleRepostUsers(postId, showAll = false) {
     
     repostInfoElement.innerHTML = `
       <span class="repost-icon">🔄</span>
-      <span>Репостнул <strong class="repost-user-link" onclick="openProfileFromRepost('${mainUser.userId}', '${mainUser.username}')">@${mainUser.username}</strong></span>
+      <span>Репостнул <strong class="repost-user-link" data-userid="${mainUser.userId}" data-username="${mainUser.username}">@${mainUser.username}</strong></span>
       ${otherUsersCount > 0 ? `
         <span> и </span>
-        <button class="show-more-reposts-btn" onclick="toggleRepostUsers('${postId}', true)">
+        <button class="show-more-reposts-btn" data-postid="${postId}">
           ${otherUsersCount} ${getOtherUsersText(otherUsersCount)}
         </button>
       ` : ''}
@@ -3777,7 +3677,7 @@ async function createPost() {
   }
 }
 
-async function deletePost(postId, postUserId) {
+async function deletePost(postId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
@@ -3821,62 +3721,20 @@ async function deletePost(postId, postUserId) {
       loadPosts();
     }
     
-    if (currentProfileUserId === postUserId) {
-      await refreshProfilePosts(postUserId);
-      await refreshProfileReposts(postUserId);
-    }
-    
   } catch (error) {
     console.error("Ошибка при удалении поста:", error);
     showNotification("Не удалось удалить пост: " + error.message);
   }
 }
 
-async function toggleLike(id) {
-  const post = postsCache.get(id);
+async function toggleRepost(postId, button) {
+  const post = postsCache.get(postId);
   if (!post) return;
   
-  const liked = post.likedBy?.includes(currentUser.uid);
+  const isReposted = userData.reposts?.includes(postId) || false;
   
   try {
-    await db.collection("posts").doc(id).update({
-      likes: firebase.firestore.FieldValue.increment(liked ? -1 : 1),
-      likedBy: liked
-        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-    });
-    
-    post.likes = (post.likes || 0) + (liked ? -1 : 1);
-    if (liked) {
-      post.likedBy = post.likedBy?.filter(uid => uid !== currentUser.uid) || [];
-    } else {
-      if (!post.likedBy) post.likedBy = [];
-      post.likedBy.push(currentUser.uid);
-    }
-    
-    const likeButton = document.querySelector(`#post-${id} .action`);
-    const likesSpan = document.getElementById(`likes-${id}`);
-    if (likeButton && likesSpan) {
-      likeButton.classList.toggle('liked', !liked);
-      likeButton.innerHTML = `${!liked ? "❤️" : "🤍"} <span id="likes-${id}">${post.likes}</span>`;
-    }
-    
-    showNotification(liked ? "Лайк убран" : "Посту понравилось!");
-    
-  } catch (error) {
-    console.error("Ошибка при лайке:", error);
-    showNotification("Ошибка: " + error.message);
-  }
-}
-
-async function toggleRepost(id) {
-  const post = postsCache.get(id);
-  if (!post) return;
-  
-  const isReposted = userData.reposts?.includes(id) || false;
-  
-  try {
-    const postRef = db.collection("posts").doc(id);
+    const postRef = db.collection("posts").doc(postId);
     const postDoc = await postRef.get();
     const postData = postDoc.data();
     
@@ -3897,28 +3755,27 @@ async function toggleRepost(id) {
     
     await db.collection("users").doc(currentUser.uid).update({
       reposts: isReposted
-        ? firebase.firestore.FieldValue.arrayRemove(id)
-        : firebase.firestore.FieldValue.arrayUnion(id)
+        ? firebase.firestore.FieldValue.arrayRemove(postId)
+        : firebase.firestore.FieldValue.arrayUnion(postId)
     });
     
     if (isReposted) {
-      userData.reposts = userData.reposts.filter(postId => postId !== id);
-      if (userData.pinnedReposts?.includes(id)) {
-        await togglePinRepost(id, false);
+      userData.reposts = userData.reposts.filter(id => id !== postId);
+      if (userData.pinnedReposts?.includes(postId)) {
+        await togglePinRepost(postId, false);
       }
     } else {
       if (!userData.reposts) userData.reposts = [];
-      userData.reposts.push(id);
+      userData.reposts.push(postId);
     }
     
     post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
     post.repostedBy = newRepostedBy;
     
-    const repostButton = document.querySelector(`#post-${id} .action:nth-child(3)`);
-    const repostsSpan = document.getElementById(`reposts-${id}`);
-    if (repostButton && repostsSpan) {
-      repostButton.classList.toggle('reposted', !isReposted);
-      repostButton.innerHTML = `🔄 <span id="reposts-${id}">${post.reposts}</span>`;
+    button.classList.toggle('reposted', !isReposted);
+    const repostsSpan = button.querySelector('span');
+    if (repostsSpan) {
+      repostsSpan.textContent = post.reposts;
     }
     
     showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
@@ -3936,8 +3793,6 @@ async function toggleRepost(id) {
     showNotification("Ошибка: " + error.message);
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ЗАКРЕПЛЕНИЯ РЕПОСТОВ ====================
 
 async function togglePinRepost(postId, forcePin = null) {
   if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
@@ -3976,8 +3831,6 @@ async function togglePinRepost(postId, forcePin = null) {
     showNotification("Ошибка: " + error.message);
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
 
 async function openProfile(uid, name) {
   if (!uid || !name) return;
@@ -4353,8 +4206,8 @@ async function refreshProfilePosts(uid) {
       const processedText = updateHashtagsInPost(post);
       
       const imageHTML = post.imageBase64 ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
-           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+        `<div class="post-image" style="margin-top:8px;" data-image="${post.imageBase64}">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;" loading="lazy">
          </div>` : '';
       
       const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
@@ -4367,9 +4220,9 @@ async function refreshProfilePosts(uid) {
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user" onclick="openProfile('${post.userId}','${post.username}')">
+              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
-                ${adminUsers.has(post.userId) ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+                ${adminUsers.has(post.userId) ? '<span class="verified-badge">✓</span>' : ''}
               </div>
               <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
             </div>
@@ -4383,8 +4236,7 @@ async function refreshProfilePosts(uid) {
             <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
           </div>
           ${canDelete ? 
-            `<button class="trash" style="position:absolute;top:16px;right:16px;" 
-                     onclick="deletePostFromProfile('${post.id}', '${uid}')">🗑</button>` : 
+            `<button class="trash" style="position:absolute;top:16px;right:16px;" data-postid="${post.id}">🗑</button>` : 
             ""}
         </div>`;
     });
@@ -4491,8 +4343,8 @@ async function refreshProfileReposts(uid) {
         const processedText = updateHashtagsInPost(post);
         
         const imageHTML = post.imageBase64 ? 
-          `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
-             <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+          `<div class="post-image" style="margin-top:8px;" data-image="${post.imageBase64}">
+             <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;" loading="lazy">
            </div>` : '';
         
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
@@ -4505,38 +4357,35 @@ async function refreshProfileReposts(uid) {
               <span>Репостнул <strong>@${user.username}</strong></span>
               <span class="pinned-badge">📌 Закреплено</span>
               ${isOwnProfile ? `
-                <button class="pin-btn pinned" onclick="event.stopPropagation(); togglePinRepost('${post.id}')" title="Открепить">
-                  📌
-                </button>
+                <button class="pin-btn pinned" data-postid="${post.id}">📌</button>
               ` : ''}
             </div>
             <div class="post-header">
               <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
               <div class="post-user-info">
-                <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
+                <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                   @${post.username}
-                  ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+                  ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
                 </div>
                 <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
               </div>
               ${post.userId !== currentUser.uid ? 
                 `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
-                        onclick="event.stopPropagation(); toggleSubscribe('${post.userId}', '${post.username}')"
-                        style="margin-right:8px">
+                        data-userid="${post.userId}" data-username="${post.username}">
                   ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
                 </button>` : ''}
             </div>
             <div class="post-text">${processedText}</div>
             ${imageHTML}
             <div class="post-actions">
-              <button class="action ${liked ? "liked" : ""}" onclick="event.stopPropagation(); toggleLike('${post.id}')">
-                ${liked ? "❤️" : "🤍"} <span id="repost-likes-${post.id}">${post.likes || 0}</span>
+              <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
+                ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
               </button>
-              <button class="action" onclick="event.stopPropagation(); openComments('${post.id}')">
+              <button class="action" data-comment="${post.id}">
                 💬 ${post.commentsCount || 0}
               </button>
-              <button class="action ${isReposted ? "reposted" : ""}" onclick="event.stopPropagation(); toggleRepost('${post.id}')">
-                🔄 <span id="repost-reposts-${post.id}">${post.reposts || 0}</span>
+              <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
+                🔄 <span>${post.reposts || 0}</span>
               </button>
               <button class="action viewed" title="Просмотры">
                 👁️ ${post.views || 0}
@@ -4576,8 +4425,8 @@ async function refreshProfileReposts(uid) {
       const processedText = updateHashtagsInPost(post);
       
       const imageHTML = post.imageBase64 ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
-           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+        `<div class="post-image" style="margin-top:8px;" data-image="${post.imageBase64}">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;" loading="lazy">
          </div>` : '';
       
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
@@ -4589,38 +4438,35 @@ async function refreshProfileReposts(uid) {
             <span class="repost-icon">🔄</span>
             <span>Репостнул <strong>@${user.username}</strong></span>
             ${isOwnProfile ? `
-              <button class="pin-btn" onclick="event.stopPropagation(); togglePinRepost('${post.id}')" title="Закрепить">
-                📌
-              </button>
+              <button class="pin-btn" data-postid="${post.id}">📌</button>
             ` : ''}
           </div>
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
+              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
-                ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+                ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
               </div>
               <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
             </div>
             ${post.userId !== currentUser.uid ? 
               `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
-                      onclick="event.stopPropagation(); toggleSubscribe('${post.userId}', '${post.username}')"
-                      style="margin-right:8px">
+                      data-userid="${post.userId}" data-username="${post.username}">
                 ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
               </button>` : ''}
           </div>
           <div class="post-text">${processedText}</div>
           ${imageHTML}
           <div class="post-actions">
-            <button class="action ${liked ? "liked" : ""}" onclick="event.stopPropagation(); toggleLike('${post.id}')">
-              ${liked ? "❤️" : "🤍"} <span id="repost-likes-${post.id}">${post.likes || 0}</span>
+            <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
+              ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
             </button>
-            <button class="action" onclick="event.stopPropagation(); openComments('${post.id}')">
+            <button class="action" data-comment="${post.id}">
               💬 ${post.commentsCount || 0}
             </button>
-            <button class="action ${isReposted ? "reposted" : ""}" onclick="event.stopPropagation(); toggleRepost('${post.id}')">
-              🔄 <span id="repost-reposts-${post.id}">${post.reposts || 0}</span>
+            <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
+              🔄 <span>${post.reposts || 0}</span>
             </button>
             <button class="action viewed" title="Просмотры">
               👁️ ${post.views || 0}
@@ -4753,8 +4599,6 @@ async function deletePostFromProfile(postId, userId) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
-
 function goToChatWithUser() {
   if (!currentProfileUserId) return;
   
@@ -4767,8 +4611,6 @@ function goToChatWithUser() {
   
   location.href = 'chats.html';
 }
-
-// ==================== ФУНКЦИИ ДЛЯ КОММЕНТАРИЕВ ====================
 
 function openComments(id) {
   currentPostId = id;
@@ -4819,10 +4661,10 @@ async function loadComments() {
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}</strong>
+              <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}</strong>
               <div class="post-time">${timeAgo}</div>
             </div>
-            ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment('${doc.id}')">🗑</button>` : ''}
+            ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
           </div>
           <div class="post-text">${comment.text}</div>
         </div>`;
@@ -4898,8 +4740,6 @@ async function deleteComment(commentId) {
     showNotification("Ошибка: " + error.message);
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ СМЕНЫ ИМЕНИ ====================
 
 function openChangeNameModal() {
   const modal = document.getElementById('changeNameModal');
@@ -5008,8 +4848,6 @@ async function updateUsernameInAllPosts(userId, newUsername) {
     return false;
   }
 }
-
-// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
 function formatTimeAgo(date) {
   if (!date) return "только что";
@@ -5127,9 +4965,9 @@ async function incrementPostViews(postId) {
       const post = postsCache.get(postId);
       post.views = (post.views || 0) + 1;
       
-      const viewButton = document.querySelector(`#post-${postId} .action.viewed`);
-      if (viewButton) {
-        viewButton.innerHTML = `👁️ ${post.views}`;
+      const viewSpan = document.querySelector(`#post-${postId} .views-count`);
+      if (viewSpan) {
+        viewSpan.textContent = post.views;
       }
     }
     
@@ -5161,8 +4999,6 @@ function setupViewTracking() {
     observer.observe(post);
   });
 }
-
-// ==================== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ====================
 
 async function searchUsers(searchTerm) {
   const searchResults = document.getElementById('searchResults');
@@ -5203,15 +5039,14 @@ async function searchUsers(searchTerm) {
       const avatarLetter = user.username?.[0]?.toUpperCase() || "U";
       
       resultsHTML += `
-        <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
+        <div class="search-result" data-userid="${userId}" data-username="${user.username}">
           <div class="search-avatar" ${avatarStyle}>${avatarLetter}</div>
           <div class="search-username">
             @${user.username}
-            ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+            ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
           </div>
           <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
-                  onclick="event.stopPropagation(); toggleSubscribe('${userId}', '${user.username}')"
-                  style="margin-left:auto">
+                  data-userid="${userId}" data-username="${user.username}">
             ${isSubscribed ? 'В подписках' : 'Подписаться'}
           </button>
         </div>
@@ -5237,52 +5072,6 @@ async function openSearchedProfile(userId, username) {
   
   await openProfile(userId, username);
 }
-
-// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
-
-document.getElementById("searchInput").addEventListener("input", function(e) {
-  const searchTerm = e.target.value.trim();
-  
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  
-  if (searchTerm.length >= 2) {
-    searchTimeout = setTimeout(() => {
-      searchUsers(searchTerm);
-    }, 300);
-  } else {
-    document.getElementById("searchResults").innerHTML = '';
-    document.getElementById("searchResults").classList.remove('show');
-  }
-});
-
-document.getElementById("postText").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    createPost();
-  }
-});
-
-document.getElementById("newUsernameInput").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    changeUsername();
-  }
-});
-
-document.getElementById("bioText").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.ctrlKey) {
-    e.preventDefault();
-    saveBio();
-  }
-});
-
-document.getElementById('imageViewModal').addEventListener('click', function(e) {
-  if (e.target === this) {
-    closeImageView();
-  }
-});
 
 function startTimeUpdater() {
   setInterval(() => {
@@ -5319,7 +5108,34 @@ window.addEventListener('load', () => {
     });
   }
 });
-</script>
 
+// Дополнительные обработчики для комментариев и удаления
+document.addEventListener('click', (e) => {
+  const deleteCommentBtn = e.target.closest('.comment-delete-btn');
+  if (deleteCommentBtn) {
+    e.preventDefault();
+    const commentId = deleteCommentBtn.dataset.commentid;
+    if (commentId) deleteComment(commentId);
+    return;
+  }
+  
+  const pinBtn = e.target.closest('.pin-btn');
+  if (pinBtn) {
+    e.preventDefault();
+    const postId = pinBtn.dataset.postid;
+    if (postId) togglePinRepost(postId);
+    return;
+  }
+  
+  const searchResult = e.target.closest('.search-result');
+  if (searchResult) {
+    e.preventDefault();
+    const userId = searchResult.dataset.userid;
+    const username = searchResult.dataset.username;
+    if (userId && username) openSearchedProfile(userId, username);
+    return;
+  }
+});
+</script>
 </body>
 </html>

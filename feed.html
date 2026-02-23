@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>czhmass - Base64 версия (Исправленная)</title>
+<title>czhmass - Стили профиля</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -15,7 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <style>
-/* ========== ВСЕ СТИЛИ ========== */
+/* ========== ВСЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -31,220 +31,7 @@
   --poll-bg:#1c1c1e;
   --poll-bar:#2c2c2e;
   --poll-voted:#30d158;
-  
-  /* Новые переменные для уникального оформления */
-  --unique-bg-color: #0a0f0a;
-  --unique-text-color: #2ecc71;
-  --unique-font-family: 'Courier New', monospace;
 }
-
-/* Стили для уникального оформления - применяются ТОЛЬКО к профилю */
-body.unique-theme-active .profile-sheet {
-  background-color: var(--unique-bg-color) !important;
-  color: var(--unique-text-color) !important;
-}
-
-/* Фоновый паттерн с надписью CZH - только для профиля */
-.profile-sheet .unique-bg-pattern {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  opacity: 0.15;
-}
-
-.profile-sheet .unique-bg-pattern span {
-  position: absolute;
-  color: var(--unique-text-color);
-  font-family: var(--unique-font-family);
-  font-size: clamp(80px, 20vw, 200px);
-  font-weight: 800;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: rotate(-15deg);
-  opacity: 0.1;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* Уникальный шрифт для ника в профиле */
-.profile-sheet .unique-username {
-  font-family: var(--unique-font-family) !important;
-  color: var(--unique-text-color) !important;
-  text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-  font-weight: 800;
-  letter-spacing: 2px;
-  font-size: 20px;
-}
-
-/* Уникальный шрифт для ника автора поста в профиле */
-.profile-sheet .post-user.unique-username-in-feed {
-  font-family: var(--unique-font-family) !important;
-  color: var(--unique-text-color) !important;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
-/* Контейнер для контента поверх фона в профиле */
-.profile-sheet .sheet-body {
-  position: relative;
-  z-index: 2;
-  background-color: transparent;
-}
-
-/* Карточки в профиле при уникальном оформлении */
-.profile-sheet.unique-theme-active .post {
-  background: rgba(0, 20, 0, 0.7) !important;
-  border: 1px solid rgba(46, 204, 113, 0.3) !important;
-  backdrop-filter: blur(5px);
-}
-
-.profile-sheet.unique-theme-active .profile-bio {
-  background: rgba(0, 20, 0, 0.7) !important;
-  border: 1px solid rgba(46, 204, 113, 0.3) !important;
-}
-
-.profile-sheet.unique-theme-active .profile-tabs {
-  background: rgba(0, 20, 0, 0.7) !important;
-  border: 1px solid rgba(46, 204, 113, 0.3) !important;
-}
-
-.profile-sheet.unique-theme-active .profile-tab.active {
-  color: var(--unique-text-color) !important;
-}
-
-.profile-sheet.unique-theme-active .profile-tab-slider {
-  background: var(--unique-text-color) !important;
-  opacity: 0.3;
-}
-
-.profile-sheet.unique-theme-active .post-text {
-  color: #fff !important;
-}
-
-.profile-sheet.unique-theme-active .post-time {
-  color: rgba(46, 204, 113, 0.7) !important;
-}
-
-/* Модальное окно выбора оформления */
-.theme-selector-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--card);
-  border-radius: 22px;
-  padding: 24px;
-  z-index: 4000;
-  width: 90%;
-  max-width: 320px;
-  border: 1px solid var(--border);
-  display: none;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-}
-
-.theme-selector-modal.show {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
-.theme-selector-modal h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  text-align: center;
-  background: var(--accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.theme-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.05);
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-}
-
-.theme-option:hover {
-  background: rgba(255,255,255,0.1);
-  transform: scale(1.02);
-}
-
-.theme-option.selected {
-  border-color: var(--unique-text-color);
-  background: rgba(46, 204, 113, 0.1);
-}
-
-.theme-preview {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 20px;
-}
-
-.theme-preview.default {
-  background: var(--accent);
-  color: white;
-}
-
-.theme-preview.unique {
-  background: var(--unique-bg-color);
-  color: var(--unique-text-color);
-  font-family: var(--unique-font-family);
-  border: 1px solid var(--unique-text-color);
-}
-
-.theme-info {
-  flex: 1;
-}
-
-.theme-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.theme-desc {
-  font-size: 12px;
-  color: var(--sub);
-}
-
-.theme-close-btn {
-  width: 100%;
-  margin-top: 16px;
-  padding: 14px;
-  background: var(--accent);
-  border: none;
-  border-radius: 16px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.theme-close-btn:hover {
-  opacity: 0.9;
-}
-
-/* ========== ОСНОВНЫЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -253,7 +40,6 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
   overflow-x:hidden;
   position:relative;
-  transition: background-color 0.3s ease;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
@@ -278,6 +64,24 @@ body{
   animation-name: fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+}
+
+.snowflake-small {
+  width: 4px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.snowflake-medium {
+  width: 6px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.snowflake-large {
+  width: 8px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 @keyframes fall {
@@ -430,7 +234,6 @@ body{
   padding:130px 14px 100px;
   position:relative;
   z-index:2;
-  transition: background-color 0.3s ease;
 }
 
 .create{
@@ -1829,36 +1632,261 @@ body{
   text-align: center;
   touch-action: none;
 }
+
+/* ========== НОВЫЕ СТИЛИ ДЛЯ ОФОРМЛЕНИЯ ПРОФИЛЯ ========== */
+.theme-selector-btn {
+  background: none;
+  border: none;
+  color: var(--sub);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  margin-left: 4px;
+}
+.theme-selector-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Стили для модального окна выбора темы */
+.theme-modal .modal {
+  max-width: 450px;
+}
+
+.theme-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.theme-option {
+  background: #1c1c1e;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.theme-option:hover {
+  border-color: var(--hashtag);
+  transform: scale(1.02);
+}
+
+.theme-option.selected {
+  border-color: var(--success);
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.theme-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.theme-preview.base {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.theme-preview.phasmo {
+  background: #1a2a1a;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(74, 222, 128, 0.3);
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 0 5px #4ade80;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(74, 222, 128, 0.1) 0px,
+    rgba(74, 222, 128, 0.1) 20px,
+    rgba(74, 222, 128, 0.2) 20px,
+    rgba(74, 222, 128, 0.2) 40px
+  );
+}
+
+.theme-preview.phasmo::after {
+  content: "CZH CZH CZH";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  white-space: nowrap;
+  font-size: 12px;
+  color: #4ade80;
+  opacity: 0.5;
+}
+
+.theme-info {
+  flex: 1;
+}
+
+.theme-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.theme-desc {
+  font-size: 13px;
+  color: var(--sub);
+}
+
+.theme-code-input {
+  width: 100%;
+  background: #1c1c1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  margin: 16px 0 8px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.theme-code-input:focus {
+  outline: none;
+  border-color: var(--success);
+}
+
+.theme-code-hint {
+  color: var(--sub);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+/* Стили для темы Phasmophobia */
+.theme-phasmo .post-user,
+.theme-phasmo .profile-name,
+.theme-phasmo .search-username,
+.theme-phasmo .repost-user-link {
+  color: #4ade80 !important;
+  font-family: 'Courier New', monospace !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+.theme-phasmo .profile-bio,
+.theme-phasmo .profile-header,
+.theme-phasmo .profile-stats,
+.theme-phasmo .profile-tabs,
+.theme-phasmo .post {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-phasmo .profile-bio::before,
+.theme-phasmo .profile-header::before,
+.theme-phasmo .profile-stats::before,
+.theme-phasmo .profile-tabs::before,
+.theme-phasmo .post::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(74, 222, 128, 0.03) 0px,
+    rgba(74, 222, 128, 0.03) 30px,
+    rgba(74, 222, 128, 0.06) 30px,
+    rgba(74, 222, 128, 0.06) 60px
+  );
+  z-index: 0;
+}
+
+.theme-phasmo .profile-bio > *,
+.theme-phasmo .profile-header > *,
+.theme-phasmo .profile-stats > *,
+.theme-phasmo .profile-tabs > *,
+.theme-phasmo .post > * {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-phasmo .profile-avatar {
+  border: 2px solid #4ade80;
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
+}
+
+/* Фон с текстом CZH для профиля */
+.theme-phasmo .profile-bio::after,
+.theme-phasmo .profile-header::after,
+.theme-phasmo .profile-stats::after,
+.theme-phasmo .profile-tabs::after,
+.theme-phasmo .post::after {
+  display: none;
+}
+
+/* Добавляем текстовый фон через псевдоэлемент для всего профиля */
+.theme-phasmo #profileSheet .sheet-body {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-phasmo #profileSheet .sheet-body::before {
+  content: "CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  color: rgba(74, 222, 128, 0.1);
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transform: rotate(-15deg) scale(1.5);
+  pointer-events: none;
+  z-index: 0;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: none;
+}
+
+/* Для постов в ленте */
+.theme-phasmo .post {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-phasmo .post::after {
+  content: "CZH";
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  color: rgba(74, 222, 128, 0.1);
+  font-family: 'Courier New', monospace;
+  font-size: 40px;
+  font-weight: bold;
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 0;
+}
 </style>
 </head>
 <body>
 
-<!-- Фоновый паттерн для уникального оформления (будет перемещен в профиль) -->
-<div class="unique-bg-pattern" id="uniqueBgPattern" style="display: none;"></div>
-
-<!-- Модальное окно выбора оформления -->
-<div class="theme-selector-modal" id="themeSelectorModal">
-  <h3>Выберите оформление</h3>
-  <div class="theme-options">
-    <div class="theme-option selected" data-theme="default" id="defaultThemeOption">
-      <div class="theme-preview default">C</div>
-      <div class="theme-info">
-        <div class="theme-name">Обычное</div>
-        <div class="theme-desc">Стандартное оформление как во всей соцсети</div>
-      </div>
-    </div>
-    <div class="theme-option" data-theme="unique" id="uniqueThemeOption">
-      <div class="theme-preview unique">CZH</div>
-      <div class="theme-info">
-        <div class="theme-name">Уникальное</div>
-        <div class="theme-desc">Зеленый стиль в духе Phasmophobia</div>
-      </div>
-    </div>
-  </div>
-  <button class="theme-close-btn" id="applyThemeBtn">Применить</button>
-</div>
-
-<!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА -->
+<!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА + НОВЫЕ МОДАЛЬНЫЕ ОКНА -->
 <div id="snowflakes-container"></div>
 
 <div class="dynamic-island" id="time"></div>
@@ -1902,7 +1930,7 @@ body{
   </button>
 </div>
 
-<div class="container" id="mainContainer">
+<div class="container">
   <div id="hashtagHeader" style="display:none">
     <button class="back-to-hashtags-btn" onclick="backToHashtags()">
       ← К хештегам
@@ -1968,6 +1996,46 @@ body{
     <div class="modal-buttons">
       <button class="modal-btn secondary" onclick="closeChangeNameModal()">Отмена</button>
       <button class="modal-btn primary" onclick="changeUsername()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ТЕМЫ -->
+<div class="modal-overlay" id="themeModal">
+  <div class="modal theme-modal">
+    <div class="modal-header">
+      <div class="modal-title">Оформление профиля</div>
+      <button class="modal-close" onclick="closeThemeModal()">✕</button>
+    </div>
+    
+    <div class="theme-options">
+      <!-- Базовая тема -->
+      <div class="theme-option" id="themeBaseOption" onclick="selectTheme('base')">
+        <div class="theme-preview base"></div>
+        <div class="theme-info">
+          <div class="theme-name">Базовое оформление</div>
+          <div class="theme-desc">Стандартный стиль профиля</div>
+        </div>
+      </div>
+      
+      <!-- Тема Phasmophobia (требует код) -->
+      <div class="theme-option" id="themePhasmoOption" onclick="selectTheme('phasmo')">
+        <div class="theme-preview phasmo"></div>
+        <div class="theme-info">
+          <div class="theme-name">Phasmophobia Style</div>
+          <div class="theme-desc">Зеленый ник, фон с текстом CZH</div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="phasmoCodeSection" style="display:none;">
+      <input type="text" class="theme-code-input" id="themeCodeInput" placeholder="Введите код" maxlength="20">
+      <div class="theme-code-hint">Подсказка: попробуйте CZHMASS</div>
+    </div>
+    
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeThemeModal()">Отмена</button>
+      <button class="modal-btn primary" onclick="applyTheme()">Применить</button>
     </div>
   </div>
 </div>
@@ -2052,8 +2120,81 @@ body{
     <strong>Профиль</strong>
     <button class="action" onclick="closeProfile()">✕</button>
   </div>
-  <div class="sheet-body" id="profileSheetBody">
-    <!-- Контент профиля будет добавлен сюда динамически -->
+  <div class="sheet-body">
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar">A</div>
+      <div class="profile-info">
+        <div class="profile-name">
+          <div class="profile-name-with-badge">
+            <span id="profileName">@anon</span>
+            <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
+            <!-- Новая кнопка для выбора темы -->
+            <button class="theme-selector-btn" id="themeSelectorBtn" onclick="openThemeModal()" style="display:none;">🎨</button>
+          </div>
+          <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
+          <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
+          <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
+          <button class="profile-page-btn" id="profilePageBtn" onclick="goToProfilePage()" style="display:none">
+            📄 Страница
+          </button>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="profile-stat-value posts-stat">
+              <span>📝</span>
+              <span id="profilePostsCount">0</span>
+            </div>
+            <div class="profile-stat-label">постов</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value likes-stat">
+              <span>❤️</span>
+              <span id="profileLikesCount">0</span>
+            </div>
+            <div class="profile-stat-label">лайков</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value subscribers-stat">
+              <span>👥</span>
+              <span id="profileSubscribersCount">0</span>
+            </div>
+            <div class="profile-stat-label">подписчиков</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value reposts-stat">
+              <span>🔄</span>
+              <span id="profileRepostsCount">0</span>
+            </div>
+            <div class="profile-stat-label">репостов</div>
+          </div>
+          <!-- Счетчик закрепленных репостов удален -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="profile-bio" id="profileBio">
+      <button class="profile-bio-edit-btn" id="editBioBtn" onclick="openEditBioModal()" style="display:none">✏️</button>
+      <div id="profileBioText" class="profile-bio-text"></div>
+      <div id="profileBioEmpty" class="profile-bio-empty" style="display:none">
+        Пользователь еще не добавил описание...
+      </div>
+      <div class="bio-word-counter" id="profileBioWordCounter" style="display:none"></div>
+    </div>
+    
+    <div class="profile-tabs">
+      <div class="profile-tab-slider" id="profileTabSlider"></div>
+      <button class="profile-tab active" onclick="switchProfileTab('posts')">Посты</button>
+      <button class="profile-tab" onclick="switchProfileTab('reposts')">Репосты</button>
+    </div>
+    
+    <div class="profile-posts-container">
+      <div class="profile-posts-content" id="profilePostsContent">
+        <div id="profilePosts"></div>
+      </div>
+      <div class="profile-posts-content hidden" id="profileRepostsContent">
+        <div id="profileReposts"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2099,18 +2240,15 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ПЕРЕМЕННЫЕ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
-let repostClickCount = 0;
-let lastRepostClickTime = 0;
-let uniqueThemeUnlocked = false;
-let uniqueThemeActive = false;
-let profileSheet = null;
+// ==================== ПЕРЕМЕННЫЕ ДЛЯ ТЕМЫ ====================
+let selectedTheme = 'base'; // 'base' или 'phasmo'
+let themeCodeAttempt = '';
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
 let currentCropFile = null;
 
-// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (ИСПРАВЛЕНЫ) ====================
 
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
@@ -2128,6 +2266,7 @@ function closeImageView() {
   }
 }
 
+// ИСПРАВЛЕНО: обработчик загрузки фото
 document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2173,6 +2312,7 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
+// ==================== СЖАТИЕ И КОНВЕРТАЦИЯ В BASE64 ====================
 async function compressToBase64(file) {
   return new Promise((resolve, reject) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -2219,6 +2359,8 @@ async function compressToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+
+// ==================== ФУНКЦИИ ДЛЯ ОБРЕЗКИ АВАТАРА ====================
 
 function openCropModal(imageUrl, file) {
   const modal = document.getElementById('cropModal');
@@ -2298,15 +2440,11 @@ async function applyCrop() {
       avatar: base64Avatar
     });
     
-    if (currentProfileUserId === currentUser.uid) {
-      const avatarElement = document.querySelector('#profileSheet .profile-avatar');
-      if (avatarElement) {
-        avatarElement.style.backgroundImage = `url('${base64Avatar}')`;
-        avatarElement.style.backgroundSize = 'cover';
-        avatarElement.style.backgroundPosition = 'center';
-        avatarElement.textContent = '';
-      }
-    }
+    const avatarElement = document.getElementById('profileAvatar');
+    avatarElement.style.backgroundImage = `url('${base64Avatar}')`;
+    avatarElement.style.backgroundSize = 'cover';
+    avatarElement.style.backgroundPosition = 'center';
+    avatarElement.textContent = '';
     
     if (userData) {
       userData.avatar = base64Avatar;
@@ -2369,153 +2507,158 @@ async function updateUserAvatarInAllContent(userId, newAvatar) {
   }
 }
 
-// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
+function setupAvatarChange() {
+  const avatarElement = document.getElementById('profileAvatar');
+  if (!avatarElement) return;
 
-function handleRepostClick() {
-  const now = Date.now();
+  avatarElement.style.cursor = 'pointer';
+  avatarElement.title = 'Нажмите чтобы изменить аватар';
   
-  if (now - lastRepostClickTime > 2000) {
-    repostClickCount = 0;
-  }
-  
-  repostClickCount++;
-  lastRepostClickTime = now;
-  
-  if (repostClickCount < 3) {
-    showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
-  }
-  
-  if (repostClickCount === 3) {
-    showNotification('✅ Комбо активировано! Теперь нажмите на свой никнейм в профиле', 2000);
-  }
-}
-
-function handleNicknameClick() {
-  if (repostClickCount === 3) {
-    uniqueThemeUnlocked = true;
-    localStorage.setItem('uniqueThemeUnlocked', 'true');
-    repostClickCount = 0;
-    showNotification('🎉 Уникальное оформление разблокировано!', 2000);
-    openThemeSelector();
-  } else if (uniqueThemeUnlocked) {
-    openThemeSelector();
-  }
-}
-
-function openThemeSelector() {
-  const modal = document.getElementById('themeSelectorModal');
-  const defaultOption = document.getElementById('defaultThemeOption');
-  const uniqueOption = document.getElementById('uniqueThemeOption');
-  
-  if (uniqueThemeActive) {
-    defaultOption.classList.remove('selected');
-    uniqueOption.classList.add('selected');
-  } else {
-    defaultOption.classList.add('selected');
-    uniqueOption.classList.remove('selected');
-  }
-  
-  modal.classList.add('show');
-}
-
-function closeThemeSelector() {
-  const modal = document.getElementById('themeSelectorModal');
-  const selectedOption = document.querySelector('.theme-option.selected');
-  
-  if (selectedOption) {
-    const theme = selectedOption.dataset.theme;
-    applyTheme(theme === 'unique');
-  }
-  
-  modal.classList.remove('show');
-}
-
-function applyTheme(useUnique) {
-  uniqueThemeActive = useUnique && uniqueThemeUnlocked;
-  
-  const profileSheet = document.getElementById('profileSheet');
-  const profileSheetBody = document.getElementById('profileSheetBody');
-  const bgPattern = document.getElementById('uniqueBgPattern');
-  
-  if (uniqueThemeActive) {
-    profileSheet.classList.add('unique-theme-active');
-    
-    if (!profileSheet.querySelector('.unique-bg-pattern')) {
-      const patternClone = bgPattern.cloneNode(true);
-      patternClone.style.display = 'block';
-      profileSheet.insertBefore(patternClone, profileSheetBody);
-    }
-    
-    const profileName = document.querySelector('#profileSheet .profile-name span:first-child');
-    if (profileName) {
-      profileName.classList.add('unique-username');
-    }
-    
-    updateUsernamesInProfile(true);
-    
-    localStorage.setItem('uniqueThemeActive', 'true');
-    showNotification('✨ Уникальное оформление включено!');
-  } else {
-    profileSheet.classList.remove('unique-theme-active');
-    
-    const existingPattern = profileSheet.querySelector('.unique-bg-pattern');
-    if (existingPattern) {
-      existingPattern.remove();
-    }
-    
-    const profileName = document.querySelector('#profileSheet .profile-name span:first-child');
-    if (profileName) {
-      profileName.classList.remove('unique-username');
-    }
-    
-    updateUsernamesInProfile(false);
-    
-    localStorage.setItem('uniqueThemeActive', 'false');
-    showNotification('Обычное оформление включено');
-  }
-}
-
-function createBackgroundPattern() {
-  const bgPattern = document.getElementById('uniqueBgPattern');
-  bgPattern.innerHTML = '';
-  
-  for (let i = 0; i < 20; i++) {
-    const span = document.createElement('span');
-    span.textContent = 'CZH';
-    span.style.left = Math.random() * 100 + '%';
-    span.style.top = Math.random() * 100 + '%';
-    bgPattern.appendChild(span);
-  }
-}
-
-function updateUsernamesInProfile(useUnique) {
-  const usernameElements = document.querySelectorAll('#profileSheet .post-user');
-  
-  usernameElements.forEach(element => {
-    const userId = element.dataset.userid;
-    
-    if (userId === currentUser?.uid) {
-      if (useUnique) {
-        element.classList.add('unique-username-in-feed');
-      } else {
-        element.classList.remove('unique-username-in-feed');
+  avatarElement.onclick = async (e) => {
+    if (currentProfileUserId !== currentUser.uid) {
+      const avatarUrl = avatarElement.style.backgroundImage.slice(5, -2);
+      if (avatarUrl) {
+        openImageView(avatarUrl);
       }
+      return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          showNotification("Загрузка изображения...");
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            openCropModal(event.target.result, file);
+          };
+          reader.readAsDataURL(file);
+        } catch (error) {
+          showNotification("❌ Ошибка: " + error.message);
+        }
+      }
+    };
+    input.click();
+  };
+  
+  avatarElement.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const avatarUrl = avatarElement.style.backgroundImage.slice(5, -2);
+    if (avatarUrl) {
+      openImageView(avatarUrl);
     }
   });
 }
 
-function setupNicknameClickHandler() {
-  const profileName = document.querySelector('#profileSheet .profile-name span:first-child');
-  if (profileName) {
-    profileName.removeEventListener('click', handleNicknameClick);
-    profileName.addEventListener('click', handleNicknameClick);
-    profileName.style.cursor = 'pointer';
-    profileName.title = 'Нажмите, чтобы открыть выбор оформления';
+// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ ТЕМЫ ====================
+
+function openThemeModal() {
+  // Сбрасываем выбор
+  document.getElementById('phasmoCodeSection').style.display = 'none';
+  document.getElementById('themeCodeInput').value = '';
+  
+  // Подсвечиваем текущую выбранную тему
+  document.getElementById('themeBaseOption').classList.toggle('selected', selectedTheme === 'base');
+  document.getElementById('themePhasmoOption').classList.toggle('selected', selectedTheme === 'phasmo');
+  
+  // Показываем модальное окно
+  document.getElementById('themeModal').classList.add('show');
+}
+
+function closeThemeModal() {
+  document.getElementById('themeModal').classList.remove('show');
+}
+
+function selectTheme(theme) {
+  // Визуально выбираем тему
+  document.getElementById('themeBaseOption').classList.toggle('selected', theme === 'base');
+  document.getElementById('themePhasmoOption').classList.toggle('selected', theme === 'phasmo');
+  
+  // Если выбрана phasmo, показываем поле для ввода кода
+  if (theme === 'phasmo') {
+    document.getElementById('phasmoCodeSection').style.display = 'block';
+  } else {
+    document.getElementById('phasmoCodeSection').style.display = 'none';
+  }
+  
+  // Сохраняем выбранную тему временно
+  window.tempSelectedTheme = theme;
+}
+
+async function applyTheme() {
+  const themeToApply = window.tempSelectedTheme || selectedTheme;
+  
+  // Если выбрана phasmo, проверяем код
+  if (themeToApply === 'phasmo') {
+    const code = document.getElementById('themeCodeInput').value.trim().toUpperCase();
+    const validCode = 'CZHMASS'; // Код для активации
+    
+    if (code !== validCode) {
+      showNotification('❌ Неверный код для темы Phasmophobia');
+      return;
+    }
+  }
+  
+  // Применяем тему
+  selectedTheme = themeToApply;
+  
+  // Сохраняем тему в Firestore для пользователя
+  try {
+    await db.collection("users").doc(currentUser.uid).update({
+      theme: selectedTheme
+    });
+    
+    // Обновляем глобально
+    document.body.classList.remove('theme-phasmo');
+    if (selectedTheme === 'phasmo') {
+      document.body.classList.add('theme-phasmo');
+    }
+    
+    showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : 'Базовая'}" применена!`);
+    closeThemeModal();
+    
+    // Перезагружаем посты для обновления отображения
+    if (currentTab === 'hashtags') {
+      loadAllHashtags();
+    } else {
+      loadPosts();
+    }
+    
+  } catch (error) {
+    console.error("Ошибка при сохранении темы:", error);
+    showNotification("❌ Ошибка при сохранении темы");
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
+// Функция для загрузки темы пользователя
+async function loadUserTheme(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const user = userDoc.data();
+      const theme = user.theme || 'base';
+      
+      // Если это текущий пользователь, обновляем глобальную переменную
+      if (userId === currentUser.uid) {
+        selectedTheme = theme;
+        document.body.classList.remove('theme-phasmo');
+        if (theme === 'phasmo') {
+          document.body.classList.add('theme-phasmo');
+        }
+      }
+      
+      return theme;
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки темы пользователя:", error);
+  }
+  return 'base';
+}
 
+// ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 function openPollModal() {
   currentPoll = {
     question: '',
@@ -2841,14 +2984,44 @@ function createOptimizedSnowflakes() {
     flake.style.opacity = '0';
     flake.style.transform = 'translate3d(0,0,0)';
     flake.style.willChange = 'transform, opacity';
-    flake.style.animation = `fall ${10 + Math.random() * 20}s linear infinite`;
-    flake.style.animationDelay = Math.random() * 10 + 's';
     snowflakeContainer.appendChild(flake);
+    
+    snowflakes.push({
+      element: flake,
+      x: parseFloat(flake.style.left),
+      y: parseFloat(flake.style.top),
+      speed: 1 + Math.random() * 2,
+      size: size,
+      opacity: 0.3 + Math.random() * 0.5
+    });
   }
+  
+  animateSnowflakes();
+}
+
+function animateSnowflakes() {
+  function update() {
+    snowflakes.forEach(flake => {
+      let newY = flake.y + flake.speed * 0.05;
+      
+      if (newY > 110) {
+        newY = -10;
+        flake.element.style.left = Math.random() * 100 + '%';
+        flake.x = parseFloat(flake.element.style.left);
+      }
+      
+      flake.y = newY;
+      flake.element.style.top = newY + '%';
+      flake.element.style.opacity = flake.opacity;
+    });
+    
+    snowflakeAnimationFrame = requestAnimationFrame(update);
+  }
+  
+  update();
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
-
 function extractHashtags(text) {
   if (!text) return [];
   const hashtagRegex = /#([а-яА-ЯёЁa-zA-Z0-9_]+)/g;
@@ -3065,8 +3238,7 @@ function declinePosts(count) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЛАЙКОВ ====================
-
+// ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ЛАЙКОВ ====================
 async function toggleLike(postId, button) {
   const post = postsCache.get(postId);
   if (!post) return;
@@ -3119,8 +3291,7 @@ async function toggleLike(postId, button) {
   }
 }
 
-// ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
-
+// ==================== ИСПРАВЛЕННОЕ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ====================
 function setupEventDelegation() {
   const feed = document.getElementById('feed');
   if (!feed) return;
@@ -3149,10 +3320,7 @@ function setupEventDelegation() {
     if (repostBtn) {
       e.preventDefault();
       const postId = repostBtn.dataset.repost;
-      if (postId) {
-        handleRepostClick();
-        toggleRepost(postId, repostBtn);
-      }
+      if (postId) toggleRepost(postId, repostBtn);
       return;
     }
     
@@ -3243,6 +3411,8 @@ function setupEventDelegation() {
   });
 }
 
+// ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -3254,7 +3424,6 @@ auth.onAuthStateChanged(async (user) => {
   
   try {
     createOptimizedSnowflakes();
-    createBackgroundPattern();
     
     await loadUserData();
     
@@ -3264,6 +3433,9 @@ auth.onAuthStateChanged(async (user) => {
       loadBlockedUsers()
     ]);
     
+    // Загружаем тему пользователя
+    await loadUserTheme(currentUser.uid);
+    
     loadPosts();
     setupEventDelegation();
     
@@ -3272,27 +3444,6 @@ auth.onAuthStateChanged(async (user) => {
     setTimeout(checkPostToScroll, 1000);
     
     startTimeUpdater();
-    
-    uniqueThemeUnlocked = localStorage.getItem('uniqueThemeUnlocked') === 'true';
-    const savedTheme = localStorage.getItem('uniqueThemeActive');
-    
-    // Инициализация обработчиков для модального окна темы
-    document.getElementById('defaultThemeOption').addEventListener('click', function() {
-      document.getElementById('defaultThemeOption').classList.add('selected');
-      document.getElementById('uniqueThemeOption').classList.remove('selected');
-    });
-    
-    document.getElementById('uniqueThemeOption').addEventListener('click', function() {
-      document.getElementById('uniqueThemeOption').classList.add('selected');
-      document.getElementById('defaultThemeOption').classList.remove('selected');
-    });
-    
-    document.getElementById('applyThemeBtn').addEventListener('click', closeThemeSelector);
-    
-    if (savedTheme === 'true' && uniqueThemeUnlocked) {
-      uniqueThemeActive = true;
-      // Применяем тему после загрузки профиля, если он открыт
-    }
     
   } catch (error) {
     console.error('Ошибка инициализации:', error);
@@ -3344,7 +3495,8 @@ async function loadUserData() {
         bio: "",
         blockedUsers: [],
         reposts: [],
-        pinnedReposts: []
+        pinnedReposts: [],
+        theme: 'base' // Тема по умолчанию
       };
       await db.collection("users").doc(currentUser.uid).set(userData);
     } else {
@@ -3359,6 +3511,12 @@ async function loadUserData() {
         userData.pinnedReposts = [];
         await db.collection("users").doc(currentUser.uid).update({
           pinnedReposts: []
+        });
+      }
+      if (!userData.theme) {
+        userData.theme = 'base';
+        await db.collection("users").doc(currentUser.uid).update({
+          theme: 'base'
         });
       }
     }
@@ -3757,8 +3915,11 @@ async function displayPosts(posts, isHashtagFeed = false) {
       pollHTML += '</div>';
     }
     
+    // Добавляем класс темы для поста (если у автора есть тема)
+    const postThemeClass = post.userTheme === 'phasmo' ? ' theme-phasmo' : '';
+    
     feed.innerHTML += `
-    <div class="post fade" id="post-${postId}" data-postid="${postId}">
+    <div class="post fade${postThemeClass}" id="post-${postId}" data-postid="${postId}">
       ${repostHTML}
       <div class="post-header">
         <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
@@ -3876,6 +4037,7 @@ async function createPost() {
       userId: currentUser.uid,
       username: username,
       userAvatar: localStorage.getItem('userAvatar') || null,
+      userTheme: selectedTheme, // Добавляем тему пользователя в пост
       createdAt: new Date(),
       likes: 0,
       views: 0,
@@ -4090,89 +4252,22 @@ async function openProfile(uid, name) {
   
   currentProfileUserId = uid;
   currentProfileTab = 'posts';
+  document.getElementById("profileSheet").classList.add("show");
   
-  const profileSheet = document.getElementById("profileSheet");
-  const profileBody = document.getElementById("profileSheetBody");
+  document.getElementById("profileName").textContent = "@" + name;
   
-  // Загружаем базовую структуру профиля
-  profileBody.innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar" id="profileAvatar">A</div>
-      <div class="profile-info">
-        <div class="profile-name">
-          <div class="profile-name-with-badge">
-            <span id="profileName">@${name}</span>
-            <span class="verified-badge" id="profileVerifiedBadge" style="display:none" title="Администратор">✓</span>
-          </div>
-          <button class="subscribe-btn" id="profileSubscribeBtn" style="margin-left:8px;display:none">Подписаться</button>
-          <button class="chat-btn" id="profileChatBtn" style="display:none" onclick="goToChatWithUser()">В чат</button>
-          <button class="change-name-btn" id="changeNameBtn" onclick="openChangeNameModal()">✏️</button>
-          <button class="profile-page-btn" id="profilePageBtn" onclick="goToProfilePage()" style="display:none">
-            📄 Страница
-          </button>
-        </div>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <div class="profile-stat-value posts-stat">
-              <span>📝</span>
-              <span id="profilePostsCount">0</span>
-            </div>
-            <div class="profile-stat-label">постов</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value likes-stat">
-              <span>❤️</span>
-              <span id="profileLikesCount">0</span>
-            </div>
-            <div class="profile-stat-label">лайков</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value subscribers-stat">
-              <span>👥</span>
-              <span id="profileSubscribersCount">0</span>
-            </div>
-            <div class="profile-stat-label">подписчиков</div>
-          </div>
-          <div class="profile-stat">
-            <div class="profile-stat-value reposts-stat">
-              <span>🔄</span>
-              <span id="profileRepostsCount">0</span>
-            </div>
-            <div class="profile-stat-label">репостов</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="profile-bio" id="profileBio">
-      <button class="profile-bio-edit-btn" id="editBioBtn" onclick="openEditBioModal()" style="display:none">✏️</button>
-      <div id="profileBioText" class="profile-bio-text"></div>
-      <div id="profileBioEmpty" class="profile-bio-empty" style="display:none">
-        Пользователь еще не добавил описание...
-      </div>
-      <div class="bio-word-counter" id="profileBioWordCounter" style="display:none"></div>
-    </div>
-    
-    <div class="profile-tabs">
-      <div class="profile-tab-slider" id="profileTabSlider"></div>
-      <button class="profile-tab active" onclick="switchProfileTab('posts')">Посты</button>
-      <button class="profile-tab" onclick="switchProfileTab('reposts')">Репосты</button>
-    </div>
-    
-    <div class="profile-posts-container">
-      <div class="profile-posts-content" id="profilePostsContent">
-        <div id="profilePosts"></div>
-      </div>
-      <div class="profile-posts-content hidden" id="profileRepostsContent">
-        <div id="profileReposts"></div>
-      </div>
-    </div>
-  `;
+  // Загружаем тему пользователя
+  const userTheme = await loadUserTheme(uid);
   
-  profileSheet.classList.add("show");
+  // Применяем класс темы к профилю
+  document.getElementById('profileSheet').classList.remove('theme-phasmo');
+  if (userTheme === 'phasmo') {
+    document.getElementById('profileSheet').classList.add('theme-phasmo');
+  }
   
-  // Загружаем данные пользователя
+  const avatarElement = document.getElementById("profileAvatar");
   let userAvatar = null;
+  
   try {
     const userDoc = await db.collection("users").doc(uid).get();
     if (userDoc.exists) {
@@ -4183,7 +4278,6 @@ async function openProfile(uid, name) {
   }
   
   const firstLetter = name?.[0]?.toUpperCase() || "A";
-  const avatarElement = document.getElementById("profileAvatar");
   
   if (uid === currentUser.uid) {
     const savedAvatar = localStorage.getItem('userAvatar');
@@ -4201,13 +4295,6 @@ async function openProfile(uid, name) {
       avatarElement.style.backgroundImage = '';
       avatarElement.textContent = firstLetter;
     }
-    
-    // Применяем сохраненную тему
-    const savedTheme = localStorage.getItem('uniqueThemeActive');
-    if (savedTheme === 'true' && uniqueThemeUnlocked) {
-      uniqueThemeActive = true;
-      applyTheme(true);
-    }
   } else if (userAvatar) {
     avatarElement.style.backgroundImage = `url('${userAvatar}')`;
     avatarElement.style.backgroundSize = 'cover';
@@ -4220,16 +4307,20 @@ async function openProfile(uid, name) {
   
   setupAvatarChange();
   
+  switchProfileTab('posts');
+  
   const changeNameBtn = document.getElementById("changeNameBtn");
   const profilePageBtn = document.getElementById("profilePageBtn");
+  const themeSelectorBtn = document.getElementById("themeSelectorBtn");
   
   if (uid === currentUser.uid) {
     changeNameBtn.style.display = "inline-block";
     profilePageBtn.style.display = "inline-flex";
-    setupNicknameClickHandler();
+    themeSelectorBtn.style.display = "inline-block";
   } else {
     changeNameBtn.style.display = "none";
     profilePageBtn.style.display = "none";
+    themeSelectorBtn.style.display = "none";
   }
   
   updateProfileSubscribeButton(uid);
@@ -4269,15 +4360,6 @@ function goToProfilePage() {
 function closeProfile() {
   currentProfileUserId = null;
   document.getElementById("profileSheet").classList.remove("show");
-  
-  // Убираем уникальное оформление при закрытии профиля
-  if (uniqueThemeActive) {
-    document.getElementById('profileSheet').classList.remove('unique-theme-active');
-    const existingPattern = document.querySelector('#profileSheet .unique-bg-pattern');
-    if (existingPattern) {
-      existingPattern.remove();
-    }
-  }
 }
 
 function switchProfileTab(tab) {
@@ -4560,14 +4642,12 @@ async function refreshProfilePosts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
-      
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
+              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
                 ${adminUsers.has(post.userId) ? '<span class="verified-badge">✓</span>' : ''}
               </div>
@@ -4587,10 +4667,6 @@ async function refreshProfilePosts(uid) {
             ""}
         </div>`;
     });
-    
-    if (uniqueThemeActive && uid === currentUser.uid) {
-      updateUsernamesInProfile(true);
-    }
     
   } catch (error) {
     console.error("Ошибка при загрузке постов профиля:", error);
@@ -4701,8 +4777,6 @@ async function refreshProfileReposts(uid) {
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
         const authorLetter = post.username?.[0]?.toUpperCase() || "A";
         
-        const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
-        
         profileReposts.innerHTML += `
           <div class="post fade" id="repost-${post.id}">
             <div class="repost-info">
@@ -4716,7 +4790,7 @@ async function refreshProfileReposts(uid) {
             <div class="post-header">
               <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
               <div class="post-user-info">
-                <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
+                <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                   @${post.username}
                   ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
                 </div>
@@ -4785,8 +4859,6 @@ async function refreshProfileReposts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
-      
       profileReposts.innerHTML += `
         <div class="post fade" id="repost-${post.id}">
           <div class="repost-info">
@@ -4799,7 +4871,7 @@ async function refreshProfileReposts(uid) {
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
+              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
                 ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
               </div>
@@ -4829,10 +4901,6 @@ async function refreshProfileReposts(uid) {
           </div>
         </div>`;
     });
-    
-    if (uniqueThemeActive && uid === currentUser.uid) {
-      updateUsernamesInProfile(true);
-    }
     
   } catch (error) {
     console.error("Ошибка при загрузке репостов профиля:", error);
@@ -5020,7 +5088,7 @@ async function loadComments() {
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <span class="post-user" data-userid="${comment.userId}" data-username="${comment.username}">@${comment.username}</span> ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
+              <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}</strong>
               <div class="post-time">${timeAgo}</div>
             </div>
             ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
@@ -5059,6 +5127,7 @@ async function addComment() {
         userId: currentUser.uid,
         username: username,
         userAvatar: localStorage.getItem('userAvatar') || null,
+        userTheme: selectedTheme, // Добавляем тему в комментарий
         createdAt: new Date()
       });
     
@@ -5468,6 +5537,7 @@ window.addEventListener('load', () => {
   }
 });
 
+// Дополнительные обработчики для комментариев и удаления
 document.addEventListener('click', (e) => {
   const deleteCommentBtn = e.target.closest('.comment-delete-btn');
   if (deleteCommentBtn) {
@@ -5494,66 +5564,6 @@ document.addEventListener('click', (e) => {
     return;
   }
 });
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (document.getElementById('imageViewModal').classList.contains('show')) {
-      closeImageView();
-    }
-    if (document.getElementById('cropModal').classList.contains('show')) {
-      closeCropModal();
-    }
-    if (document.getElementById('themeSelectorModal').classList.contains('show')) {
-      closeThemeSelector();
-    }
-  }
-});
-
-function setupAvatarChange() {
-  const avatarElement = document.getElementById('profileAvatar');
-  if (!avatarElement) return;
-
-  avatarElement.style.cursor = 'pointer';
-  avatarElement.title = currentProfileUserId === currentUser.uid ? 'Нажмите чтобы изменить аватар' : 'Нажмите для просмотра';
-  
-  avatarElement.onclick = async (e) => {
-    if (currentProfileUserId !== currentUser.uid) {
-      const avatarUrl = avatarElement.style.backgroundImage.slice(5, -2);
-      if (avatarUrl) {
-        openImageView(avatarUrl);
-      }
-      return;
-    }
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        try {
-          showNotification("Загрузка изображения...");
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            openCropModal(event.target.result, file);
-          };
-          reader.readAsDataURL(file);
-        } catch (error) {
-          showNotification("❌ Ошибка: " + error.message);
-        }
-      }
-    };
-    input.click();
-  };
-  
-  avatarElement.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    const avatarUrl = avatarElement.style.backgroundImage.slice(5, -2);
-    if (avatarUrl) {
-      openImageView(avatarUrl);
-    }
-  });
-}
 </script>
 </body>
 </html>

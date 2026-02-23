@@ -1,9 +1,9 @@
-x<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>czhmass</title>
+<title>czhmass - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -14,7 +14,7 @@ x<!DOCTYPE html>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1048.0/aws-sdk.min.js"></script>
 
 <style>
-/* Все ваши исходные стили */
+/* ========== ВСЕ СТИЛИ ========== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -253,7 +253,6 @@ body{
   resize:vertical;
 }
 
-/* Кнопки в блоке создания поста */
 .create-actions {
   display: flex;
   gap: 8px;
@@ -273,7 +272,6 @@ body{
   cursor: pointer;
 }
 
-/* Кнопка загрузки фото */
 .upload-photo-btn {
   background: rgba(90, 200, 250, 0.1);
   border: 1px dashed var(--hashtag);
@@ -306,7 +304,6 @@ body{
   border-color: var(--success);
 }
 
-/* Предпросмотр фото */
 .image-preview {
   width: 100%;
   max-height: 200px;
@@ -349,7 +346,6 @@ body{
   transform: scale(1.1);
 }
 
-/* Изображение в посте */
 .post-image {
   width: 100%;
   border-radius: 16px;
@@ -373,7 +369,6 @@ body{
   max-height: 400px;
 }
 
-/* Модальное окно для просмотра фото */
 .image-view-modal {
   position: fixed;
   inset: 0;
@@ -433,7 +428,6 @@ body{
   color:#ff453a;
 }
 
-/* Кнопки медиа */
 .media-buttons {
   display: flex;
   gap: 8px;
@@ -468,7 +462,6 @@ body{
   color: var(--pin);
 }
 
-/* Контейнер для опроса */
 .poll-container {
   background: var(--poll-bg);
   border-radius: 16px;
@@ -571,7 +564,6 @@ body{
   color: var(--success);
 }
 
-/* Модальное окно создания опроса */
 .poll-modal {
   background: var(--card);
   border-radius: 20px;
@@ -687,7 +679,6 @@ body{
   color: white;
 }
 
-/* Индикатор опроса в посте */
 .poll-badge {
   display: inline-flex;
   align-items: center;
@@ -700,7 +691,6 @@ body{
   margin-right: 8px;
 }
 
-/* Поиск пользователей */
 .search{
   background:var(--card);
   border-radius:22px;
@@ -780,7 +770,6 @@ body{
   font-size:14px;
 }
 
-/* Хештеги */
 .hashtag {
   color: var(--hashtag);
   font-weight: 600;
@@ -955,7 +944,6 @@ body{
   padding:0;
 }
 
-/* Кнопка закрепления */
 .pin-btn {
   background: none;
   border: none;
@@ -1155,7 +1143,6 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 }
 
-/* PROFILE SHEET */
 .profile-header{
   display:flex;
   align-items:flex-start;
@@ -1509,54 +1496,6 @@ body{
   background:rgba(255,69,58,0.1);
 }
 
-/* Модальное окно для просмотра изображения */
-.image-view-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 5000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.image-view-modal.show {
-  display: flex;
-}
-
-.image-view-modal img {
-  max-width: 95%;
-  max-height: 95vh;
-  object-fit: contain;
-  border-radius: 12px;
-}
-
-.image-view-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  backdrop-filter: blur(4px);
-}
-
-.image-view-close:hover {
-  background: rgba(255, 69, 58, 0.9);
-  transform: scale(1.1);
-}
-
-/* Прогресс загрузки */
 .upload-progress {
   position: fixed;
   bottom: 100px;
@@ -1598,10 +1537,8 @@ body{
 }
 </style>
 </head>
-
 <body>
 
-<!-- Контейнер для снежинок -->
 <div id="snowflakes-container"></div>
 
 <div class="dynamic-island" id="time"></div>
@@ -1618,7 +1555,6 @@ body{
   </div>
 </div>
 
-<!-- Таб бар -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('all')">
     <div>
@@ -1647,8 +1583,6 @@ body{
 </div>
 
 <div class="container">
-
-  <!-- Контейнер для кнопки "К хештегам" -->
   <div id="hashtagHeader" style="display:none">
     <button class="back-to-hashtags-btn" onclick="backToHashtags()">
       ← К хештегам
@@ -1656,40 +1590,32 @@ body{
   </div>
 
   <div id="mainContent">
-
     <div class="create">
       <textarea id="postText" placeholder="Что у вас нового? Можно использовать #хештеги..." maxlength="500"></textarea>
       <div class="word-counter" id="postWordCounter">Слов: 0/50</div>
       
-      <!-- Контейнер для кнопок медиа -->
       <div class="media-buttons">
-        <!-- Кнопка загрузки фото -->
         <input type="file" id="imageUpload" accept="image/*" style="display:none">
         <button class="media-btn" id="uploadPhotoBtn" onclick="document.getElementById('imageUpload').click()">
           <span>📷</span> Фото
         </button>
         
-        <!-- Кнопка опроса -->
         <button class="media-btn" id="pollBtn" onclick="openPollModal()">
           <span>📊</span> Опрос
         </button>
       </div>
       
-      <!-- Индикатор добавленного опроса -->
       <div id="pollIndicator" style="display:none; margin-top:8px; padding:8px; background:rgba(90,200,250,0.1); border-radius:12px; font-size:14px; color:var(--hashtag);">
         📊 Опрос добавлен
       </div>
       
-      <!-- Контейнер для предпросмотра изображения -->
       <div id="imagePreviewContainer" style="display:none;"></div>
       
-      <!-- Кнопка публикации -->
       <div class="create-actions">
         <button class="create-btn" onclick="createPost()">Опубликовать</button>
       </div>
     </div>
 
-    <!-- ПОИСК ПОЛЬЗОВАТЕЛЕЙ -->
     <div class="search">
       <div class="search-icon">🔍</div>
       <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
@@ -1697,27 +1623,21 @@ body{
     </div>
 
     <div id="feed"></div>
-
   </div>
-
 </div>
 
-<!-- Уведомление -->
 <div class="notification" id="notification"></div>
 
-<!-- Прогресс загрузки -->
 <div class="upload-progress" id="uploadProgress">
   <div class="upload-spinner"></div>
   <div class="upload-progress-text">Загрузка в Яндекс Облако...</div>
 </div>
 
-<!-- Модальное окно для просмотра изображения -->
 <div class="image-view-modal" id="imageViewModal" onclick="closeImageView()">
   <button class="image-view-close" onclick="event.stopPropagation(); closeImageView()">✕</button>
   <img id="imageViewImg" src="" alt="Просмотр изображения">
 </div>
 
-<!-- Модальное окно для смены имени -->
 <div class="modal-overlay" id="changeNameModal">
   <div class="modal">
     <div class="modal-header">
@@ -1732,7 +1652,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно для редактирования описания -->
 <div class="modal-overlay" id="editBioModal">
   <div class="modal">
     <div class="modal-header">
@@ -1748,7 +1667,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно для создания опроса -->
 <div class="modal-overlay" id="pollModal">
   <div class="poll-modal">
     <div class="poll-modal-header">
@@ -1758,9 +1676,7 @@ body{
     
     <input type="text" class="modal-input" id="pollQuestion" placeholder="Вопрос опроса" maxlength="100">
     
-    <div id="pollOptionsContainer">
-      <!-- Опции будут добавляться сюда динамически -->
-    </div>
+    <div id="pollOptionsContainer"></div>
     
     <button class="poll-add-option" onclick="addPollOption()">
       + Добавить вариант ответа
@@ -1784,7 +1700,6 @@ body{
   </div>
 </div>
 
-<!-- Модальное окно просмотра результатов опроса -->
 <div class="modal-overlay" id="pollResultsModal">
   <div class="poll-modal">
     <div class="poll-modal-header">
@@ -1792,9 +1707,7 @@ body{
       <button class="modal-close" onclick="closePollResultsModal()">✕</button>
     </div>
     
-    <div id="pollResultsContent" style="margin-bottom:20px;">
-      <!-- Результаты будут загружаться сюда -->
-    </div>
+    <div id="pollResultsContent" style="margin-bottom:20px;"></div>
     
     <div class="poll-buttons">
       <button class="poll-btn primary" onclick="closePollResultsModal()">Закрыть</button>
@@ -1802,7 +1715,6 @@ body{
   </div>
 </div>
 
-<!-- COMMENTS -->
 <div class="sheet" id="commentsSheet">
   <div class="sheet-header">
     <strong>Комментарии</strong>
@@ -1815,7 +1727,6 @@ body{
   </div>
 </div>
 
-<!-- PROFILE -->
 <div class="sheet" id="profileSheet">
   <div class="sheet-header">
     <strong>Профиль</strong>
@@ -1877,7 +1788,6 @@ body{
       </div>
     </div>
     
-    <!-- Блок описания профиля -->
     <div class="profile-bio" id="profileBio">
       <button class="profile-bio-edit-btn" id="editBioBtn" onclick="openEditBioModal()" style="display:none">✏️</button>
       <div id="profileBioText" class="profile-bio-text"></div>
@@ -1887,7 +1797,6 @@ body{
       <div class="bio-word-counter" id="profileBioWordCounter" style="display:none"></div>
     </div>
     
-    <!-- Табы постов/репостов -->
     <div class="profile-tabs">
       <div class="profile-tab-slider" id="profileTabSlider"></div>
       <button class="profile-tab active" onclick="switchProfileTab('posts')">Посты</button>
@@ -1917,16 +1826,14 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 
 // ==================== КОНФИГУРАЦИЯ ЯНДЕКС ОБЛАКА ====================
-// ВАЖНО: Получите эти данные в консоли Яндекс Облака
 const YANDEX_CLOUD = {
   bucket: 'czh',
   endpoint: 'https://storage.yandexcloud.net',
-  accessKeyId: 'YCAJEgTKkJ4u9Y2OGjwDyMnZr', // ВСТАВЬТЕ СВОЙ КЛЮЧ
-  secretAccessKey: 'YCMGuKEUlkuo30t-RmT9HchhWWvjmm1pWL6PCQSX', // ВСТАВЬТЕ СВОЙ СЕКРЕТ
+  accessKeyId: 'YCAJEgTKkJ4u9Y2OGjwDyMnZr',
+  secretAccessKey: 'YCMGuKEUlkuo30t-RmT9HchhWWvjmm1pWL6PCQSX',
   region: 'ru-central1'
 };
 
-// Настройка AWS SDK для работы с Яндекс Облаком
 AWS.config.update({
   accessKeyId: YANDEX_CLOUD.accessKeyId,
   secretAccessKey: YANDEX_CLOUD.secretAccessKey,
@@ -1957,9 +1864,24 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ФУНКЦИИ ДЛЯ ЗАГРУЗКИ В ЯНДЕКС ОБЛАКО ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО ====================
 
-// Обработчик выбора файла
+function openImageView(imageUrl) {
+  const modal = document.getElementById('imageViewModal');
+  const img = document.getElementById('imageViewImg');
+  if (modal && img) {
+    img.src = imageUrl;
+    modal.classList.add('show');
+  }
+}
+
+function closeImageView() {
+  const modal = document.getElementById('imageViewModal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
 document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2005,11 +1927,10 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// Загрузка в Яндекс Облако
 async function uploadToYandexCloud(file) {
   const progressDiv = document.getElementById('uploadProgress');
   progressDiv.classList.add('show');
-  
+
   try {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
@@ -2034,20 +1955,19 @@ async function uploadToYandexCloud(file) {
     await s3.upload(params).promise();
     
     progressDiv.classList.remove('show');
-    showNotification('Изображение загружено в Яндекс Облако!');
+    showNotification('✅ Изображение загружено в Яндекс Облако!');
     
     return `https://storage.yandexcloud.net/${YANDEX_CLOUD.bucket}/${filePath}`;
     
   } catch (error) {
     progressDiv.classList.remove('show');
     console.error('Ошибка загрузки:', error);
-    showNotification('Ошибка: ' + error.message);
+    showNotification('❌ Ошибка: ' + error.message);
     return null;
   }
 }
-  
+
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
-// (Все ваши исходные функции для опросов остаются здесь)
 function openPollModal() {
   currentPoll = {
     question: '',
@@ -2811,8 +2731,6 @@ async function getUserIdByUsername(username) {
   return null;
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ПОСТОВ ====================
-
 function switchTab(tab) {
   currentTab = tab;
   
@@ -3054,7 +2972,6 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
-    // Генерируем HTML для изображения, если оно есть
     let imageHTML = '';
     if (post.imageUrl) {
       imageHTML = `
@@ -3064,7 +2981,6 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
-    // Генерируем HTML для опроса, если он есть
     let pollHTML = '';
     if (post.poll) {
       const endsAt = post.poll.endsAt.toDate ? post.poll.endsAt.toDate() : new Date(post.poll.endsAt);
@@ -3250,19 +3166,17 @@ async function createPost() {
       commentsCount: 0
     };
     
-// Загружаем изображение в Яндекс Облако, если оно есть
-if (currentImageFile) {
-    showNotification("Загрузка в Яндекс Облако...", 2000);
-    const imageUrl = await uploadToYandexCloud(currentImageFile);
-    if (imageUrl) {  // ← ИСПРАВЛЕНО!
+    if (currentImageFile) {
+      showNotification("Загрузка в Яндекс Облако...", 2000);
+      const imageUrl = await uploadToYandexCloud(currentImageFile);
+      if (imageUrl) {
         postData.imageUrl = imageUrl;
         showNotification("Изображение загружено!");
-    } else {
+      } else {
         showNotification("Не удалось загрузить изображение. Пост будет опубликован без фото.");
+      }
     }
-}
     
-    // Добавляем опрос, если он есть
     if (currentPoll) {
       postData.poll = {
         question: currentPoll.question,
@@ -3276,7 +3190,6 @@ if (currentImageFile) {
     
     await db.collection("posts").add(postData);
     
-    // Очищаем форму
     postText.value = "";
     updateWordCounter('postText', 'postWordCounter', 50);
     removeImage();
@@ -3476,8 +3389,6 @@ async function toggleRepost(id) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЗАКРЕПЛЕНИЯ РЕПОСТОВ ====================
-
 async function togglePinRepost(postId, forcePin = null) {
   if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
   
@@ -3518,8 +3429,6 @@ async function togglePinRepost(postId, forcePin = null) {
     showNotification("Ошибка: " + error.message);
   }
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ПРОФИЛЯ ====================
 
 async function openProfile(uid, name) {
   if (!uid || !name) return;
@@ -4269,8 +4178,6 @@ async function deletePostFromProfile(postId, userId) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ ЧАТОВ ====================
-
 function goToChatWithUser() {
   if (!currentProfileUserId) return;
   
@@ -4283,8 +4190,6 @@ function goToChatWithUser() {
   
   location.href = 'chats.html';
 }
-
-// ==================== ФУНКЦИИ ДЛЯ КОММЕНТАРИЕВ ====================
 
 function openComments(id) {
   currentPostId = id;
@@ -4411,8 +4316,6 @@ async function deleteComment(commentId) {
   }
 }
 
-// ==================== ФУНКЦИИ ДЛЯ СМЕНЫ ИМЕНИ ====================
-
 function openChangeNameModal() {
   const modal = document.getElementById('changeNameModal');
   const input = document.getElementById('newUsernameInput');
@@ -4521,8 +4424,6 @@ async function updateUsernameInAllPosts(userId, newUsername) {
     return false;
   }
 }
-
-// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
 function formatTimeAgo(date) {
   if (!date) return "только что";
@@ -4675,8 +4576,6 @@ function setupViewTracking() {
   });
 }
 
-// ==================== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ====================
-
 async function searchUsers(searchTerm) {
   const searchResults = document.getElementById('searchResults');
   
@@ -4747,8 +4646,6 @@ async function openSearchedProfile(userId, username) {
   
   await openProfile(userId, username);
 }
-
-// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
 
 document.getElementById("searchInput").addEventListener("input", function(e) {
   const searchTerm = e.target.value.trim();

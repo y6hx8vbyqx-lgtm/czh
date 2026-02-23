@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+x<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -2057,14 +2057,15 @@ async function uploadToYandexCloud(file) {
       }
     };
     
-    await s3.upload(params).promise();
+    await s3.putObject(params).promise();
     
-    // 2. Явно делаем файл публичным после загрузки (ЭТО КЛЮЧЕВОЙ ШАГ)
-    await s3.putObjectAcl({
-      Bucket: YANDEX_CLOUD.bucket,
-      Key: filePath,
-      ACL: 'public-read'
-    }).promise();
+    // Принудительно делаем файл публичным
+await s3.putObjectACL({
+  Bucket: YANDEX_CLOUD.bucket,
+  Key: filePath,
+  ACL: 'public-read'
+}).promise();
+console.log('Файл сделан публичным');
     
     progressDiv.classList.remove('show');
     showNotification('Изображение загружено в Яндекс Облако!');

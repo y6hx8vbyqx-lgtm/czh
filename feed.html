@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>czhmass - FreeImage версия</title>
+<title>czhmass - Base64 версия</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -1627,7 +1627,7 @@ body{
 
 <div class="upload-progress" id="uploadProgress">
   <div class="upload-spinner"></div>
-  <div class="upload-progress-text">Загрузка на FreeImage...</div>
+  <div class="upload-progress-text">Сжатие изображения...</div>
 </div>
 
 <div class="image-view-modal" id="imageViewModal" onclick="closeImageView()">
@@ -1841,7 +1841,7 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (FREEIMAGE) ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (BASE64 СО СЖАТИЕМ) ====================
 
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
@@ -1904,42 +1904,61 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// ==================== ЗАГРУЗКА НА FREEIMAGE.HOST ====================
-// Загрузка на PostImage (бывший Radikal) - работает в России
-async function uploadToPostImage(file) {
-  const progressDiv = document.getElementById('uploadProgress');
-  progressDiv.classList.add('show');
-  document.querySelector('.upload-progress-text').textContent = 'Загрузка на PostImage...';
-
-  try {
-    const formData = new FormData();
-    formData.append('upload', file);
-    formData.append('optsize', '0'); // без сжатия
-
-    const response = await fetch('https://postimages.org/json/upload', {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await response.json();
-    
-    if (!data || !data.url) {
-      throw new Error('Ошибка загрузки');
+// ==================== СЖАТИЕ И КОНВЕРТАЦИЯ В BASE64 ====================
+async function compressToBase64(file) {
+  return new Promise((resolve, reject) => {
+    // Проверка размера
+    if (file.size > 10 * 1024 * 1024) {
+      reject(new Error('Файл слишком большой. Максимум 10MB'));
+      return;
     }
 
-    progressDiv.classList.remove('show');
-    showNotification('✅ Изображение загружено на PostImage!');
-    
-    return data.url; // Прямая ссылка на фото
-
-  } catch (error) {
-    progressDiv.classList.remove('show');
-    console.error('Ошибка загрузки:', error);
-    showNotification('❌ Ошибка: ' + error.message);
-    return null;
-  }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Создаём canvas для сжатия
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Уменьшаем до 1200px по большей стороне
+        const maxSize = 1200;
+        if (width > height && width > maxSize) {
+          height = Math.round(height * maxSize / width);
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = Math.round(width * maxSize / height);
+          height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Рисуем сжатое изображение
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Конвертируем в JPEG с качеством 0.8
+        let base64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Проверяем размер (должен быть меньше 1MB)
+        const sizeInMB = (base64.length * 0.75) / (1024 * 1024);
+        if (sizeInMB > 0.95) {
+          // Если всё ещё больше 0.95MB, сжимаем сильнее
+          base64 = canvas.toDataURL('image/jpeg', 0.5);
+        }
+        
+        resolve(base64);
+      };
+      img.onerror = () => reject(new Error('Ошибка загрузки изображения'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+    reader.readAsDataURL(file);
+  });
 }
-  
+
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 function openPollModal() {
   currentPoll = {
@@ -2945,9 +2964,15 @@ async function displayPosts(posts, isHashtagFeed = false) {
       `;
     }
     
-    // Генерируем HTML для изображения, если оно есть
+    // Генерируем HTML для изображения, если оно есть (Base64)
     let imageHTML = '';
-    if (post.imageUrl) {
+    if (post.imageBase64) {
+      imageHTML = `
+        <div class="post-image" onclick="openImageView('${post.imageBase64}')">
+          <img src="${post.imageBase64}" alt="Изображение к посту" loading="lazy">
+        </div>
+      `;
+    } else if (post.imageUrl) {
       imageHTML = `
         <div class="post-image" onclick="openImageView('${post.imageUrl}')">
           <img src="${post.imageUrl}" alt="Изображение к посту" loading="lazy">
@@ -3141,15 +3166,17 @@ async function createPost() {
       commentsCount: 0
     };
     
-    // Загружаем изображение на FreeImage, если оно есть
+    // Загружаем изображение (Base64 со сжатием), если оно есть
     if (currentImageFile) {
-      showNotification("Загрузка на FreeImage...", 2000);
-      const imageUrl = await uploadToFreeImage(currentImageFile);
-      if (imageUrl) {
-        postData.imageUrl = imageUrl;
-        showNotification("✅ Изображение загружено!");
-      } else {
-        showNotification("❌ Не удалось загрузить изображение. Пост будет опубликован без фото.");
+      showNotification("Сжатие изображения...", 2000);
+      try {
+        const imageBase64 = await compressToBase64(currentImageFile);
+        if (imageBase64) {
+          postData.imageBase64 = imageBase64; // Сохраняем Base64 прямо в пост
+          showNotification("✅ Изображение готово!");
+        }
+      } catch (error) {
+        showNotification("❌ Ошибка: " + error.message);
       }
     }
     
@@ -3191,7 +3218,7 @@ async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
-    // Просто удаляем пост из Firestore (FreeImage не требует удаления)
+    // Просто удаляем пост из Firestore (Base64 уже внутри)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();
@@ -3738,9 +3765,9 @@ async function refreshProfilePosts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      const imageHTML = post.imageUrl ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-           <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+      const imageHTML = post.imageBase64 ? 
+        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
       const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
@@ -3864,9 +3891,9 @@ async function refreshProfileReposts(uid) {
         
         const processedText = updateHashtagsInPost(post);
         
-        const imageHTML = post.imageUrl ? 
-          `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-             <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+        const imageHTML = post.imageBase64 ? 
+          `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+             <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
            </div>` : '';
         
         profileReposts.innerHTML += `
@@ -3946,9 +3973,9 @@ async function refreshProfileReposts(uid) {
       
       const processedText = updateHashtagsInPost(post);
       
-      const imageHTML = post.imageUrl ? 
-        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageUrl}')">
-           <img src="${post.imageUrl}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
+      const imageHTML = post.imageBase64 ? 
+        `<div class="post-image" style="margin-top:8px;" onclick="openImageView('${post.imageBase64}')">
+           <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
       profileReposts.innerHTML += `
@@ -4068,7 +4095,7 @@ async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
-    // Просто удаляем пост (FreeImage не требует удаления)
+    // Просто удаляем пост (Base64 уже внутри)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();

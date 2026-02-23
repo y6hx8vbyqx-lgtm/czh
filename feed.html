@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>czhmass - Imgur версия</title>
+<title>czhmass - FreeImage версия</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -1627,7 +1627,7 @@ body{
 
 <div class="upload-progress" id="uploadProgress">
   <div class="upload-spinner"></div>
-  <div class="upload-progress-text">Загрузка на Imgur...</div>
+  <div class="upload-progress-text">Загрузка на FreeImage...</div>
 </div>
 
 <div class="image-view-modal" id="imageViewModal" onclick="closeImageView()">
@@ -1822,9 +1822,6 @@ firebase.initializeApp({
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// ==================== УДАЛЯЕМ ВЕСЬ КОД ЯНДЕКС ОБЛАКА ====================
-// Больше не нужен! Вместо него используем Imgur
-
 // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
 let currentUser = null;
 let userData = null;
@@ -1844,7 +1841,7 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
-// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (IMGUR) ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (FREEIMAGE) ====================
 
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
@@ -1907,8 +1904,7 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// ==================== НОВАЯ ФУНКЦИЯ ЗАГРУЗКИ НА IMGUR ====================
-// Загрузка на FreeImage.Host (бесплатно, без регистрации)
+// ==================== ЗАГРУЗКА НА FREEIMAGE.HOST ====================
 async function uploadToFreeImage(file) {
   const progressDiv = document.getElementById('uploadProgress');
   progressDiv.classList.add('show');
@@ -1943,7 +1939,7 @@ async function uploadToFreeImage(file) {
     return null;
   }
 }
-  
+
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 function openPollModal() {
   currentPoll = {
@@ -3145,10 +3141,10 @@ async function createPost() {
       commentsCount: 0
     };
     
-    // Загружаем изображение на Imgur, если оно есть
+    // Загружаем изображение на FreeImage, если оно есть
     if (currentImageFile) {
-      showNotification("Загрузка на Imgur...", 2000);
-      const imageUrl = await uploadToImgur(currentImageFile);
+      showNotification("Загрузка на FreeImage...", 2000);
+      const imageUrl = await uploadToFreeImage(currentImageFile);
       if (imageUrl) {
         postData.imageUrl = imageUrl;
         showNotification("✅ Изображение загружено!");
@@ -3195,7 +3191,7 @@ async function deletePost(postId, postUserId) {
   if (!confirm("Удалить пост?")) return;
   
   try {
-    // Просто удаляем пост из Firestore (Imgur не требует удаления)
+    // Просто удаляем пост из Firestore (FreeImage не требует удаления)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();
@@ -4072,7 +4068,7 @@ async function deletePostFromProfile(postId, userId) {
   if (!confirm("Удалить этот пост из профиля?")) return;
   
   try {
-    // Просто удаляем пост (Imgur не требует удаления)
+    // Просто удаляем пост (FreeImage не требует удаления)
     const usersWithRepost = await db.collection("users")
       .where("reposts", "array-contains", postId)
       .get();

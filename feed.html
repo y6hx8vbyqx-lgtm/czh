@@ -15,7 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <style>
-/* ========== ВСЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
+/* ========== ВСЕ СТИЛИ ========== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -31,7 +31,196 @@
   --poll-bg:#1c1c1e;
   --poll-bar:#2c2c2e;
   --poll-voted:#30d158;
+  
+  /* Новые переменные для уникального оформления */
+  --unique-bg-color: #0a2f0a;
+  --unique-text-color: #2ecc71;
+  --unique-font-family: 'Courier New', monospace;
 }
+
+/* Стили для уникального оформления */
+body.unique-theme-active {
+  position: relative;
+  background-color: var(--unique-bg-color) !important;
+}
+
+/* Фоновый паттерн с надписью CZH */
+.unique-bg-pattern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.3;
+}
+
+.unique-bg-pattern span {
+  position: absolute;
+  color: var(--unique-text-color);
+  font-family: var(--unique-font-family);
+  font-size: clamp(60px, 15vw, 150px);
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-15deg);
+  opacity: 0.2;
+  user-select: none;
+  animation: patternFloat 20s linear infinite;
+}
+
+@keyframes patternFloat {
+  0% {
+    transform: rotate(-15deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(-15deg) translateX(100%);
+  }
+}
+
+/* Уникальный шрифт для ника в профиле */
+.unique-username {
+  font-family: var(--unique-font-family) !important;
+  color: var(--unique-text-color) !important;
+  text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+/* Уникальный шрифт для ника в ленте постов */
+.post-user.unique-username-in-feed {
+  font-family: var(--unique-font-family) !important;
+  color: var(--unique-text-color) !important;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* Контейнер для контента поверх фона */
+.container.unique-active,
+.profile-posts-container.unique-active,
+#feed.unique-active {
+  position: relative;
+  z-index: 2;
+  background-color: transparent;
+}
+
+/* Модальное окно выбора оформления */
+.theme-selector-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card);
+  border-radius: 22px;
+  padding: 24px;
+  z-index: 4000;
+  width: 90%;
+  max-width: 320px;
+  border: 1px solid var(--border);
+  display: none;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.theme-selector-modal.show {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.theme-selector-modal h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  text-align: center;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.theme-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.theme-option:hover {
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.02);
+}
+
+.theme-option.selected {
+  border-color: var(--unique-text-color);
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.theme-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.theme-preview.default {
+  background: var(--accent);
+  color: white;
+}
+
+.theme-preview.unique {
+  background: var(--unique-bg-color);
+  color: var(--unique-text-color);
+  font-family: var(--unique-font-family);
+  border: 1px solid var(--unique-text-color);
+}
+
+.theme-info {
+  flex: 1;
+}
+
+.theme-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.theme-desc {
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.theme-close-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.theme-close-btn:hover {
+  opacity: 0.9;
+}
+
+/* ========== ОСНОВНЫЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -40,6 +229,7 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
   overflow-x:hidden;
   position:relative;
+  transition: background-color 0.3s ease;
 }
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
@@ -234,6 +424,7 @@ body{
   padding:130px 14px 100px;
   position:relative;
   z-index:2;
+  transition: background-color 0.3s ease;
 }
 
 .create{
@@ -1636,6 +1827,31 @@ body{
 </head>
 <body>
 
+<!-- Фоновый паттерн для уникального оформления -->
+<div class="unique-bg-pattern" id="uniqueBgPattern" style="display: none;"></div>
+
+<!-- Модальное окно выбора оформления -->
+<div class="theme-selector-modal" id="themeSelectorModal">
+  <h3>Выберите оформление</h3>
+  <div class="theme-options">
+    <div class="theme-option selected" data-theme="default" id="defaultThemeOption">
+      <div class="theme-preview default">C</div>
+      <div class="theme-info">
+        <div class="theme-name">Обычное</div>
+        <div class="theme-desc">Стандартное оформление как во всей соцсети</div>
+      </div>
+    </div>
+    <div class="theme-option" data-theme="unique" id="uniqueThemeOption">
+      <div class="theme-preview unique">CZH</div>
+      <div class="theme-info">
+        <div class="theme-name">Уникальное</div>
+        <div class="theme-desc">Зеленый стиль в духе Phasmophobia</div>
+      </div>
+    </div>
+  </div>
+  <button class="theme-close-btn" onclick="closeThemeSelector()">Применить</button>
+</div>
+
 <!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА -->
 <div id="snowflakes-container"></div>
 
@@ -1680,7 +1896,7 @@ body{
   </button>
 </div>
 
-<div class="container">
+<div class="container" id="mainContainer">
   <div id="hashtagHeader" style="display:none">
     <button class="back-to-hashtags-btn" onclick="backToHashtags()">
       ← К хештегам
@@ -1875,7 +2091,6 @@ body{
             </div>
             <div class="profile-stat-label">репостов</div>
           </div>
-          <!-- Счетчик закрепленных репостов удален -->
         </div>
       </div>
     </div>
@@ -1948,11 +2163,17 @@ let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
+// ==================== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
+let repostClickCount = 0;
+let lastRepostClickTime = 0;
+let uniqueThemeUnlocked = false;
+let uniqueThemeActive = false;
+
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
 let currentCropFile = null;
 
-// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (ИСПРАВЛЕНЫ) ====================
+// ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО ====================
 
 function openImageView(imageUrl) {
   const modal = document.getElementById('imageViewModal');
@@ -1970,7 +2191,6 @@ function closeImageView() {
   }
 }
 
-// ИСПРАВЛЕНО: обработчик загрузки фото
 document.getElementById('imageUpload').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2016,7 +2236,6 @@ function removeImage() {
   document.getElementById('uploadPhotoBtn').classList.remove('has-image');
 }
 
-// ==================== СЖАТИЕ И КОНВЕРТАЦИЯ В BASE64 ====================
 async function compressToBase64(file) {
   return new Promise((resolve, reject) => {
     if (file.size > 10 * 1024 * 1024) {
@@ -2063,8 +2282,6 @@ async function compressToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
-
-// ==================== ФУНКЦИИ ДЛЯ ОБРЕЗКИ АВАТАРА ====================
 
 function openCropModal(imageUrl, file) {
   const modal = document.getElementById('cropModal');
@@ -2257,7 +2474,151 @@ function setupAvatarChange() {
   });
 }
 
+// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ УНИКАЛЬНОГО ОФОРМЛЕНИЯ ====================
+
+function handleRepostClick() {
+  const now = Date.now();
+  
+  if (now - lastRepostClickTime > 2000) {
+    repostClickCount = 0;
+  }
+  
+  repostClickCount++;
+  lastRepostClickTime = now;
+  
+  if (repostClickCount < 3) {
+    showNotification(`Осталось нажатий: ${3 - repostClickCount}`, 1000);
+  }
+  
+  if (repostClickCount === 3) {
+    showNotification('✅ Комбо активировано! Теперь нажмите на свой никнейм', 2000);
+  }
+}
+
+function handleNicknameClick() {
+  if (repostClickCount === 3) {
+    uniqueThemeUnlocked = true;
+    localStorage.setItem('uniqueThemeUnlocked', 'true');
+    repostClickCount = 0;
+    showNotification('🎉 Уникальное оформление разблокировано!', 2000);
+    openThemeSelector();
+  } else if (uniqueThemeUnlocked) {
+    openThemeSelector();
+  }
+}
+
+function openThemeSelector() {
+  const modal = document.getElementById('themeSelectorModal');
+  const defaultOption = document.getElementById('defaultThemeOption');
+  const uniqueOption = document.getElementById('uniqueThemeOption');
+  
+  if (uniqueThemeActive) {
+    defaultOption.classList.remove('selected');
+    uniqueOption.classList.add('selected');
+  } else {
+    defaultOption.classList.add('selected');
+    uniqueOption.classList.remove('selected');
+  }
+  
+  modal.classList.add('show');
+}
+
+function closeThemeSelector() {
+  const modal = document.getElementById('themeSelectorModal');
+  const selectedOption = document.querySelector('.theme-option.selected');
+  
+  if (selectedOption) {
+    const theme = selectedOption.dataset.theme;
+    applyTheme(theme === 'unique');
+  }
+  
+  modal.classList.remove('show');
+}
+
+function applyTheme(useUnique) {
+  uniqueThemeActive = useUnique && uniqueThemeUnlocked;
+  
+  const body = document.body;
+  const bgPattern = document.getElementById('uniqueBgPattern');
+  const profileName = document.getElementById('profileName');
+  const mainContainer = document.getElementById('mainContainer');
+  const feed = document.getElementById('feed');
+  
+  if (uniqueThemeActive) {
+    body.classList.add('unique-theme-active');
+    mainContainer.classList.add('unique-active');
+    if (feed) feed.classList.add('unique-active');
+    
+    createBackgroundPattern();
+    bgPattern.style.display = 'block';
+    
+    if (profileName) {
+      profileName.classList.add('unique-username');
+    }
+    
+    updateUsernamesInFeed(true);
+    localStorage.setItem('uniqueThemeActive', 'true');
+    showNotification('✨ Уникальное оформление включено!');
+  } else {
+    body.classList.remove('unique-theme-active');
+    mainContainer.classList.remove('unique-active');
+    if (feed) feed.classList.remove('unique-active');
+    bgPattern.style.display = 'none';
+    bgPattern.innerHTML = '';
+    
+    if (profileName) {
+      profileName.classList.remove('unique-username');
+    }
+    
+    updateUsernamesInFeed(false);
+    localStorage.setItem('uniqueThemeActive', 'false');
+    showNotification('Обычное оформление включено');
+  }
+}
+
+function createBackgroundPattern() {
+  const bgPattern = document.getElementById('uniqueBgPattern');
+  bgPattern.innerHTML = '';
+  
+  for (let i = 0; i < 30; i++) {
+    const span = document.createElement('span');
+    span.textContent = 'CZH';
+    span.style.left = Math.random() * 100 + '%';
+    span.style.top = Math.random() * 100 + '%';
+    span.style.animationDelay = Math.random() * 20 + 's';
+    span.style.animationDuration = 15 + Math.random() * 10 + 's';
+    span.style.fontSize = (80 + Math.random() * 100) + 'px';
+    span.style.opacity = (0.1 + Math.random() * 0.2).toString();
+    bgPattern.appendChild(span);
+  }
+}
+
+function updateUsernamesInFeed(useUnique) {
+  const usernameElements = document.querySelectorAll('.post-user');
+  
+  usernameElements.forEach(element => {
+    const userId = element.dataset.userid;
+    
+    if (userId === currentUser?.uid) {
+      if (useUnique) {
+        element.classList.add('unique-username-in-feed');
+      } else {
+        element.classList.remove('unique-username-in-feed');
+      }
+    }
+  });
+}
+
+function setupNicknameClickHandler() {
+  const profileName = document.getElementById('profileName');
+  if (profileName) {
+    profileName.removeEventListener('click', handleNicknameClick);
+    profileName.addEventListener('click', handleNicknameClick);
+  }
+}
+
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
+
 function openPollModal() {
   currentPoll = {
     question: '',
@@ -2621,6 +2982,7 @@ function animateSnowflakes() {
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ХЕШТЕГОВ ====================
+
 function extractHashtags(text) {
   if (!text) return [];
   const hashtagRegex = /#([а-яА-ЯёЁa-zA-Z0-9_]+)/g;
@@ -2837,7 +3199,8 @@ function declinePosts(count) {
   }
 }
 
-// ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ЛАЙКОВ ====================
+// ==================== ФУНКЦИИ ДЛЯ ЛАЙКОВ ====================
+
 async function toggleLike(postId, button) {
   const post = postsCache.get(postId);
   if (!post) return;
@@ -2890,7 +3253,8 @@ async function toggleLike(postId, button) {
   }
 }
 
-// ==================== ИСПРАВЛЕННОЕ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ====================
+// ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+
 function setupEventDelegation() {
   const feed = document.getElementById('feed');
   if (!feed) return;
@@ -2919,7 +3283,10 @@ function setupEventDelegation() {
     if (repostBtn) {
       e.preventDefault();
       const postId = repostBtn.dataset.repost;
-      if (postId) toggleRepost(postId, repostBtn);
+      if (postId) {
+        handleRepostClick();
+        toggleRepost(postId, repostBtn);
+      }
       return;
     }
     
@@ -3010,8 +3377,6 @@ function setupEventDelegation() {
   });
 }
 
-// ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
-
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
     location.href = 'index.html';
@@ -3040,6 +3405,13 @@ auth.onAuthStateChanged(async (user) => {
     setTimeout(checkPostToScroll, 1000);
     
     startTimeUpdater();
+    
+    uniqueThemeUnlocked = localStorage.getItem('uniqueThemeUnlocked') === 'true';
+    const savedTheme = localStorage.getItem('uniqueThemeActive');
+    if (savedTheme === 'true' && uniqueThemeUnlocked) {
+      uniqueThemeActive = true;
+      applyTheme(true);
+    }
     
   } catch (error) {
     console.error('Ошибка инициализации:', error);
@@ -3504,13 +3876,15 @@ async function displayPosts(posts, isHashtagFeed = false) {
       pollHTML += '</div>';
     }
     
+    const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+    
     feed.innerHTML += `
     <div class="post fade" id="post-${postId}" data-postid="${postId}">
       ${repostHTML}
       <div class="post-header">
         <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
         <div class="post-user-info">
-          <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+          <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
             @${post.username}
             ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
           </div>
@@ -3871,6 +4245,14 @@ async function openProfile(uid, name) {
       avatarElement.style.backgroundImage = '';
       avatarElement.textContent = firstLetter;
     }
+    
+    setupNicknameClickHandler();
+    
+    const savedTheme = localStorage.getItem('uniqueThemeActive');
+    if (savedTheme === 'true' && uniqueThemeUnlocked) {
+      uniqueThemeActive = true;
+      applyTheme(true);
+    }
   } else if (userAvatar) {
     avatarElement.style.backgroundImage = `url('${userAvatar}')`;
     avatarElement.style.backgroundSize = 'cover';
@@ -4215,12 +4597,14 @@ async function refreshProfilePosts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
+      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+              <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
                 ${adminUsers.has(post.userId) ? '<span class="verified-badge">✓</span>' : ''}
               </div>
@@ -4350,6 +4734,8 @@ async function refreshProfileReposts(uid) {
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
         const authorLetter = post.username?.[0]?.toUpperCase() || "A";
         
+        const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+        
         profileReposts.innerHTML += `
           <div class="post fade" id="repost-${post.id}">
             <div class="repost-info">
@@ -4363,7 +4749,7 @@ async function refreshProfileReposts(uid) {
             <div class="post-header">
               <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
               <div class="post-user-info">
-                <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+                <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
                   @${post.username}
                   ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
                 </div>
@@ -4432,6 +4818,8 @@ async function refreshProfileReposts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
+      const usernameClass = (post.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      
       profileReposts.innerHTML += `
         <div class="post fade" id="repost-${post.id}">
           <div class="repost-info">
@@ -4444,7 +4832,7 @@ async function refreshProfileReposts(uid) {
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+              <div class="post-user${usernameClass}" data-userid="${post.userId}" data-username="${post.username}">
                 @${post.username}
                 ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
               </div>
@@ -4656,12 +5044,14 @@ async function loadComments() {
       const authorAvatarStyle = comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = comment.username?.[0]?.toUpperCase() || "A";
       
+      const usernameClass = (comment.userId === currentUser?.uid && uniqueThemeActive) ? ' unique-username-in-feed' : '';
+      
       commentsBody.innerHTML += `
         <div class="post fade">
           <div class="post-header">
             <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
             <div class="post-user-info">
-              <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}</strong>
+              <span class="post-user${usernameClass}" data-userid="${comment.userId}" data-username="${comment.username}">@${comment.username}</span> ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
               <div class="post-time">${timeAgo}</div>
             </div>
             ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
@@ -5109,7 +5499,6 @@ window.addEventListener('load', () => {
   }
 });
 
-// Дополнительные обработчики для комментариев и удаления
 document.addEventListener('click', (e) => {
   const deleteCommentBtn = e.target.closest('.comment-delete-btn');
   if (deleteCommentBtn) {
@@ -5135,6 +5524,17 @@ document.addEventListener('click', (e) => {
     if (userId && username) openSearchedProfile(userId, username);
     return;
   }
+});
+
+// Добавляем обработчики для модального окна выбора темы
+document.getElementById('defaultThemeOption').addEventListener('click', function() {
+  document.getElementById('defaultThemeOption').classList.add('selected');
+  document.getElementById('uniqueThemeOption').classList.remove('selected');
+});
+
+document.getElementById('uniqueThemeOption').addEventListener('click', function() {
+  document.getElementById('uniqueThemeOption').classList.add('selected');
+  document.getElementById('defaultThemeOption').classList.remove('selected');
 });
 </script>
 </body>

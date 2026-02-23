@@ -10,6 +10,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 
+<!-- Cropper.js для обрезки фото -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
 <style>
 /* ========== ВСЕ СТИЛИ ========== */
 :root{
@@ -755,6 +759,8 @@ body{
   justify-content:center;
   font-weight:700;
   font-size:16px;
+  background-size: cover;
+  background-position: center;
 }
 .search-username{
   font-weight:600;
@@ -882,6 +888,7 @@ body{
   font-weight:700;
   background-size: cover;
   background-position: center;
+  color: transparent;
 }
 .post-user-info{
   display:flex;
@@ -1162,6 +1169,7 @@ body{
   background-position: center;
   cursor: pointer;
   transition: opacity 0.3s;
+  color: transparent;
 }
 .profile-avatar:hover {
   opacity: 0.8;
@@ -1542,6 +1550,78 @@ body{
   font-size: 14px;
   font-weight: 500;
 }
+
+/* Стили для модального окна обрезки */
+.crop-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.crop-modal.show {
+  display: flex;
+}
+
+.crop-container {
+  width: 100%;
+  max-width: 500px;
+  max-height: 70vh;
+  background: #1c1c1e;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.crop-image {
+  max-width: 100%;
+  display: block;
+}
+
+.crop-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.crop-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+  min-width: 120px;
+}
+
+.crop-btn.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.crop-btn:hover {
+  transform: scale(1.05);
+}
+
+.crop-btn:active {
+  transform: scale(0.95);
+}
+
+.crop-instructions {
+  color: var(--sub);
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -1815,6 +1895,18 @@ body{
   </div>
 </div>
 
+<!-- Модальное окно для обрезки фото -->
+<div class="crop-modal" id="cropModal">
+  <div class="crop-instructions">🔍 Перетащите и измените размер области для аватара</div>
+  <div class="crop-container">
+    <img id="cropImage" class="crop-image" src="" alt="Обрезка">
+  </div>
+  <div class="crop-controls">
+    <button class="crop-btn cancel" onclick="closeCropModal()">Отмена</button>
+    <button class="crop-btn" onclick="applyCrop()">Сохранить</button>
+  </div>
+</div>
+
 <script>
 // ==================== ИНИЦИАЛИЗАЦИЯ FIREBASE ====================
 firebase.initializeApp({
@@ -1844,6 +1936,10 @@ let currentPoll = null;
 let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+
+// ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
+let cropper = null;
+let currentCropFile = null;
 
 // ==================== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОТО (BASE64 СО СЖАТИЕМ) ====================
 
@@ -1963,6 +2059,159 @@ async function compressToBase64(file) {
   });
 }
 
+// ==================== ФУНКЦИИ ДЛЯ ОБРЕЗКИ АВАТАРА ====================
+
+function openCropModal(imageUrl, file) {
+  const modal = document.getElementById('cropModal');
+  const image = document.getElementById('cropImage');
+  
+  currentCropFile = file;
+  image.src = imageUrl;
+  modal.classList.add('show');
+  
+  image.onload = function() {
+    if (cropper) {
+      cropper.destroy();
+    }
+    
+    cropper = new Cropper(image, {
+      aspectRatio: 1 / 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      background: false,
+      guides: true,
+      center: true,
+      minCropBoxWidth: 100,
+      minCropBoxHeight: 100
+    });
+  };
+}
+
+function closeCropModal() {
+  const modal = document.getElementById('cropModal');
+  modal.classList.remove('show');
+  
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+  
+  currentCropFile = null;
+}
+
+async function applyCrop() {
+  if (!cropper || !currentCropFile) {
+    closeCropModal();
+    return;
+  }
+  
+  try {
+    document.getElementById('uploadProgress').classList.add('show');
+    document.querySelector('.upload-progress-text').textContent = 'Обработка изображения...';
+    
+    const canvas = cropper.getCroppedCanvas({
+      width: 512,
+      height: 512,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    
+    const blob = await new Promise(resolve => {
+      canvas.toBlob(resolve, 'image/jpeg', 0.9);
+    });
+    
+    const croppedFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+    
+    document.querySelector('.upload-progress-text').textContent = 'Сжатие изображения...';
+    const base64Avatar = await compressToBase64(croppedFile);
+    
+    document.querySelector('.upload-progress-text').textContent = 'Сохранение...';
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('userAvatar', base64Avatar);
+    
+    // Сохраняем в Firestore
+    await db.collection("users").doc(currentUser.uid).update({
+      avatar: base64Avatar
+    });
+    
+    // Обновляем аватар в профиле
+    const avatarElement = document.getElementById('profileAvatar');
+    avatarElement.style.backgroundImage = `url('${base64Avatar}')`;
+    avatarElement.style.backgroundSize = 'cover';
+    avatarElement.style.backgroundPosition = 'center';
+    avatarElement.textContent = '';
+    
+    // Обновляем аватар в данных пользователя
+    if (userData) {
+      userData.avatar = base64Avatar;
+    }
+    
+    // Обновляем аватар во всех постах и комментариях пользователя
+    await updateUserAvatarInAllContent(currentUser.uid, base64Avatar);
+    
+    // Обновляем отображение ленты
+    if (currentTab === 'hashtags') {
+      loadAllHashtags();
+    } else {
+      loadPosts();
+    }
+    
+    document.getElementById('uploadProgress').classList.remove('show');
+    closeCropModal();
+    showNotification("✅ Аватар обновлен!");
+    
+  } catch (error) {
+    document.getElementById('uploadProgress').classList.remove('show');
+    closeCropModal();
+    showNotification("❌ Ошибка: " + error.message);
+    console.error("Ошибка при обновлении аватара:", error);
+  }
+}
+
+// Функция для обновления аватара во всех постах и комментариях пользователя
+async function updateUserAvatarInAllContent(userId, newAvatar) {
+  try {
+    // Обновляем в постах
+    const postsSnap = await db.collection("posts")
+      .where("userId", "==", userId)
+      .get();
+    
+    const batch = db.batch();
+    postsSnap.forEach(doc => {
+      batch.update(doc.ref, { userAvatar: newAvatar });
+    });
+    
+    // Обновляем в комментариях
+    const allPostsSnap = await db.collection("posts").get();
+    const commentUpdates = [];
+    
+    allPostsSnap.forEach(postDoc => {
+      const commentsRef = postDoc.ref.collection("comments")
+        .where("userId", "==", userId);
+      
+      commentUpdates.push(
+        commentsRef.get().then(commentsSnap => {
+          commentsSnap.forEach(commentDoc => {
+            batch.update(commentDoc.ref, { userAvatar: newAvatar });
+          });
+        })
+      );
+    });
+    
+    await Promise.all(commentUpdates);
+    await batch.commit();
+    
+    return true;
+  } catch (error) {
+    console.error("Ошибка при обновлении аватаров:", error);
+    return false;
+  }
+}
+
 // ==================== ФУНКЦИЯ ДЛЯ СМЕНЫ АВАТАРА ====================
 function setupAvatarChange() {
   const avatarElement = document.getElementById('profileAvatar');
@@ -1972,7 +2221,6 @@ function setupAvatarChange() {
   avatarElement.title = 'Нажмите чтобы изменить аватар';
   
   avatarElement.onclick = async () => {
-    // Только для своего профиля
     if (currentProfileUserId !== currentUser.uid) {
       showNotification('Вы можете изменить только свой аватар');
       return;
@@ -1985,37 +2233,13 @@ function setupAvatarChange() {
       const file = e.target.files[0];
       if (file) {
         try {
-          document.getElementById('uploadProgress').classList.add('show');
-          document.querySelector('.upload-progress-text').textContent = 'Сжатие изображения...';
-          
-          const base64Avatar = await compressToBase64(file);
-          
-          document.querySelector('.upload-progress-text').textContent = 'Сохранение...';
-          
-          // Сохраняем в localStorage
-          localStorage.setItem('userAvatar', base64Avatar);
-          
-          // Сохраняем в Firestore
-          await db.collection("users").doc(currentUser.uid).update({
-            avatar: base64Avatar
-          });
-          
-          // Обновляем аватар в интерфейсе
-          avatarElement.style.backgroundImage = `url('${base64Avatar}')`;
-          avatarElement.style.backgroundSize = 'cover';
-          avatarElement.style.backgroundPosition = 'center';
-          avatarElement.textContent = ''; // Убираем букву
-          
-          // Обновляем аватар в userData
-          if (userData) {
-            userData.avatar = base64Avatar;
-          }
-          
-          document.getElementById('uploadProgress').classList.remove('show');
-          showNotification("✅ Аватар обновлен!");
-          
+          showNotification("Загрузка изображения...");
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            openCropModal(event.target.result, file);
+          };
+          reader.readAsDataURL(file);
         } catch (error) {
-          document.getElementById('uploadProgress').classList.remove('show');
           showNotification("❌ Ошибка: " + error.message);
         }
       }
@@ -3030,9 +3254,9 @@ async function displayPosts(posts, isHashtagFeed = false) {
     }
     
     // Получаем аватар автора поста
-    let authorAvatar = '';
+    let authorAvatarStyle = '';
     if (post.userAvatar) {
-      authorAvatar = `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"`;
+      authorAvatarStyle = `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center;"`;
     }
     
     // Генерируем HTML для изображения, если оно есть (Base64)
@@ -3113,7 +3337,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
     <div class="post fade" id="post-${postId}">
       ${repostHTML}
       <div class="post-header">
-        <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
+        <div class="avatar" ${authorAvatarStyle}>${post.username?.[0]||"A"}</div>
         <div class="post-user-info">
           <div class="post-user" onclick="openProfile('${post.userId}','${post.username}')">
             @${post.username}
@@ -3872,12 +4096,24 @@ async function refreshProfilePosts(uid) {
       
       const pollBadge = post.poll ? '<span class="poll-badge">📊 Опрос</span>' : '';
       
+      // Аватар автора поста
+      const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center;"` : '';
+      
       profilePosts.innerHTML += `
         <div class="post fade" id="profile-post-${post.id}">
+          <div class="post-header">
+            <div class="avatar" ${authorAvatarStyle}>${post.username?.[0]||"A"}</div>
+            <div class="post-user-info">
+              <div class="post-user" onclick="openProfile('${post.userId}','${post.username}')">
+                @${post.username}
+                ${adminUsers.has(post.userId) ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}
+              </div>
+              <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+            </div>
+          </div>
           <div class="post-text">${processedText}</div>
           ${imageHTML}
-          <div class="post-time" title="${fullDateTime}">
-            <span>${timeAgo}</span>
+          <div class="post-time" style="margin-top:8px;">
             ${pollBadge}
             <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
             <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
@@ -3996,6 +4232,9 @@ async function refreshProfileReposts(uid) {
              <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
            </div>` : '';
         
+        // Аватар автора поста
+        const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center;"` : '';
+        
         profileReposts.innerHTML += `
           <div class="post fade" id="repost-${post.id}">
             <div class="repost-info">
@@ -4009,7 +4248,7 @@ async function refreshProfileReposts(uid) {
               ` : ''}
             </div>
             <div class="post-header">
-              <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
+              <div class="avatar" ${authorAvatarStyle}>${post.username?.[0]||"A"}</div>
               <div class="post-user-info">
                 <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
                   @${post.username}
@@ -4078,6 +4317,9 @@ async function refreshProfileReposts(uid) {
            <img src="${post.imageBase64}" alt="Изображение" style="max-height:200px; width:auto; border-radius:12px;">
          </div>` : '';
       
+      // Аватар автора поста
+      const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center;"` : '';
+      
       profileReposts.innerHTML += `
         <div class="post fade" id="repost-${post.id}">
           <div class="repost-info">
@@ -4090,7 +4332,7 @@ async function refreshProfileReposts(uid) {
             ` : ''}
           </div>
           <div class="post-header">
-            <div class="avatar" ${post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${post.username?.[0]||"A"}</div>
+            <div class="avatar" ${authorAvatarStyle}>${post.username?.[0]||"A"}</div>
             <div class="post-user-info">
               <div class="post-user" onclick="event.stopPropagation(); openProfile('${post.userId}','${post.username}')">
                 @${post.username}
@@ -4307,10 +4549,13 @@ async function loadComments() {
       const canDelete = comment.userId === currentUser.uid || userData?.isAdmin;
       const isAdmin = adminUsers.has(comment.userId);
       
+      // Аватар комментатора
+      const authorAvatarStyle = comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center;"` : '';
+      
       commentsBody.innerHTML += `
         <div class="post fade">
           <div class="post-header">
-            <div class="avatar" ${comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${comment.username?.[0]||"A"}</div>
+            <div class="avatar" ${authorAvatarStyle}>${comment.username?.[0]||"A"}</div>
             <div class="post-user-info">
               <strong>@${comment.username} ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}</strong>
               <div class="post-time">${timeAgo}</div>
@@ -4693,9 +4938,12 @@ async function searchUsers(searchTerm) {
       const isSubscribed = subscriptions.has(userId);
       const isAdmin = user.isAdmin || false;
       
+      // Аватар пользователя
+      const avatarStyle = user.avatar ? `style="background-image: url('${user.avatar}'); background-size: cover; background-position: center;"` : '';
+      
       resultsHTML += `
         <div class="search-result" onclick="openSearchedProfile('${userId}', '${user.username}')">
-          <div class="search-avatar" ${user.avatar ? `style="background-image: url('${user.avatar}'); background-size: cover; background-position: center; text-indent: -9999px;"` : ''}>${user.username?.[0]?.toUpperCase() || "U"}</div>
+          <div class="search-avatar" ${avatarStyle}>${user.username?.[0]?.toUpperCase() || "U"}</div>
           <div class="search-username">
             @${user.username}
             ${isAdmin ? '<span class="verified-badge" title="Администратор">✓</span>' : ''}

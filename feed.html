@@ -3267,17 +3267,17 @@ async function createPost() {
       commentsCount: 0
     };
     
-    // Загружаем изображение в Яндекс Облако, если оно есть
-    if (currentImageFile) {
-      showNotification("Загрузка в Яндекс Облако...", 2000);
-      const imageUrl = await uploadToYandexCloud(currentImageFile);
-      if (imageUrl) {
+// Загружаем изображение в Яндекс Облако, если оно есть
+if (currentImageFile) {
+    showNotification("Загрузка в Яндекс Облако...", 2000);
+    const imageUrl = await uploadToYandexCloud(currentImageFile);
+    if (imageUrl) {  // ← ИСПРАВЛЕНО!
         postData.imageUrl = imageUrl;
         showNotification("Изображение загружено!");
-      } else {
+    } else {
         showNotification("Не удалось загрузить изображение. Пост будет опубликован без фото.");
-      }
     }
+}
     
     // Добавляем опрос, если он есть
     if (currentPoll) {

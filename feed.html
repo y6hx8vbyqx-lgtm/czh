@@ -2031,50 +2031,7 @@ async function uploadToYandexCloud(file) {
       }
     };
     
-    const arrayBuffer = await file.arrayBuffer();
-
-const params = {
-  Bucket: YANDEX_CLOUD.bucket,
-  Key: filePath,
-  Body: new Uint8Array(arrayBuffer),
-  ContentType: file.type,
-  ACL: 'public-read',
-  Metadata: {
-    'uploaded-by': currentUser.uid,
-    'uploaded-at': new Date().toISOString()
-  }
-};
-
-// 1. Загружаем файл
-await s3.upload(params).promise();
-
-// 2. Явно делаем файл публичным после загрузки
-await s3.putObjectAcl({
-  Bucket: YANDEX_CLOUD.bucket,
-  Key: filePath,
-  ACL: 'public-read'
-}).promise();
-
-progressDiv.classList.remove('show');
-showNotification('Изображение загружено в Яндекс Облако!');
-
-// ВАЖНО: filePath, а не fileId!
-return `https://storage.yandexcloud.net/${YANDEX_CLOUD.bucket}/${filePath}`;
-
-} catch (error) {
-  console.error('Ошибка загрузки в Яндекс Облако:', error);
-  progressDiv.classList.remove('show');
-
-  if (error.code === 'NetworkingError') {  // Исправлено: NetworkingError, а не NetworkError
-    showNotification('Ошибка сети. Проверьте подключение к интернету.');
-  } else if (error.code === 'AccessDenied') {
-    showNotification('Ошибка доступа к Яндекс Облаку. Проверьте ключи.');
-  } else {
-    showNotification('Ошибка загрузки: ' + (error.message || 'Неизвестная ошибка'));
-  }
-
-  return null;
-}
+    const data = await s3.upload(params).promise();
     
     progressDiv.classList.remove('show');
     showNotification('Изображение загружено в Яндекс Облако!');

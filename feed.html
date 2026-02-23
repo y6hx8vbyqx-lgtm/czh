@@ -1908,6 +1908,7 @@ function removeImage() {
 }
 
 // ==================== НОВАЯ ФУНКЦИЯ ЗАГРУЗКИ НА IMGUR ====================
+// Загрузка на FreeImage.Host (бесплатно, без регистрации)
 async function uploadToFreeImage(file) {
   const progressDiv = document.getElementById('uploadProgress');
   progressDiv.classList.add('show');
@@ -1927,11 +1928,11 @@ async function uploadToFreeImage(file) {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error('Ошибка загрузки');
+      throw new Error(data.error?.message || 'Ошибка загрузки');
     }
 
     progressDiv.classList.remove('show');
-    showNotification('✅ Изображение загружено!');
+    showNotification('✅ Изображение загружено на FreeImage!');
     
     return data.image.url; // Прямая ссылка на фото
 
@@ -1942,7 +1943,7 @@ async function uploadToFreeImage(file) {
     return null;
   }
 }
-
+  
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
 function openPollModal() {
   currentPoll = {

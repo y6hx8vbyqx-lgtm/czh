@@ -2035,7 +2035,7 @@ async function uploadToYandexCloud(file) {
     
     progressDiv.classList.remove('show');
     showNotification('Изображение загружено в Яндекс Облако!');
-    return data.Location;
+    return `https://storage.yandexcloud.net/${YANDEX_CLOUD.bucket}/${filePath}`;
     
   } catch (error) {
     console.error('Ошибка загрузки в Яндекс Облако:', error);

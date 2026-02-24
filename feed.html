@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -44,7 +44,7 @@ body{
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
 
-/* Снежинки */
+/* Снежинки - оставляем для зимы, но можно заменить на лепестки весной */
 #snowflakes-container {
   position: fixed;
   top: 0;
@@ -66,19 +66,65 @@ body{
   animation-iteration-count: infinite;
 }
 
+/* Стили для лепестков сакуры (можно заменить снежинки) */
+.sakura-petal {
+  position: absolute;
+  background-color: #ffb7c5;
+  border-radius: 150% 0 150% 0;
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+  animation: fall 10s linear infinite;
+  transform: rotate(45deg);
+  box-shadow: 0 0 5px #ff8a9f;
+}
+
+.sakura-petal::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  background-color: #ff8a9f;
+  border-radius: 50%;
+  box-shadow: 0 0 3px #ff4d6d;
+}
+
+.sakura-petal.small {
+  width: 8px;
+  height: 8px;
+  opacity: 0.4;
+}
+
+.sakura-petal.large {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
 @keyframes fall {
   0% {
-    transform: translateY(-10px) rotate(0deg);
+    transform: translateY(-10px) rotate(0deg) scale(1);
     opacity: 0;
   }
   10% {
     opacity: 0.8;
   }
+  30% {
+    transform: translateY(30vh) rotate(90deg) scale(1.1);
+  }
+  50% {
+    transform: translateY(50vh) rotate(180deg) scale(1.2);
+  }
+  70% {
+    transform: translateY(70vh) rotate(270deg) scale(1.1);
+  }
   90% {
-    opacity: 0.8;
+    opacity: 0.6;
   }
   100% {
-    transform: translateY(100vh) rotate(360deg);
+    transform: translateY(100vh) rotate(360deg) scale(0.8);
     opacity: 0;
   }
 }
@@ -1615,8 +1661,7 @@ body{
   touch-action: none;
 }
 
-/* ========== СТИЛИ ДЛЯ ТЕМЫ PHASMOPHOBIA ========== */
-/* Эти стили применяются к постам и профилю пользователя, который выбрал эту тему */
+/* ========== ТЕМА PHASMOPHOBIA ========== */
 .theme-phasmo .post-user,
 .theme-phasmo .profile-name,
 .theme-phasmo .repost-user-link {
@@ -1671,7 +1716,6 @@ body{
   box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
 }
 
-/* Фон с текстом CZH для профиля */
 .theme-phasmo #profileSheet .sheet-body {
   position: relative;
   overflow: hidden;
@@ -1701,12 +1745,6 @@ body{
   animation: none;
 }
 
-/* Для постов в ленте */
-.theme-phasmo .post {
-  position: relative;
-  overflow: hidden;
-}
-
 .theme-phasmo .post::after {
   content: "CZH";
   position: absolute;
@@ -1721,10 +1759,250 @@ body{
   z-index: 0;
 }
 
-/* Для комментариев */
 .theme-phasmo .comment .post-user {
   color: #4ade80 !important;
   font-family: 'Courier New', monospace !important;
+}
+
+/* ========== ТЕМА SAKURA BLOOM (ВЕСЕННЯЯ) ========== */
+.theme-sakura {
+  --sakura-pink: #ffb7c5;
+  --sakura-dark-pink: #ff8a9f;
+  --sakura-white: #fff9fb;
+  --sakura-green: #d4e6b5;
+  --sakura-brown: #8b5a2b;
+  --sakura-sky: #e1f0fa;
+}
+
+/* Общие стили для темы сакуры */
+.theme-sakura .post {
+  background: rgba(255, 249, 251, 0.95);
+  border: 1px solid #ffd9e2;
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(255, 183, 197, 0.3);
+  position: relative;
+  backdrop-filter: blur(10px);
+  color: #4a4a4a;
+}
+
+.theme-sakura .post::before {
+  content: "🌸";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  font-size: 40px;
+  opacity: 0.3;
+  transform: rotate(-15deg);
+  z-index: 1;
+}
+
+.theme-sakura .post::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M80,70 Q90,60 95,70 T100,85" stroke="%23ffb7c5" fill="none" stroke-width="2"/><circle cx="95" cy="70" r="3" fill="%23ff8a9f"/><circle cx="98" cy="78" r="2" fill="%23ffb7c5"/></svg>') no-repeat;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.theme-sakura .post-user {
+  color: #8b5a2b !important;
+  font-weight: 600;
+  font-family: 'Arial Rounded', sans-serif;
+}
+
+.theme-sakura .post-text {
+  color: #4a4a4a;
+  line-height: 1.6;
+}
+
+.theme-sakura .post-time {
+  color: #8b5a2b;
+  opacity: 0.7;
+}
+
+/* Профиль в теме сакуры */
+.theme-sakura .profile-header {
+  background: linear-gradient(135deg, #ffb7c5 0%, #ffe4e9 100%);
+  border-radius: 30px 30px 60px 60px;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.theme-sakura .profile-header::before {
+  content: "🌸🌸🌸";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 60px;
+  opacity: 0.2;
+  transform: rotate(15deg);
+  white-space: nowrap;
+}
+
+.theme-sakura .profile-avatar {
+  border: 3px solid white;
+  box-shadow: 0 0 0 3px #ff8a9f, 0 10px 20px rgba(255, 138, 159, 0.3);
+}
+
+.theme-sakura .profile-name {
+  color: #8b5a2b;
+  font-family: 'Arial Rounded', sans-serif;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+}
+
+.theme-sakura .profile-stats .profile-stat-value {
+  color: #8b5a2b;
+}
+
+.theme-sakura .profile-bio {
+  background: rgba(255, 249, 251, 0.9);
+  border: 1px solid #ffd9e2;
+}
+
+/* Кнопки в теме сакуры */
+.theme-sakura .action {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 30px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  color: #8b5a2b;
+}
+
+.theme-sakura .action:hover {
+  background: #ffb7c5;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 183, 197, 0.5);
+}
+
+.theme-sakura .action.liked {
+  background: #ff8a9f;
+  color: white;
+}
+
+.theme-sakura .subscribe-btn {
+  background: linear-gradient(135deg, #ffb7c5, #ff8a9f);
+  border: none;
+  color: white;
+  border-radius: 30px;
+  padding: 8px 20px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(255, 138, 159, 0.3);
+}
+
+.theme-sakura .subscribe-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(255, 138, 159, 0.5);
+}
+
+.theme-sakura .subscribe-btn.subscribed {
+  background: #8b5a2b;
+  opacity: 0.8;
+}
+
+.theme-sakura .create {
+  background: rgba(255, 249, 251, 0.95);
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .create textarea {
+  background: white;
+  color: #4a4a4a;
+  border: 1px solid #ffd9e2;
+}
+
+/* Профиль в теме сакуры (весь лист) */
+.theme-sakura #profileSheet .sheet-body {
+  background: linear-gradient(135deg, #fff9fb 0%, #ffe4e9 100%);
+}
+
+.theme-sakura .profile-tabs {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .profile-tab.active {
+  color: #8b5a2b;
+}
+
+.theme-sakura .profile-tab-slider {
+  background: linear-gradient(135deg, #ffb7c5, #ff8a9f);
+}
+
+/* Репосты в теме сакуры */
+.theme-sakura .repost-info {
+  background: rgba(255, 183, 197, 0.1);
+  border-radius: 20px;
+  padding: 8px 12px;
+}
+
+.theme-sakura .repost-user-link {
+  color: #ff8a9f !important;
+}
+
+.theme-sakura .pinned-badge {
+  background: rgba(255, 138, 159, 0.2);
+  color: #8b5a2b;
+}
+
+/* Опросы в теме сакуры */
+.theme-sakura .poll-container {
+  background: rgba(255, 249, 251, 0.95);
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .poll-question {
+  color: #8b5a2b;
+}
+
+.theme-sakura .poll-option {
+  background: white;
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .poll-option:hover {
+  background: #ffb7c5;
+  color: white;
+}
+
+.theme-sakura .poll-option-bar {
+  background: linear-gradient(90deg, rgba(255, 183, 197, 0.3), rgba(255, 138, 159, 0.3));
+}
+
+/* Комментарии в теме сакуры */
+.theme-sakura .comment .post-user {
+  color: #8b5a2b !important;
+}
+
+/* Хештеги в теме сакуры */
+.theme-sakura .hashtag {
+  color: #ff8a9f !important;
+}
+
+.theme-sakura .hashtag:hover {
+  color: #8b5a2b !important;
+}
+
+/* Поиск в теме сакуры */
+.theme-sakura .search {
+  background: rgba(255, 249, 251, 0.95);
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .search-input {
+  background: white;
+  color: #4a4a4a;
+  border: 1px solid #ffd9e2;
+}
+
+.theme-sakura .search-input::placeholder {
+  color: #ffb7c5;
 }
 
 /* Стили для модального окна выбора темы */
@@ -1811,6 +2089,31 @@ body{
   font-size: 12px;
   color: #4ade80;
   opacity: 0.5;
+}
+
+.theme-preview.sakura {
+  background: linear-gradient(135deg, #ffb7c5, #ff8a9f);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-preview.sakura::before {
+  content: "🌸";
+  position: absolute;
+  font-size: 30px;
+  opacity: 0.5;
+  transform: rotate(-15deg);
+}
+
+.theme-preview.sakura::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.3) 0%, transparent 50%);
 }
 
 .theme-info {
@@ -1990,9 +2293,18 @@ body{
           <div class="theme-desc">Зеленый ник, фон с текстом CZH</div>
         </div>
       </div>
+      
+      <!-- Тема Sakura Bloom (доступна всем, сезонная) -->
+      <div class="theme-option available" id="themeSakuraOption" onclick="selectTheme('sakura')">
+        <div class="theme-preview sakura"></div>
+        <div class="theme-info">
+          <div class="theme-name">Sakura Bloom 🌸</div>
+          <div class="theme-desc">Весеннее настроение, цветущая сакура</div>
+        </div>
+      </div>
     </div>
     
-    <!-- Поле для ввода кода -->
+    <!-- Поле для ввода кода (только для Phasmophobia) -->
     <div id="phasmoCodeSection">
       <input type="text" class="theme-code-input" id="themeCodeInput" placeholder="Введите код для разблокировки Phasmophobia Style" maxlength="20">
       <button class="modal-btn primary" style="margin-bottom:16px;" onclick="unlockPhasmoTheme()">Разблокировать тему</button>
@@ -2522,10 +2834,13 @@ function openThemeModal() {
   // Сбрасываем выделение
   document.getElementById('themeBaseOption').classList.remove('selected');
   document.getElementById('themePhasmoOption').classList.remove('selected');
+  document.getElementById('themeSakuraOption').classList.remove('selected');
   document.getElementById('themeCodeInput').value = '';
   
-  // Базовая тема всегда доступна, Phasmo только если разблокирована
+  // Базовая и сакура всегда доступны, Phasmo только если разблокирована
   document.getElementById('themeBaseOption').classList.add('available');
+  document.getElementById('themeSakuraOption').classList.add('available');
+  
   if (phasmoUnlocked) {
     document.getElementById('themePhasmoOption').classList.add('available');
   } else {
@@ -2557,6 +2872,7 @@ function selectTheme(theme) {
   // Визуально выбираем тему
   document.getElementById('themeBaseOption').classList.toggle('selected', theme === 'base');
   document.getElementById('themePhasmoOption').classList.toggle('selected', theme === 'phasmo');
+  document.getElementById('themeSakuraOption').classList.toggle('selected', theme === 'sakura');
   
   // Сохраняем выбранную тему временно
   window.tempSelectedTheme = theme;
@@ -2583,7 +2899,7 @@ async function applyTheme() {
     // Обновляем кэш
     userThemesCache.set(currentUser.uid, selectedTheme);
     
-    showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : 'Базовая'}" применена!`);
+    showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : selectedTheme === 'sakura' ? 'Sakura Bloom' : 'Базовая'}" применена!`);
     closeThemeModal();
     
     // Перезагружаем страницу для применения темы ко всем элементам
@@ -2622,14 +2938,38 @@ function applyThemeToElement(element, userId) {
   if (!element) return;
   
   // Удаляем все классы темы
-  element.classList.remove('theme-phasmo');
+  element.classList.remove('theme-phasmo', 'theme-sakura');
   
   // Если у пользователя есть тема и она не базовая, применяем класс
   if (userId && userThemesCache.has(userId)) {
     const theme = userThemesCache.get(userId);
-    if (theme === 'phasmo') {
-      element.classList.add('theme-phasmo');
+    if (theme === 'phasmo' || theme === 'sakura') {
+      element.classList.add(`theme-${theme}`);
     }
+  }
+}
+
+// Функция для создания лепестков сакуры (можно вызвать весной)
+function createSakuraPetals() {
+  const container = document.getElementById('snowflakes-container');
+  if (!container) return;
+  
+  // Очищаем контейнер
+  container.innerHTML = '';
+  
+  const count = 30;
+  
+  for (let i = 0; i < count; i++) {
+    const petal = document.createElement('div');
+    const sizeClass = Math.random() > 0.6 ? 'large' : (Math.random() > 0.3 ? 'medium' : 'small');
+    
+    petal.className = `sakura-petal ${sizeClass}`;
+    petal.style.left = Math.random() * 100 + '%';
+    petal.style.top = -10 + Math.random() * 20 + '%';
+    petal.style.animationDuration = (8 + Math.random() * 10) + 's';
+    petal.style.animationDelay = Math.random() * 5 + 's';
+    
+    container.appendChild(petal);
   }
 }
 
@@ -2936,14 +3276,31 @@ function getVotesWord(count) {
   return 'голосов';
 }
 
-// ==================== ОПТИМИЗИРОВАННЫЕ СНЕЖИНКИ ====================
-let snowflakeAnimationFrame = null;
-let snowflakes = [];
-let snowflakeContainer = null;
+// ==================== ОПТИМИЗИРОВАННЫЕ СНЕЖИНКИ/ЛЕПЕСТКИ ====================
+let animationFrame = null;
+let particles = [];
+let particlesContainer = null;
+
+function createParticles() {
+  particlesContainer = document.getElementById('snowflakes-container');
+  if (!particlesContainer) return;
+  
+  // Определяем текущий сезон (можно менять вручную)
+  const isSpring = true; // Весной ставим true, зимой false
+  
+  if (isSpring) {
+    createSakuraPetals();
+  } else {
+    createOptimizedSnowflakes();
+  }
+}
 
 function createOptimizedSnowflakes() {
-  snowflakeContainer = document.getElementById('snowflakes-container');
-  if (!snowflakeContainer) return;
+  particlesContainer = document.getElementById('snowflakes-container');
+  if (!particlesContainer) return;
+  
+  particlesContainer.innerHTML = '';
+  particles = [];
   
   const count = 20;
   
@@ -2959,9 +3316,9 @@ function createOptimizedSnowflakes() {
     flake.style.opacity = '0';
     flake.style.transform = 'translate3d(0,0,0)';
     flake.style.willChange = 'transform, opacity';
-    snowflakeContainer.appendChild(flake);
+    particlesContainer.appendChild(flake);
     
-    snowflakes.push({
+    particles.push({
       element: flake,
       x: parseFloat(flake.style.left),
       y: parseFloat(flake.style.top),
@@ -2971,26 +3328,65 @@ function createOptimizedSnowflakes() {
     });
   }
   
-  animateSnowflakes();
+  animateParticles();
 }
 
-function animateSnowflakes() {
+function createSakuraPetals() {
+  particlesContainer = document.getElementById('snowflakes-container');
+  if (!particlesContainer) return;
+  
+  particlesContainer.innerHTML = '';
+  particles = [];
+  
+  const count = 30;
+  
+  for (let i = 0; i < count; i++) {
+    const petal = document.createElement('div');
+    const size = 8 + Math.random() * 8;
+    const sizeClass = size > 14 ? 'large' : (size > 10 ? 'medium' : 'small');
+    
+    petal.className = `sakura-petal ${sizeClass}`;
+    petal.style.width = size + 'px';
+    petal.style.height = size + 'px';
+    petal.style.left = Math.random() * 100 + '%';
+    petal.style.top = -10 + Math.random() * 20 + '%';
+    petal.style.animationDuration = (8 + Math.random() * 10) + 's';
+    petal.style.animationDelay = Math.random() * 5 + 's';
+    petal.style.opacity = '0';
+    petal.style.willChange = 'transform, opacity';
+    
+    particlesContainer.appendChild(petal);
+    
+    particles.push({
+      element: petal,
+      x: parseFloat(petal.style.left),
+      y: parseFloat(petal.style.top),
+      speed: 0.5 + Math.random() * 1.5,
+      size: size,
+      opacity: 0.4 + Math.random() * 0.4
+    });
+  }
+  
+  animateParticles();
+}
+
+function animateParticles() {
   function update() {
-    snowflakes.forEach(flake => {
-      let newY = flake.y + flake.speed * 0.05;
+    particles.forEach(particle => {
+      let newY = particle.y + particle.speed * 0.05;
       
       if (newY > 110) {
         newY = -10;
-        flake.element.style.left = Math.random() * 100 + '%';
-        flake.x = parseFloat(flake.element.style.left);
+        particle.element.style.left = Math.random() * 100 + '%';
+        particle.x = parseFloat(particle.element.style.left);
       }
       
-      flake.y = newY;
-      flake.element.style.top = newY + '%';
-      flake.element.style.opacity = flake.opacity;
+      particle.y = newY;
+      particle.element.style.top = newY + '%';
+      particle.element.style.opacity = particle.opacity;
     });
     
-    snowflakeAnimationFrame = requestAnimationFrame(update);
+    animationFrame = requestAnimationFrame(update);
   }
   
   update();
@@ -3368,7 +3764,7 @@ auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   
   try {
-    createOptimizedSnowflakes();
+    createParticles(); // Создаем снежинки или лепестки в зависимости от сезона
     
     await loadUserData();
     

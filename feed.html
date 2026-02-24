@@ -1767,9 +1767,16 @@ body{
   display: flex;
   align-items: center;
   gap: 16px;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-.theme-option:hover {
+.theme-option.available {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.theme-option.available:hover {
   border-color: var(--hashtag);
   transform: scale(1.02);
 }
@@ -1984,8 +1991,8 @@ body{
     </div>
     
     <div class="theme-options">
-      <!-- Базовая тема -->
-      <div class="theme-option" id="themeBaseOption" onclick="selectTheme('base')">
+      <!-- Базовая тема (всегда доступна) -->
+      <div class="theme-option available" id="themeBaseOption" onclick="selectTheme('base')">
         <div class="theme-preview base"></div>
         <div class="theme-info">
           <div class="theme-name">Базовое оформление</div>
@@ -1993,7 +2000,7 @@ body{
         </div>
       </div>
       
-      <!-- Тема Phasmophobia -->
+      <!-- Тема Phasmophobia (недоступна пока не введен код) -->
       <div class="theme-option" id="themePhasmoOption" onclick="selectTheme('phasmo')">
         <div class="theme-preview phasmo"></div>
         <div class="theme-info">
@@ -2003,14 +2010,15 @@ body{
       </div>
     </div>
     
-    <!-- Поле для ввода кода (всегда видно при выборе темы) -->
+    <!-- Поле для ввода кода -->
     <div id="phasmoCodeSection">
-      <input type="text" class="theme-code-input" id="themeCodeInput" placeholder="Введите код для разблокировки" maxlength="20">
+      <input type="text" class="theme-code-input" id="themeCodeInput" placeholder="Введите код для разблокировки Phasmophobia Style" maxlength="20">
+      <button class="modal-btn primary" style="margin-bottom:16px;" onclick="unlockPhasmoTheme()">Разблокировать тему</button>
     </div>
     
     <div class="modal-buttons">
       <button class="modal-btn secondary" onclick="closeThemeModal()">Отмена</button>
-      <button class="modal-btn primary" onclick="applyTheme()">Применить</button>
+      <button class="modal-btn primary" onclick="applyTheme()" id="applyThemeBtn">Применить</button>
     </div>
   </div>
 </div>
@@ -2095,7 +2103,7 @@ body{
     <strong>Профиль</strong>
     <button class="action" onclick="closeProfile()">✕</button>
   </div>
-  <div class="sheet-body">
+  <div class="sheet-body" id="profileSheetBody">
     <div class="profile-header">
       <div class="profile-avatar" id="profileAvatar">A</div>
       <div class="profile-info">
@@ -2213,8 +2221,8 @@ let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ТЕМЫ ====================
-let selectedTheme = 'base'; // 'base' или 'phasmo'
-let phasmoUnlocked = false; // Флаг, разблокирована ли тема Phasmophobia
+let selectedTheme = 'base';
+let phasmoUnlocked = false;
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
@@ -2531,12 +2539,33 @@ function openThemeModal() {
   document.getElementById('themePhasmoOption').classList.remove('selected');
   document.getElementById('themeCodeInput').value = '';
   
+  // Базовая тема всегда доступна, Phasmo только если разблокирована
+  document.getElementById('themeBaseOption').classList.add('available');
+  if (phasmoUnlocked) {
+    document.getElementById('themePhasmoOption').classList.add('available');
+  } else {
+    document.getElementById('themePhasmoOption').classList.remove('available');
+  }
+  
   // Показываем модальное окно
   document.getElementById('themeModal').classList.add('show');
 }
 
 function closeThemeModal() {
   document.getElementById('themeModal').classList.remove('show');
+}
+
+function unlockPhasmoTheme() {
+  const code = document.getElementById('themeCodeInput').value.trim().toUpperCase();
+  const validCode = 'CZHPIA2026';
+  
+  if (code === validCode) {
+    phasmoUnlocked = true;
+    document.getElementById('themePhasmoOption').classList.add('available');
+    showNotification('✅ Тема Phasmophobia Style разблокирована!');
+  } else {
+    showNotification('❌ Неверный код');
+  }
 }
 
 function selectTheme(theme) {
@@ -2549,19 +2578,12 @@ function selectTheme(theme) {
 }
 
 async function applyTheme() {
-  const themeToApply = window.tempSelectedTheme || selectedTheme;
+  const themeToApply = window.tempSelectedTheme || 'base';
   
-  // Если выбрана phasmo, проверяем код
-  if (themeToApply === 'phasmo') {
-    const code = document.getElementById('themeCodeInput').value.trim().toUpperCase();
-    const validCode = 'CZHPIA2026'; // Исправленный код
-    
-    if (code !== validCode) {
-      showNotification('❌ Неверный код');
-      return;
-    }
-    // Если код верный, разблокируем тему
-    phasmoUnlocked = true;
+  // Проверяем, можно ли применить тему Phasmo
+  if (themeToApply === 'phasmo' && !phasmoUnlocked) {
+    showNotification('❌ Сначала разблокируйте тему');
+    return;
   }
   
   // Применяем тему
@@ -2576,7 +2598,7 @@ async function applyTheme() {
     showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : 'Базовая'}" применена!`);
     closeThemeModal();
     
-    // Перезагружаем страницу, чтобы тема применилась ко всем элементам
+    // Перезагружаем страницу для применения темы ко всем элементам
     setTimeout(() => {
       location.reload();
     }, 1000);
@@ -2587,18 +2609,17 @@ async function applyTheme() {
   }
 }
 
-// Функция для загрузки темы пользователя
-async function loadUserTheme(userId) {
-  try {
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (userDoc.exists) {
-      const user = userDoc.data();
-      return user.theme || 'base';
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки темы пользователя:", error);
+// Функция для применения темы к конкретному элементу
+function applyThemeToElement(element, userId) {
+  if (!element) return;
+  
+  // Удаляем класс темы, если он был
+  element.classList.remove('own-post-theme-phasmo');
+  
+  // Добавляем класс темы ТОЛЬКО если это элемент текущего пользователя и выбрана тема Phasmo
+  if (userId === currentUser?.uid && selectedTheme === 'phasmo') {
+    element.classList.add('own-post-theme-phasmo');
   }
-  return 'base';
 }
 
 // ==================== ФУНКЦИИ ДЛЯ ОПРОСОВ ====================
@@ -3376,15 +3397,9 @@ auth.onAuthStateChanged(async (user) => {
       loadBlockedUsers()
     ]);
     
-    // Загружаем тему пользователя для применения класса к body
+    // Загружаем тему пользователя
     const theme = await loadUserTheme(currentUser.uid);
     selectedTheme = theme;
-    
-    // Класс темы применяется глобально, но стили внутри него сработают только для своих элементов
-    document.body.classList.remove('own-post-theme-phasmo');
-    if (theme === 'phasmo') {
-      document.body.classList.add('own-post-theme-phasmo');
-    }
     
     loadPosts();
     setupEventDelegation();
@@ -3865,12 +3880,16 @@ async function displayPosts(posts, isHashtagFeed = false) {
       pollHTML += '</div>';
     }
     
-    // Применяем класс темы ТОЛЬКО если это пост текущего пользователя
-    const isOwnPost = post.userId === currentUser.uid;
-    const themeClass = isOwnPost && selectedTheme === 'phasmo' ? 'own-post-theme-phasmo' : '';
+    // Создаем элемент поста
+    const postElement = document.createElement('div');
+    postElement.className = 'post fade';
+    postElement.id = `post-${postId}`;
+    postElement.setAttribute('data-postid', postId);
     
-    feed.innerHTML += `
-    <div class="post fade ${themeClass}" id="post-${postId}" data-postid="${postId}">
+    // Применяем тему к посту
+    applyThemeToElement(postElement, post.userId);
+    
+    postElement.innerHTML = `
       ${repostHTML}
       <div class="post-header">
         <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
@@ -3906,7 +3925,9 @@ async function displayPosts(posts, isHashtagFeed = false) {
           👁️ <span class="views-count">${post.views || 0}</span>
         </button>
       </div>
-    </div>`;
+    `;
+    
+    feed.appendChild(postElement);
   });
   
   setTimeout(setupViewTracking, 500);
@@ -4200,6 +4221,10 @@ async function openProfile(uid, name) {
   currentProfileTab = 'posts';
   document.getElementById("profileSheet").classList.add("show");
   
+  // Применяем тему к профилю
+  const profileSheetBody = document.getElementById('profileSheetBody');
+  applyThemeToElement(profileSheetBody, uid);
+  
   document.getElementById("profileName").textContent = "@" + name;
   
   // Делаем ник кликабельным для открытия меню темы (только для своего профиля)
@@ -4212,15 +4237,6 @@ async function openProfile(uid, name) {
     profileNameElement.style.cursor = 'default';
     profileNameElement.title = '';
     profileNameElement.onclick = null;
-  }
-  
-  // Загружаем тему пользователя для применения класса к профилю
-  const userTheme = await loadUserTheme(uid);
-  
-  // Применяем класс темы ТОЛЬКО если это профиль текущего пользователя
-  document.getElementById('profileSheet').classList.remove('own-post-theme-phasmo');
-  if (uid === currentUser.uid && userTheme === 'phasmo') {
-    document.getElementById('profileSheet').classList.add('own-post-theme-phasmo');
   }
   
   const avatarElement = document.getElementById("profileAvatar");
@@ -4597,33 +4613,39 @@ async function refreshProfilePosts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      // Применяем класс темы ТОЛЬКО для своих постов
-      const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      // Создаем элемент поста
+      const postElement = document.createElement('div');
+      postElement.className = 'post fade';
+      postElement.id = `profile-post-${post.id}`;
       
-      profilePosts.innerHTML += `
-        <div class="post fade ${themeClass}" id="profile-post-${post.id}">
-          <div class="post-header">
-            <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
-            <div class="post-user-info">
-              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
-                @${post.username}
-                ${adminUsers.has(post.userId) ? '<span class="verified-badge">✓</span>' : ''}
-              </div>
-              <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+      // Применяем тему к посту
+      applyThemeToElement(postElement, post.userId);
+      
+      postElement.innerHTML = `
+        <div class="post-header">
+          <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
+          <div class="post-user-info">
+            <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+              @${post.username}
+              ${adminUsers.has(post.userId) ? '<span class="verified-badge">✓</span>' : ''}
             </div>
+            <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
           </div>
-          <div class="post-text">${processedText}</div>
-          ${imageHTML}
-          <div class="post-time" style="margin-top:8px;">
-            ${pollBadge}
-            <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
-            <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
-            <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
-          </div>
-          ${canDelete ? 
-            `<button class="trash" style="position:absolute;top:16px;right:16px;" data-postid="${post.id}">🗑</button>` : 
-            ""}
-        </div>`;
+        </div>
+        <div class="post-text">${processedText}</div>
+        ${imageHTML}
+        <div class="post-time" style="margin-top:8px;">
+          ${pollBadge}
+          <span style="color:#ff2d55;margin-left:10px;">❤️ ${post.likes || 0}</span>
+          <span style="color:#5ac8fa;margin-left:10px;">💬 ${post.commentsCount || 0}</span>
+          <span style="color:#64d2ff;margin-left:10px;">🔄 ${post.reposts || 0}</span>
+        </div>
+        ${canDelete ? 
+          `<button class="trash" style="position:absolute;top:16px;right:16px;" data-postid="${post.id}">🗑</button>` : 
+          ""}
+      `;
+      
+      profilePosts.appendChild(postElement);
     });
     
   } catch (error) {
@@ -4735,51 +4757,57 @@ async function refreshProfileReposts(uid) {
         const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
         const authorLetter = post.username?.[0]?.toUpperCase() || "A";
         
-        // Применяем класс темы ТОЛЬКО для своих репостов (оригинальный пост может быть чужим)
-        const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+        // Создаем элемент поста
+        const postElement = document.createElement('div');
+        postElement.className = 'post fade';
+        postElement.id = `repost-${post.id}`;
         
-        profileReposts.innerHTML += `
-          <div class="post fade ${themeClass}" id="repost-${post.id}">
-            <div class="repost-info">
-              <span class="repost-icon">🔄</span>
-              <span>Репостнул <strong>@${user.username}</strong></span>
-              <span class="pinned-badge">📌 Закреплено</span>
-              ${isOwnProfile ? `
-                <button class="pin-btn pinned" data-postid="${post.id}">📌</button>
-              ` : ''}
-            </div>
-            <div class="post-header">
-              <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
-              <div class="post-user-info">
-                <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
-                  @${post.username}
-                  ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
-                </div>
-                <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+        // Применяем тему к посту
+        applyThemeToElement(postElement, post.userId);
+        
+        postElement.innerHTML = `
+          <div class="repost-info">
+            <span class="repost-icon">🔄</span>
+            <span>Репостнул <strong>@${user.username}</strong></span>
+            <span class="pinned-badge">📌 Закреплено</span>
+            ${isOwnProfile ? `
+              <button class="pin-btn pinned" data-postid="${post.id}">📌</button>
+            ` : ''}
+          </div>
+          <div class="post-header">
+            <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
+            <div class="post-user-info">
+              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+                @${post.username}
+                ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
               </div>
-              ${post.userId !== currentUser.uid ? 
-                `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
-                        data-userid="${post.userId}" data-username="${post.username}">
-                  ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
-                </button>` : ''}
+              <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
             </div>
-            <div class="post-text">${processedText}</div>
-            ${imageHTML}
-            <div class="post-actions">
-              <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
-                ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
-              </button>
-              <button class="action" data-comment="${post.id}">
-                💬 ${post.commentsCount || 0}
-              </button>
-              <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
-                🔄 <span>${post.reposts || 0}</span>
-              </button>
-              <button class="action viewed" title="Просмотры">
-                👁️ ${post.views || 0}
-              </button>
-            </div>
-          </div>`;
+            ${post.userId !== currentUser.uid ? 
+              `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
+                      data-userid="${post.userId}" data-username="${post.username}">
+                ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
+              </button>` : ''}
+          </div>
+          <div class="post-text">${processedText}</div>
+          ${imageHTML}
+          <div class="post-actions">
+            <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
+              ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
+            </button>
+            <button class="action" data-comment="${post.id}">
+              💬 ${post.commentsCount || 0}
+            </button>
+            <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
+              🔄 <span>${post.reposts || 0}</span>
+            </button>
+            <button class="action viewed" title="Просмотры">
+              👁️ ${post.views || 0}
+            </button>
+          </div>
+        `;
+        
+        profileReposts.appendChild(postElement);
       });
       
       if (regularPosts.length > 0) {
@@ -4820,50 +4848,56 @@ async function refreshProfileReposts(uid) {
       const authorAvatarStyle = post.userAvatar ? `style="background-image: url('${post.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = post.username?.[0]?.toUpperCase() || "A";
       
-      // Применяем класс темы ТОЛЬКО для своих репостов
-      const themeClass = (post.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      // Создаем элемент поста
+      const postElement = document.createElement('div');
+      postElement.className = 'post fade';
+      postElement.id = `repost-${post.id}`;
       
-      profileReposts.innerHTML += `
-        <div class="post fade ${themeClass}" id="repost-${post.id}">
-          <div class="repost-info">
-            <span class="repost-icon">🔄</span>
-            <span>Репостнул <strong>@${user.username}</strong></span>
-            ${isOwnProfile ? `
-              <button class="pin-btn" data-postid="${post.id}">📌</button>
-            ` : ''}
-          </div>
-          <div class="post-header">
-            <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
-            <div class="post-user-info">
-              <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
-                @${post.username}
-                ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
-              </div>
-              <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
+      // Применяем тему к посту
+      applyThemeToElement(postElement, post.userId);
+      
+      postElement.innerHTML = `
+        <div class="repost-info">
+          <span class="repost-icon">🔄</span>
+          <span>Репостнул <strong>@${user.username}</strong></span>
+          ${isOwnProfile ? `
+            <button class="pin-btn" data-postid="${post.id}">📌</button>
+          ` : ''}
+        </div>
+        <div class="post-header">
+          <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
+          <div class="post-user-info">
+            <div class="post-user" data-userid="${post.userId}" data-username="${post.username}">
+              @${post.username}
+              ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
             </div>
-            ${post.userId !== currentUser.uid ? 
-              `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
-                      data-userid="${post.userId}" data-username="${post.username}">
-                ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
-              </button>` : ''}
+            <div class="post-time" title="${fullDateTime}">${timeAgo}</div>
           </div>
-          <div class="post-text">${processedText}</div>
-          ${imageHTML}
-          <div class="post-actions">
-            <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
-              ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
-            </button>
-            <button class="action" data-comment="${post.id}">
-              💬 ${post.commentsCount || 0}
-            </button>
-            <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
-              🔄 <span>${post.reposts || 0}</span>
-            </button>
-            <button class="action viewed" title="Просмотры">
-              👁️ ${post.views || 0}
-            </button>
-          </div>
-        </div>`;
+          ${post.userId !== currentUser.uid ? 
+            `<button class="subscribe-btn ${subscriptions.has(post.userId) ? 'subscribed' : ''}" 
+                    data-userid="${post.userId}" data-username="${post.username}">
+              ${subscriptions.has(post.userId) ? 'В подписках' : 'Подписаться'}
+            </button>` : ''}
+        </div>
+        <div class="post-text">${processedText}</div>
+        ${imageHTML}
+        <div class="post-actions">
+          <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
+            ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
+          </button>
+          <button class="action" data-comment="${post.id}">
+            💬 ${post.commentsCount || 0}
+          </button>
+          <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
+            🔄 <span>${post.reposts || 0}</span>
+          </button>
+          <button class="action viewed" title="Просмотры">
+            👁️ ${post.views || 0}
+          </button>
+        </div>
+      `;
+      
+      profileReposts.appendChild(postElement);
     });
     
   } catch (error) {
@@ -5047,24 +5081,29 @@ async function loadComments() {
       const authorAvatarStyle = comment.userAvatar ? `style="background-image: url('${comment.userAvatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
       const authorLetter = comment.username?.[0]?.toUpperCase() || "A";
       
-      // Применяем класс темы ТОЛЬКО для своих комментариев
-      const themeClass = (comment.userId === currentUser.uid && selectedTheme === 'phasmo') ? 'own-post-theme-phasmo' : '';
+      // Создаем элемент комментария
+      const commentElement = document.createElement('div');
+      commentElement.className = 'post fade';
       
-      commentsBody.innerHTML += `
-        <div class="post fade ${themeClass}">
-          <div class="post-header">
-            <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
-            <div class="post-user-info">
-              <div class="post-user" data-userid="${comment.userId}" data-username="${comment.username}">
-                <strong>@${comment.username}</strong>
-                ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
-              </div>
-              <div class="post-time">${timeAgo}</div>
+      // Применяем тему к комментарию
+      applyThemeToElement(commentElement, comment.userId);
+      
+      commentElement.innerHTML = `
+        <div class="post-header">
+          <div class="avatar" ${authorAvatarStyle}>${authorLetter}</div>
+          <div class="post-user-info">
+            <div class="post-user" data-userid="${comment.userId}" data-username="${comment.username}">
+              <strong>@${comment.username}</strong>
+              ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
             </div>
-            ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
+            <div class="post-time">${timeAgo}</div>
           </div>
-          <div class="post-text">${comment.text}</div>
-        </div>`;
+          ${canDelete ? `<button class="comment-delete-btn" data-commentid="${doc.id}">🗑</button>` : ''}
+        </div>
+        <div class="post-text">${comment.text}</div>
+      `;
+      
+      commentsBody.appendChild(commentElement);
     });
     
   } catch (error) {
@@ -5488,6 +5527,18 @@ function logout() {
       location.href = "index.html";
     });
   }
+}
+
+async function loadUserTheme(userId) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      return userDoc.data().theme || 'base';
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки темы:", error);
+  }
+  return 'base';
 }
 
 window.addEventListener('load', () => {

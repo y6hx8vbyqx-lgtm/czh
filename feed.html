@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>czhmass - Стили профиля (Только для своих)</title>
+<title>czhmass - Стили профиля</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -15,7 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <style>
-/* ========== ВСЕ СТИЛИ (ПОЛНОСТЬЮ СОХРАНЕНЫ) ========== */
+/* ========== ВСЕ СТИЛИ ========== */
 :root{
   --bg:#000;
   --card:rgba(28,28,30,.95);
@@ -64,24 +64,6 @@ body{
   animation-name: fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-}
-
-.snowflake-small {
-  width: 4px;
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.6);
-}
-
-.snowflake-medium {
-  width: 6px;
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.7);
-}
-
-.snowflake-large {
-  width: 8px;
-  height: 8px;
-  background-color: rgba(255, 255, 255, 0.8);
 }
 
 @keyframes fall {
@@ -1633,31 +1615,31 @@ body{
   touch-action: none;
 }
 
-/* ========== НОВЫЕ СТИЛИ ДЛЯ ОФОРМЛЕНИЯ ПРОФИЛЯ ========== */
-/* Стили для темы Phasmophobia - применяются ТОЛЬКО К СВОИМ постам и профилю */
-.own-post-theme-phasmo .post-user,
-.own-post-theme-phasmo .profile-name,
-.own-post-theme-phasmo .repost-user-link {
+/* ========== СТИЛИ ДЛЯ ТЕМЫ PHASMOPHOBIA ========== */
+/* Эти стили применяются к постам и профилю пользователя, который выбрал эту тему */
+.theme-phasmo .post-user,
+.theme-phasmo .profile-name,
+.theme-phasmo .repost-user-link {
   color: #4ade80 !important;
   font-family: 'Courier New', monospace !important;
   font-weight: 600 !important;
   text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
-.own-post-theme-phasmo .profile-bio,
-.own-post-theme-phasmo .profile-header,
-.own-post-theme-phasmo .profile-stats,
-.own-post-theme-phasmo .profile-tabs,
-.own-post-theme-phasmo .post {
+.theme-phasmo .profile-bio,
+.theme-phasmo .profile-header,
+.theme-phasmo .profile-stats,
+.theme-phasmo .profile-tabs,
+.theme-phasmo .post {
   position: relative;
   overflow: hidden;
 }
 
-.own-post-theme-phasmo .profile-bio::before,
-.own-post-theme-phasmo .profile-header::before,
-.own-post-theme-phasmo .profile-stats::before,
-.own-post-theme-phasmo .profile-tabs::before,
-.own-post-theme-phasmo .post::before {
+.theme-phasmo .profile-bio::before,
+.theme-phasmo .profile-header::before,
+.theme-phasmo .profile-stats::before,
+.theme-phasmo .profile-tabs::before,
+.theme-phasmo .post::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1675,27 +1657,27 @@ body{
   z-index: 0;
 }
 
-.own-post-theme-phasmo .profile-bio > *,
-.own-post-theme-phasmo .profile-header > *,
-.own-post-theme-phasmo .profile-stats > *,
-.own-post-theme-phasmo .profile-tabs > *,
-.own-post-theme-phasmo .post > * {
+.theme-phasmo .profile-bio > *,
+.theme-phasmo .profile-header > *,
+.theme-phasmo .profile-stats > *,
+.theme-phasmo .profile-tabs > *,
+.theme-phasmo .post > * {
   position: relative;
   z-index: 1;
 }
 
-.own-post-theme-phasmo .profile-avatar {
+.theme-phasmo .profile-avatar {
   border: 2px solid #4ade80;
   box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
 }
 
 /* Фон с текстом CZH для профиля */
-.own-post-theme-phasmo #profileSheet .sheet-body {
+.theme-phasmo #profileSheet .sheet-body {
   position: relative;
   overflow: hidden;
 }
 
-.own-post-theme-phasmo #profileSheet .sheet-body::before {
+.theme-phasmo #profileSheet .sheet-body::before {
   content: "CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH CZH";
   position: absolute;
   top: 0;
@@ -1719,13 +1701,13 @@ body{
   animation: none;
 }
 
-/* Для своих постов в ленте */
-.own-post-theme-phasmo .post {
+/* Для постов в ленте */
+.theme-phasmo .post {
   position: relative;
   overflow: hidden;
 }
 
-.own-post-theme-phasmo .post::after {
+.theme-phasmo .post::after {
   content: "CZH";
   position: absolute;
   bottom: 5px;
@@ -1740,7 +1722,7 @@ body{
 }
 
 /* Для комментариев */
-.own-post-theme-phasmo .comment .post-user {
+.theme-phasmo .comment .post-user {
   color: #4ade80 !important;
   font-family: 'Courier New', monospace !important;
 }
@@ -1868,7 +1850,7 @@ body{
 </head>
 <body>
 
-<!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА + НОВЫЕ МОДАЛЬНЫЕ ОКНА -->
+<!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА -->
 <div id="snowflakes-container"></div>
 
 <div class="dynamic-island" id="time"></div>
@@ -1982,7 +1964,7 @@ body{
   </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ТЕМЫ (ИСПРАВЛЕНО) -->
+<!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ТЕМЫ -->
 <div class="modal-overlay" id="themeModal">
   <div class="modal theme-modal">
     <div class="modal-header">
@@ -2223,6 +2205,9 @@ let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ТЕМЫ ====================
 let selectedTheme = 'base';
 let phasmoUnlocked = false;
+
+// Кэш тем пользователей для быстрого доступа
+let userThemesCache = new Map();
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
@@ -2531,7 +2516,7 @@ function setupAvatarChange() {
   });
 }
 
-// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ ТЕМЫ ====================
+// ==================== ФУНКЦИИ ДЛЯ ТЕМЫ ====================
 
 function openThemeModal() {
   // Сбрасываем выделение
@@ -2595,6 +2580,9 @@ async function applyTheme() {
       theme: selectedTheme
     });
     
+    // Обновляем кэш
+    userThemesCache.set(currentUser.uid, selectedTheme);
+    
     showNotification(`✅ Тема "${selectedTheme === 'phasmo' ? 'Phasmophobia' : 'Базовая'}" применена!`);
     closeThemeModal();
     
@@ -2609,16 +2597,39 @@ async function applyTheme() {
   }
 }
 
-// Функция для применения темы к конкретному элементу
+// Функция для загрузки темы пользователя (с кэшированием)
+async function loadUserTheme(userId) {
+  // Сначала проверяем кэш
+  if (userThemesCache.has(userId)) {
+    return userThemesCache.get(userId);
+  }
+  
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (userDoc.exists) {
+      const theme = userDoc.data().theme || 'base';
+      userThemesCache.set(userId, theme);
+      return theme;
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки темы пользователя:", error);
+  }
+  return 'base';
+}
+
+// Функция для применения темы к элементу
 function applyThemeToElement(element, userId) {
   if (!element) return;
   
-  // Удаляем класс темы, если он был
-  element.classList.remove('own-post-theme-phasmo');
+  // Удаляем все классы темы
+  element.classList.remove('theme-phasmo');
   
-  // Добавляем класс темы ТОЛЬКО если это элемент текущего пользователя и выбрана тема Phasmo
-  if (userId === currentUser?.uid && selectedTheme === 'phasmo') {
-    element.classList.add('own-post-theme-phasmo');
+  // Если у пользователя есть тема и она не базовая, применяем класс
+  if (userId && userThemesCache.has(userId)) {
+    const theme = userThemesCache.get(userId);
+    if (theme === 'phasmo') {
+      element.classList.add('theme-phasmo');
+    }
   }
 }
 
@@ -3204,29 +3215,39 @@ function declinePosts(count) {
 
 // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ЛАЙКОВ ====================
 async function toggleLike(postId, button) {
-  const post = postsCache.get(postId);
-  if (!post) return;
-  
+  // Предотвращаем множественные клики
   if (button.classList.contains('processing')) return;
   button.classList.add('processing');
   
-  const liked = post.likedBy?.includes(currentUser.uid);
-  const increment = liked ? -1 : 1;
-  
   try {
+    const post = postsCache.get(postId);
+    if (!post) return;
+    
+    const liked = post.likedBy?.includes(currentUser.uid) || false;
+    const increment = liked ? -1 : 1;
+    
+    // Обновляем UI мгновенно для отзывчивости
     post.likes = (post.likes || 0) + increment;
+    
     if (liked) {
       post.likedBy = post.likedBy?.filter(id => id !== currentUser.uid) || [];
     } else {
       post.likedBy = [...(post.likedBy || []), currentUser.uid];
     }
     
+    // Обновляем класс и текст кнопки
     button.classList.toggle('liked', !liked);
-    const likesSpan = button.querySelector('span');
-    if (likesSpan) {
-      likesSpan.textContent = post.likes;
+    const iconSpan = button.querySelector('.like-icon');
+    const countSpan = button.querySelector('.likes-count');
+    
+    if (iconSpan) {
+      iconSpan.textContent = !liked ? '❤️' : '🤍';
+    }
+    if (countSpan) {
+      countSpan.textContent = post.likes;
     }
     
+    // Отправляем обновление в Firebase
     await db.collection("posts").doc(postId).update({
       likes: firebase.firestore.FieldValue.increment(increment),
       likedBy: liked 
@@ -3235,21 +3256,11 @@ async function toggleLike(postId, button) {
     });
     
   } catch (error) {
-    post.likes = (post.likes || 0) - increment;
-    if (liked) {
-      post.likedBy = [...(post.likedBy || []), currentUser.uid];
-    } else {
-      post.likedBy = post.likedBy?.filter(id => id !== currentUser.uid) || [];
-    }
-    
-    button.classList.toggle('liked', liked);
-    const likesSpan = button.querySelector('span');
-    if (likesSpan) {
-      likesSpan.textContent = post.likes;
-    }
-    
     console.error("Ошибка при лайке:", error);
     showNotification("Ошибка: " + error.message);
+    
+    // Восстанавливаем предыдущее состояние в случае ошибки
+    loadPosts();
   } finally {
     button.classList.remove('processing');
   }
@@ -3263,12 +3274,15 @@ function setupEventDelegation() {
   feed.addEventListener('click', (e) => {
     const target = e.target;
     
-    const likeBtn = target.closest('[data-like]');
+    // Обработка лайков - ищем по классу или data-атрибуту
+    const likeBtn = target.closest('[data-like]') || target.closest('.like-btn');
     if (likeBtn) {
       e.preventDefault();
       e.stopPropagation();
-      const postId = likeBtn.dataset.like;
-      if (postId) toggleLike(postId, likeBtn);
+      const postId = likeBtn.dataset.like || likeBtn.closest('[data-postid]')?.dataset.postid;
+      if (postId) {
+        toggleLike(postId, likeBtn);
+      }
       return;
     }
     
@@ -3330,39 +3344,6 @@ function setupEventDelegation() {
       return;
     }
     
-    const pollOption = target.closest('[data-poll]');
-    if (pollOption) {
-      e.preventDefault();
-      const postId = pollOption.dataset.poll;
-      const optionIndex = parseInt(pollOption.dataset.option);
-      if (postId && !isNaN(optionIndex)) voteInPoll(postId, optionIndex);
-      return;
-    }
-    
-    const pollResults = target.closest('[data-pollresults]');
-    if (pollResults) {
-      e.preventDefault();
-      const postId = pollResults.dataset.pollresults;
-      if (postId) showPollResults(postId);
-      return;
-    }
-    
-    const showMoreReposts = target.closest('.show-more-reposts-btn');
-    if (showMoreReposts) {
-      e.preventDefault();
-      const postId = showMoreReposts.dataset.postid;
-      if (postId) toggleRepostUsers(postId, true);
-      return;
-    }
-    
-    const hideReposts = target.closest('.hide-reposts-btn');
-    if (hideReposts) {
-      e.preventDefault();
-      const postId = hideReposts.closest('.post')?.id.replace('post-', '');
-      if (postId) toggleRepostUsers(postId, false);
-      return;
-    }
-    
     const postImage = target.closest('.post-image');
     if (postImage) {
       e.preventDefault();
@@ -3397,9 +3378,8 @@ auth.onAuthStateChanged(async (user) => {
       loadBlockedUsers()
     ]);
     
-    // Загружаем тему пользователя
-    const theme = await loadUserTheme(currentUser.uid);
-    selectedTheme = theme;
+    // Загружаем тему текущего пользователя в кэш
+    await loadUserTheme(currentUser.uid);
     
     loadPosts();
     setupEventDelegation();
@@ -3739,6 +3719,10 @@ async function displayPosts(posts, isHashtagFeed = false) {
     };
   }));
   
+  // Загружаем темы для всех авторов постов
+  const authorIds = [...new Set(posts.map(p => p.userId))];
+  await Promise.all(authorIds.map(id => loadUserTheme(id)));
+  
   postsWithRepostInfo.forEach(postData => {
     const post = postData;
     const postId = postData.id;
@@ -3754,11 +3738,13 @@ async function displayPosts(posts, isHashtagFeed = false) {
     if (lastPostDate && postDate && !isHashtagFeed) {
       const dividerLabel = getTimeDividerLabel(lastPostDate, postDate);
       if (dividerLabel) {
-        feed.innerHTML += `
-          <div class="post fade" style="text-align:center;color:var(--sub);font-size:14px">
-            ${dividerLabel}
-          </div>
-        `;
+        const dividerElement = document.createElement('div');
+        dividerElement.className = 'post fade';
+        dividerElement.style.textAlign = 'center';
+        dividerElement.style.color = 'var(--sub)';
+        dividerElement.style.fontSize = '14px';
+        dividerElement.textContent = dividerLabel;
+        feed.appendChild(dividerElement);
       }
     }
     
@@ -3856,7 +3842,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
           `;
         } else {
           pollHTML += `
-            <div class="poll-option" data-poll="${postId}" data-option="${index}">
+            <div class="poll-option" onclick="voteInPoll('${postId}', ${index})">
               <div class="poll-option-content">
                 <span class="poll-option-text">${option}</span>
               </div>
@@ -3872,7 +3858,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
           <span class="${isExpired ? 'poll-timer-expired' : 'poll-timer-active'}">
             ${isExpired ? 'Опрос завершен' : 'Голосование активно'}
           </span>
-          <span style="margin-left:auto; color:var(--sub);" data-pollresults="${postId}">
+          <span style="margin-left:auto; color:var(--sub);" onclick="showPollResults('${postId}')">
             ${totalVotes} ${getVotesWord(totalVotes)}
           </span>
         </div>
@@ -3886,7 +3872,7 @@ async function displayPosts(posts, isHashtagFeed = false) {
     postElement.id = `post-${postId}`;
     postElement.setAttribute('data-postid', postId);
     
-    // Применяем тему к посту
+    // Применяем тему автора к посту
     applyThemeToElement(postElement, post.userId);
     
     postElement.innerHTML = `
@@ -3912,13 +3898,14 @@ async function displayPosts(posts, isHashtagFeed = false) {
       ${imageHTML}
       ${pollHTML}
       <div class="post-actions">
-        <button class="action ${liked ? "liked" : ""}" data-like="${postId}">
-          ${liked ? "❤️" : "🤍"} <span class="likes-count">${post.likes || 0}</span>
+        <button class="action like-btn ${liked ? 'liked' : ''}" data-like="${postId}">
+          <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
+          <span class="likes-count">${post.likes || 0}</span>
         </button>
         <button class="action" data-comment="${postId}">
           💬 <span class="comments-count">${post.commentsCount || 0}</span>
         </button>
-        <button class="action ${isReposted ? "reposted" : ""}" data-repost="${postId}">
+        <button class="action ${isReposted ? 'reposted' : ''}" data-repost="${postId}">
           🔄 <span class="reposts-count">${post.reposts || 0}</span>
         </button>
         <button class="action viewed" title="Просмотры">
@@ -4220,6 +4207,9 @@ async function openProfile(uid, name) {
   currentProfileUserId = uid;
   currentProfileTab = 'posts';
   document.getElementById("profileSheet").classList.add("show");
+  
+  // Загружаем тему пользователя
+  await loadUserTheme(uid);
   
   // Применяем тему к профилю
   const profileSheetBody = document.getElementById('profileSheetBody');
@@ -4618,7 +4608,7 @@ async function refreshProfilePosts(uid) {
       postElement.className = 'post fade';
       postElement.id = `profile-post-${post.id}`;
       
-      // Применяем тему к посту
+      // Применяем тему автора к посту
       applyThemeToElement(postElement, post.userId);
       
       postElement.innerHTML = `
@@ -4727,6 +4717,10 @@ async function refreshProfileReposts(uid) {
     
     profileReposts.innerHTML = "";
     
+    // Загружаем темы для всех авторов оригинальных постов
+    const authorIds = [...new Set(validPosts.map(p => p.userId))];
+    await Promise.all(authorIds.map(id => loadUserTheme(id)));
+    
     if (pinnedPosts.length > 0) {
       pinnedPosts.forEach(post => {
         const isAdmin = adminUsers.has(post.userId);
@@ -4762,7 +4756,7 @@ async function refreshProfileReposts(uid) {
         postElement.className = 'post fade';
         postElement.id = `repost-${post.id}`;
         
-        // Применяем тему к посту
+        // Применяем тему автора оригинального поста
         applyThemeToElement(postElement, post.userId);
         
         postElement.innerHTML = `
@@ -4792,17 +4786,18 @@ async function refreshProfileReposts(uid) {
           <div class="post-text">${processedText}</div>
           ${imageHTML}
           <div class="post-actions">
-            <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
-              ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
+            <button class="action like-btn ${liked ? 'liked' : ''}" data-like="${post.id}">
+              <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
+              <span class="likes-count">${post.likes || 0}</span>
             </button>
             <button class="action" data-comment="${post.id}">
-              💬 ${post.commentsCount || 0}
+              💬 <span class="comments-count">${post.commentsCount || 0}</span>
             </button>
-            <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
-              🔄 <span>${post.reposts || 0}</span>
+            <button class="action ${isReposted ? 'reposted' : ''}" data-repost="${post.id}">
+              🔄 <span class="reposts-count">${post.reposts || 0}</span>
             </button>
             <button class="action viewed" title="Просмотры">
-              👁️ ${post.views || 0}
+              👁️ <span class="views-count">${post.views || 0}</span>
             </button>
           </div>
         `;
@@ -4811,11 +4806,10 @@ async function refreshProfileReposts(uid) {
       });
       
       if (regularPosts.length > 0) {
-        profileReposts.innerHTML += `
-          <div class="reposts-divider">
-            <span>Все репосты</span>
-          </div>
-        `;
+        const dividerElement = document.createElement('div');
+        dividerElement.className = 'reposts-divider';
+        dividerElement.innerHTML = '<span>Все репосты</span>';
+        profileReposts.appendChild(dividerElement);
       }
     }
     
@@ -4853,7 +4847,7 @@ async function refreshProfileReposts(uid) {
       postElement.className = 'post fade';
       postElement.id = `repost-${post.id}`;
       
-      // Применяем тему к посту
+      // Применяем тему автора оригинального поста
       applyThemeToElement(postElement, post.userId);
       
       postElement.innerHTML = `
@@ -4882,17 +4876,18 @@ async function refreshProfileReposts(uid) {
         <div class="post-text">${processedText}</div>
         ${imageHTML}
         <div class="post-actions">
-          <button class="action ${liked ? "liked" : ""}" data-like="${post.id}">
-            ${liked ? "❤️" : "🤍"} <span>${post.likes || 0}</span>
+          <button class="action like-btn ${liked ? 'liked' : ''}" data-like="${post.id}">
+            <span class="like-icon">${liked ? '❤️' : '🤍'}</span>
+            <span class="likes-count">${post.likes || 0}</span>
           </button>
           <button class="action" data-comment="${post.id}">
-            💬 ${post.commentsCount || 0}
+            💬 <span class="comments-count">${post.commentsCount || 0}</span>
           </button>
-          <button class="action ${isReposted ? "reposted" : ""}" data-repost="${post.id}">
-            🔄 <span>${post.reposts || 0}</span>
+          <button class="action ${isReposted ? 'reposted' : ''}" data-repost="${post.id}">
+            🔄 <span class="reposts-count">${post.reposts || 0}</span>
           </button>
           <button class="action viewed" title="Просмотры">
-            👁️ ${post.views || 0}
+            👁️ <span class="views-count">${post.views || 0}</span>
           </button>
         </div>
       `;
@@ -5062,6 +5057,11 @@ async function loadComments() {
     
     commentsBody.innerHTML = "";
     
+    // Загружаем темы для всех авторов комментариев
+    const commentDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const authorIds = [...new Set(commentDocs.map(c => c.userId))];
+    await Promise.all(authorIds.map(id => loadUserTheme(id)));
+    
     snap.forEach(doc => {
       const comment = doc.data();
       
@@ -5085,7 +5085,7 @@ async function loadComments() {
       const commentElement = document.createElement('div');
       commentElement.className = 'post fade';
       
-      // Применяем тему к комментарию
+      // Применяем тему автора комментария
       applyThemeToElement(commentElement, comment.userId);
       
       commentElement.innerHTML = `
@@ -5527,18 +5527,6 @@ function logout() {
       location.href = "index.html";
     });
   }
-}
-
-async function loadUserTheme(userId) {
-  try {
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (userDoc.exists) {
-      return userDoc.data().theme || 'base';
-    }
-  } catch (error) {
-    console.error("Ошибка загрузки темы:", error);
-  }
-  return 'base';
 }
 
 window.addEventListener('load', () => {

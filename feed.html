@@ -725,7 +725,7 @@ body{
 }
 .search-results{
   margin-top:12px;
-  max-height:200px;
+  max-height:300px;
   overflow-y:auto;
   display:none;
 }
@@ -1716,7 +1716,7 @@ body{
 
     <div class="search">
       <div class="search-icon">🔍</div>
-      <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей по нику..." autocomplete="off">
+      <input type="text" class="search-input" id="searchInput" placeholder="Поиск пользователей или постов..." autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
 
@@ -1947,6 +1947,8 @@ let currentPoll = null;
 let currentImageFile = null;
 let currentImagePreview = null;
 let viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+let postsLoadPromise = null;
+let hashtagsLoadPromise = null;
 
 // ==================== ПЕРЕМЕННЫЕ ДЛЯ ОБРЕЗКИ ====================
 let cropper = null;
@@ -2646,6 +2648,10 @@ function updateHashtagsInPost(post) {
 }
 
 async function loadAllHashtags() {
+  if (hashtagsLoadPromise) {
+    return hashtagsLoadPromise;
+  }
+  
   const feed = document.getElementById("feed");
   feed.innerHTML = `
     <div class="hashtags-list">
@@ -2655,81 +2661,87 @@ async function loadAllHashtags() {
     </div>
   `;
   
-  try {
-    const postsSnap = await db.collection("posts")
-      .orderBy("createdAt", "desc")
-      .limit(500)
-      .get();
-    
-    if (postsSnap.empty) {
-      feed.innerHTML = `
-        <div class="hashtags-list">
-          <div class="no-hashtags">
-            Пока нет хештегов
-          </div>
-        </div>
-      `;
-      return;
-    }
-    
-    const hashtagCounts = {};
-    
-    postsSnap.forEach(doc => {
-      const post = doc.data();
-      const hashtags = extractHashtags(post.text);
+  hashtagsLoadPromise = (async () => {
+    try {
+      const postsSnap = await db.collection("posts")
+        .orderBy("createdAt", "desc")
+        .limit(500)
+        .get();
       
-      hashtags.forEach(tag => {
-        if (hashtagCounts[tag]) {
-          hashtagCounts[tag]++;
-        } else {
-          hashtagCounts[tag] = 1;
-        }
+      if (postsSnap.empty) {
+        feed.innerHTML = `
+          <div class="hashtags-list">
+            <div class="no-hashtags">
+              Пока нет хештегов
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      const hashtagCounts = {};
+      
+      postsSnap.forEach(doc => {
+        const post = doc.data();
+        const hashtags = extractHashtags(post.text);
+        
+        hashtags.forEach(tag => {
+          if (hashtagCounts[tag]) {
+            hashtagCounts[tag]++;
+          } else {
+            hashtagCounts[tag] = 1;
+          }
+        });
       });
-    });
-    
-    const sortedHashtags = Object.entries(hashtagCounts)
-      .sort((a, b) => b[1] - a[1]);
-    
-    hashtagsCache.clear();
-    sortedHashtags.forEach(([tag, count]) => {
-      hashtagsCache.set(tag, count);
-    });
-    
-    if (sortedHashtags.length === 0) {
+      
+      const sortedHashtags = Object.entries(hashtagCounts)
+        .sort((a, b) => b[1] - a[1]);
+      
+      hashtagsCache.clear();
+      sortedHashtags.forEach(([tag, count]) => {
+        hashtagsCache.set(tag, count);
+      });
+      
+      if (sortedHashtags.length === 0) {
+        feed.innerHTML = `
+          <div class="hashtags-list">
+            <div class="no-hashtags">
+              Пока нет хештегов
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      let hashtagsHTML = '<div class="hashtags-list">';
+      
+      sortedHashtags.forEach(([tag, count]) => {
+        hashtagsHTML += `
+          <div class="hashtag-item" data-hashtag="${tag}">
+            <div class="hashtag-item-name">#${tag}</div>
+            <div class="hashtag-item-count">${count}</div>
+          </div>
+        `;
+      });
+      
+      hashtagsHTML += '</div>';
+      feed.innerHTML = hashtagsHTML;
+      
+    } catch (error) {
+      console.error("Ошибка при загрузке хештегов:", error);
       feed.innerHTML = `
         <div class="hashtags-list">
-          <div class="no-hashtags">
-            Пока нет хештегов
+          <div class="no-hashtags" style="color:var(--danger);">
+            Ошибка при загрузке хештегов
           </div>
         </div>
       `;
-      return;
+    } finally {
+      hashtagsLoadPromise = null;
     }
-    
-    let hashtagsHTML = '<div class="hashtags-list">';
-    
-    sortedHashtags.forEach(([tag, count]) => {
-      hashtagsHTML += `
-        <div class="hashtag-item" data-hashtag="${tag}">
-          <div class="hashtag-item-name">#${tag}</div>
-          <div class="hashtag-item-count">${count}</div>
-        </div>
-      `;
-    });
-    
-    hashtagsHTML += '</div>';
-    feed.innerHTML = hashtagsHTML;
-    
-  } catch (error) {
-    console.error("Ошибка при загрузке хештегов:", error);
-    feed.innerHTML = `
-      <div class="hashtags-list">
-        <div class="no-hashtags" style="color:var(--danger);">
-          Ошибка при загрузке хештегов
-        </div>
-      </div>
-    `;
-  }
+  })();
+  
+  return hashtagsLoadPromise;
 }
 
 async function openHashtagFeed(hashtag) {
@@ -2857,9 +2869,14 @@ async function toggleLike(postId, button) {
     }
     
     button.classList.toggle('liked', !liked);
-    const likesSpan = button.querySelector('span');
-    if (likesSpan) {
-      likesSpan.textContent = post.likes;
+    
+    if (button.innerHTML.includes('❤️')) {
+      button.innerHTML = !liked ? '❤️ <span>' + post.likes + '</span>' : '🤍 <span>' + post.likes + '</span>';
+    } else {
+      const span = button.querySelector('span');
+      if (span) {
+        span.textContent = post.likes;
+      }
     }
     
     await db.collection("posts").doc(postId).update({
@@ -2878,15 +2895,118 @@ async function toggleLike(postId, button) {
     }
     
     button.classList.toggle('liked', liked);
-    const likesSpan = button.querySelector('span');
-    if (likesSpan) {
-      likesSpan.textContent = post.likes;
+    const span = button.querySelector('span');
+    if (span) {
+      span.textContent = post.likes;
     }
     
     console.error("Ошибка при лайке:", error);
     showNotification("Ошибка: " + error.message);
   } finally {
     button.classList.remove('processing');
+  }
+}
+
+// ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ РЕПОСТОВ ====================
+async function toggleRepost(postId, button) {
+  const post = postsCache.get(postId);
+  if (!post) return;
+  
+  if (button.classList.contains('processing')) return;
+  button.classList.add('processing');
+  
+  const isReposted = userData.reposts?.includes(postId) || false;
+  
+  try {
+    const postRef = db.collection("posts").doc(postId);
+    const postDoc = await postRef.get();
+    const postData = postDoc.data();
+    
+    let newRepostedBy = postData.repostedBy || [];
+    
+    if (isReposted) {
+      newRepostedBy = newRepostedBy.filter(username => username !== userData.username);
+    } else {
+      if (!newRepostedBy.includes(userData.username)) {
+        newRepostedBy.push(userData.username);
+      }
+    }
+    
+    await postRef.update({
+      reposts: firebase.firestore.FieldValue.increment(isReposted ? -1 : 1),
+      repostedBy: newRepostedBy
+    });
+    
+    await db.collection("users").doc(currentUser.uid).update({
+      reposts: isReposted
+        ? firebase.firestore.FieldValue.arrayRemove(postId)
+        : firebase.firestore.FieldValue.arrayUnion(postId)
+    });
+    
+    if (isReposted) {
+      userData.reposts = userData.reposts.filter(id => id !== postId);
+      if (userData.pinnedReposts?.includes(postId)) {
+        await togglePinRepost(postId, false);
+      }
+    } else {
+      if (!userData.reposts) userData.reposts = [];
+      userData.reposts.push(postId);
+    }
+    
+    post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
+    post.repostedBy = newRepostedBy;
+    
+    button.classList.toggle('reposted', !isReposted);
+    const repostsSpan = button.querySelector('span');
+    if (repostsSpan) {
+      repostsSpan.textContent = post.reposts;
+    }
+    
+    showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
+    
+  } catch (error) {
+    console.error("Ошибка при репосте:", error);
+    showNotification("Ошибка: " + error.message);
+  } finally {
+    button.classList.remove('processing');
+  }
+}
+
+async function togglePinRepost(postId, forcePin = null) {
+  if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
+  
+  const isCurrentlyPinned = userData.pinnedReposts?.includes(postId) || false;
+  const shouldPin = forcePin !== null ? forcePin : !isCurrentlyPinned;
+  
+  try {
+    const pinnedCount = userData.pinnedReposts?.length || 0;
+    const maxPinnedReposts = 3;
+    
+    if (shouldPin && pinnedCount >= maxPinnedReposts && !isCurrentlyPinned) {
+      showNotification(`Можно закрепить не более ${maxPinnedReposts} репостов!`);
+      return;
+    }
+    
+    await db.collection("users").doc(currentUser.uid).update({
+      pinnedReposts: shouldPin
+        ? firebase.firestore.FieldValue.arrayUnion(postId)
+        : firebase.firestore.FieldValue.arrayRemove(postId)
+    });
+    
+    if (shouldPin) {
+      if (!userData.pinnedReposts) userData.pinnedReposts = [];
+      userData.pinnedReposts.push(postId);
+    } else {
+      userData.pinnedReposts = userData.pinnedReposts?.filter(id => id !== postId) || [];
+    }
+    
+    showNotification(shouldPin ? "Репост закреплен!" : "Репост откреплен");
+    
+    await refreshProfileReposts(currentProfileUserId);
+    
+  } catch (error) {
+    console.error("Ошибка при закреплении репоста:", error);
+    showNotification("Ошибка: " + error.message);
   }
 }
 
@@ -3041,6 +3161,8 @@ auth.onAuthStateChanged(async (user) => {
     
     startTimeUpdater();
     
+    setupSearch();
+    
   } catch (error) {
     console.error('Ошибка инициализации:', error);
     showNotification('Ошибка загрузки данных: ' + error.message);
@@ -3186,6 +3308,8 @@ async function getUserIdByUsername(username) {
 }
 
 function switchTab(tab) {
+  if (currentTab === tab) return;
+  
   currentTab = tab;
   
   const allTab = document.querySelector('.tab-bar .tab-btn:nth-child(1)');
@@ -3213,30 +3337,40 @@ function switchTab(tab) {
 }
 
 async function loadPosts() {
+  if (postsLoadPromise) {
+    return postsLoadPromise;
+  }
+  
   const feed = document.getElementById("feed");
   feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов...</div>";
   
-  try {
-    if (currentTab === 'subscriptions' && subscriptions.size > 0) {
-      await loadSubscriptionPosts();
-    } else if (currentTab === 'subscriptions') {
+  postsLoadPromise = (async () => {
+    try {
+      if (currentTab === 'subscriptions' && subscriptions.size > 0) {
+        await loadSubscriptionPosts();
+      } else if (currentTab === 'subscriptions') {
+        feed.innerHTML = `
+          <div style='text-align:center;color:var(--sub);padding:40px 0;'>
+            Вы пока ни на кого не подписаны<br><br>
+            Подпишитесь на интересных пользователей,<br>
+            чтобы видеть их посты здесь!
+          </div>`;
+      } else {
+        await loadAllPosts();
+      }
+      
+    } catch (error) {
+      console.error("Ошибка при загрузке постов:", error);
       feed.innerHTML = `
-        <div style='text-align:center;color:var(--sub);padding:40px 0;'>
-          Вы пока ни на кого не подписаны<br><br>
-          Подпишитесь на интересных пользователей,<br>
-          чтобы видеть их посты здесь!
+        <div style='text-align:center;color:var(--danger);padding:40px 0;'>
+          Ошибка при загрузке постов: ${error.message}
         </div>`;
-    } else {
-      await loadAllPosts();
+    } finally {
+      postsLoadPromise = null;
     }
-    
-  } catch (error) {
-    console.error("Ошибка при загрузке постов:", error);
-    feed.innerHTML = `
-      <div style='text-align:center;color:var(--danger);padding:40px 0;'>
-        Ошибка при загрузке постов: ${error.message}
-      </div>`;
-  }
+  })();
+  
+  return postsLoadPromise;
 }
 
 async function loadAllPosts() {
@@ -3276,7 +3410,6 @@ async function loadAllPosts() {
 
 async function loadSubscriptionPosts() {
   const feed = document.getElementById("feed");
-  feed.innerHTML = "<div style='text-align:center;color:var(--sub);padding:40px 0;'>Загрузка постов от подписок...</div>";
   
   try {
     const snap = await db.collection("posts")
@@ -3724,111 +3857,6 @@ async function deletePost(postId) {
   } catch (error) {
     console.error("Ошибка при удалении поста:", error);
     showNotification("Не удалось удалить пост: " + error.message);
-  }
-}
-
-async function toggleRepost(postId, button) {
-  const post = postsCache.get(postId);
-  if (!post) return;
-  
-  const isReposted = userData.reposts?.includes(postId) || false;
-  
-  try {
-    const postRef = db.collection("posts").doc(postId);
-    const postDoc = await postRef.get();
-    const postData = postDoc.data();
-    
-    let newRepostedBy = postData.repostedBy || [];
-    
-    if (isReposted) {
-      newRepostedBy = newRepostedBy.filter(username => username !== userData.username);
-    } else {
-      if (!newRepostedBy.includes(userData.username)) {
-        newRepostedBy.push(userData.username);
-      }
-    }
-    
-    await postRef.update({
-      reposts: firebase.firestore.FieldValue.increment(isReposted ? -1 : 1),
-      repostedBy: newRepostedBy
-    });
-    
-    await db.collection("users").doc(currentUser.uid).update({
-      reposts: isReposted
-        ? firebase.firestore.FieldValue.arrayRemove(postId)
-        : firebase.firestore.FieldValue.arrayUnion(postId)
-    });
-    
-    if (isReposted) {
-      userData.reposts = userData.reposts.filter(id => id !== postId);
-      if (userData.pinnedReposts?.includes(postId)) {
-        await togglePinRepost(postId, false);
-      }
-    } else {
-      if (!userData.reposts) userData.reposts = [];
-      userData.reposts.push(postId);
-    }
-    
-    post.reposts = (post.reposts || 0) + (isReposted ? -1 : 1);
-    post.repostedBy = newRepostedBy;
-    
-    button.classList.toggle('reposted', !isReposted);
-    const repostsSpan = button.querySelector('span');
-    if (repostsSpan) {
-      repostsSpan.textContent = post.reposts;
-    }
-    
-    showNotification(isReposted ? "Репост удален" : "Пост репостнут!");
-    
-    setTimeout(() => {
-      if (currentTab === 'hashtags') {
-        loadAllHashtags();
-      } else {
-        loadPosts();
-      }
-    }, 500);
-    
-  } catch (error) {
-    console.error("Ошибка при репосте:", error);
-    showNotification("Ошибка: " + error.message);
-  }
-}
-
-async function togglePinRepost(postId, forcePin = null) {
-  if (!currentProfileUserId || currentProfileUserId !== currentUser.uid) return;
-  
-  const isCurrentlyPinned = userData.pinnedReposts?.includes(postId) || false;
-  const shouldPin = forcePin !== null ? forcePin : !isCurrentlyPinned;
-  
-  try {
-    const pinnedCount = userData.pinnedReposts?.length || 0;
-    const maxPinnedReposts = 3;
-    
-    if (shouldPin && pinnedCount >= maxPinnedReposts && !isCurrentlyPinned) {
-      showNotification(`Можно закрепить не более ${maxPinnedReposts} репостов!`);
-      return;
-    }
-    
-    await db.collection("users").doc(currentUser.uid).update({
-      pinnedReposts: shouldPin
-        ? firebase.firestore.FieldValue.arrayUnion(postId)
-        : firebase.firestore.FieldValue.arrayRemove(postId)
-    });
-    
-    if (shouldPin) {
-      if (!userData.pinnedReposts) userData.pinnedReposts = [];
-      userData.pinnedReposts.push(postId);
-    } else {
-      userData.pinnedReposts = userData.pinnedReposts?.filter(id => id !== postId) || [];
-    }
-    
-    showNotification(shouldPin ? "Репост закреплен!" : "Репост откреплен");
-    
-    await refreshProfileReposts(currentProfileUserId);
-    
-  } catch (error) {
-    console.error("Ошибка при закреплении репоста:", error);
-    showNotification("Ошибка: " + error.message);
   }
 }
 
@@ -5000,68 +5028,165 @@ function setupViewTracking() {
   });
 }
 
-async function searchUsers(searchTerm) {
+// ==================== УЛУЧШЕННЫЙ ПОИСК ====================
+function setupSearch() {
+  const searchInput = document.getElementById('searchInput');
   const searchResults = document.getElementById('searchResults');
   
-  if (!searchTerm.trim() || searchTerm.length < 2) {
-    searchResults.innerHTML = '';
-    searchResults.classList.remove('show');
-    return;
-  }
-  
-  try {
-    searchResults.innerHTML = '<div class="no-results">Поиск...</div>';
-    searchResults.classList.add('show');
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    const query = searchInput.value.trim();
     
-    const usersSnap = await db.collection("users")
-      .where("username", ">=", searchTerm.toLowerCase())
-      .where("username", "<=", searchTerm.toLowerCase() + '\uf8ff')
-      .limit(10)
-      .get();
-    
-    if (usersSnap.empty) {
-      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
+    if (query.length < 2) {
+      searchResults.innerHTML = '';
+      searchResults.classList.remove('show');
       return;
     }
     
-    let resultsHTML = '';
+    searchTimeout = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search')) {
+      searchResults.classList.remove('show');
+    }
+  });
+}
+
+async function performSearch(query) {
+  const searchResults = document.getElementById('searchResults');
+  searchResults.innerHTML = '<div class="no-results">Поиск...</div>';
+  searchResults.classList.add('show');
+  
+  const lowerQuery = query.toLowerCase();
+  
+  try {
+    const userResults = await searchUsers(lowerQuery);
+    const postResults = await searchPosts(lowerQuery);
     
-    usersSnap.forEach(doc => {
-      const user = doc.data();
-      const userId = doc.id;
-      
-      if (userId === currentUser.uid) return;
-      
-      const isSubscribed = subscriptions.has(userId);
-      const isAdmin = user.isAdmin || false;
-      
-      const avatarStyle = user.avatar ? `style="background-image: url('${user.avatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
-      const avatarLetter = user.username?.[0]?.toUpperCase() || "U";
-      
-      resultsHTML += `
-        <div class="search-result" data-userid="${userId}" data-username="${user.username}">
-          <div class="search-avatar" ${avatarStyle}>${avatarLetter}</div>
-          <div class="search-username">
-            @${user.username}
-            ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
-          </div>
-          <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
-                  data-userid="${userId}" data-username="${user.username}">
-            ${isSubscribed ? 'В подписках' : 'Подписаться'}
-          </button>
-        </div>
-      `;
-    });
-    
-    if (!resultsHTML) {
-      searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
-    } else {
-      searchResults.innerHTML = resultsHTML;
+    if (userResults.length === 0 && postResults.length === 0) {
+      searchResults.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+      return;
     }
     
+    let html = '';
+    
+    if (userResults.length > 0) {
+      html += '<div style="color:var(--hashtag); padding:8px; font-size:14px;">👤 Пользователи</div>';
+      
+      userResults.forEach(user => {
+        const isSubscribed = subscriptions.has(user.userId);
+        const isAdmin = user.isAdmin || false;
+        
+        const avatarStyle = user.avatar ? `style="background-image: url('${user.avatar}'); background-size: cover; background-position: center; color: transparent;"` : '';
+        const avatarLetter = user.username?.[0]?.toUpperCase() || "U";
+        
+        html += `
+          <div class="search-result" data-userid="${user.userId}" data-username="${user.username}">
+            <div class="search-avatar" ${avatarStyle}>${avatarLetter}</div>
+            <div class="search-username">
+              @${user.username}
+              ${isAdmin ? '<span class="verified-badge">✓</span>' : ''}
+            </div>
+            <button class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" 
+                    data-userid="${user.userId}" data-username="${user.username}">
+              ${isSubscribed ? 'В подписках' : 'Подписаться'}
+            </button>
+          </div>
+        `;
+      });
+    }
+    
+    if (postResults.length > 0) {
+      html += '<div style="color:var(--hashtag); padding:8px; font-size:14px; margin-top:8px;">📄 Посты</div>';
+      
+      postResults.slice(0, 5).forEach(post => {
+        const postText = post.text.length > 50 ? post.text.substring(0, 50) + '...' : post.text;
+        const timeAgo = post.createdAt ? formatTimeAgo(post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt)) : '';
+        
+        html += `
+          <div class="search-result" data-postid="${post.id}">
+            <div class="search-avatar" style="background:var(--accent); color:white;">📄</div>
+            <div style="flex:1;">
+              <div style="font-weight:600; font-size:14px;">@${post.username}</div>
+              <div style="color:var(--sub); font-size:12px;">${postText}</div>
+              <div style="color:var(--sub); font-size:10px; margin-top:2px;">${timeAgo}</div>
+            </div>
+          </div>
+        `;
+      });
+      
+      if (postResults.length > 5) {
+        html += `<div style="text-align:center; color:var(--sub); padding:8px; font-size:12px;">
+          и еще ${postResults.length - 5} постов...
+        </div>`;
+      }
+    }
+    
+    searchResults.innerHTML = html;
+    
+  } catch (error) {
+    console.error("Ошибка при поиске:", error);
+    searchResults.innerHTML = '<div class="no-results">Ошибка при поиске</div>';
+  }
+}
+
+async function searchUsers(query) {
+  try {
+    const usersSnap = await db.collection("users")
+      .orderBy("username")
+      .startAt(query)
+      .endAt(query + '\uf8ff')
+      .limit(10)
+      .get();
+    
+    const results = [];
+    usersSnap.forEach(doc => {
+      const user = doc.data();
+      if (doc.id !== currentUser.uid) {
+        results.push({
+          userId: doc.id,
+          username: user.username,
+          avatar: user.avatar,
+          isAdmin: user.isAdmin || false
+        });
+      }
+    });
+    
+    return results;
   } catch (error) {
     console.error("Ошибка при поиске пользователей:", error);
-    searchResults.innerHTML = '<div class="no-results">Ошибка при поиске</div>';
+    return [];
+  }
+}
+
+async function searchPosts(query) {
+  try {
+    const postsSnap = await db.collection("posts")
+      .orderBy("createdAt", "desc")
+      .limit(50)
+      .get();
+    
+    const results = [];
+    postsSnap.forEach(doc => {
+      const post = doc.data();
+      if (post.text.toLowerCase().includes(query) && !blockedUsers.has(post.userId)) {
+        results.push({
+          id: doc.id,
+          text: post.text,
+          username: post.username,
+          userId: post.userId,
+          createdAt: post.createdAt
+        });
+      }
+    });
+    
+    return results;
+  } catch (error) {
+    console.error("Ошибка при поиске постов:", error);
+    return [];
   }
 }
 
@@ -5071,6 +5196,23 @@ async function openSearchedProfile(userId, username) {
   document.getElementById('searchResults').classList.remove('show');
   
   await openProfile(userId, username);
+}
+
+async function openSearchedPost(postId) {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+  document.getElementById('searchResults').classList.remove('show');
+  
+  const postElement = document.getElementById(`post-${postId}`);
+  if (postElement) {
+    postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    postElement.classList.add('highlighted');
+    setTimeout(() => {
+      postElement.classList.remove('highlighted');
+    }, 3000);
+  } else {
+    showNotification('Пост не найден в текущей ленте');
+  }
 }
 
 function startTimeUpdater() {
@@ -5132,7 +5274,13 @@ document.addEventListener('click', (e) => {
     e.preventDefault();
     const userId = searchResult.dataset.userid;
     const username = searchResult.dataset.username;
-    if (userId && username) openSearchedProfile(userId, username);
+    const postId = searchResult.dataset.postid;
+    
+    if (userId && username) {
+      openSearchedProfile(userId, username);
+    } else if (postId) {
+      openSearchedPost(postId);
+    }
     return;
   }
 });

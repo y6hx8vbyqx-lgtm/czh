@@ -36,7 +36,15 @@
         .btn-primary:hover{transform:translateY(-2px);opacity:0.9}
         .btn-secondary{background:rgba(255,255,255,0.1);color:white;backdrop-filter:blur(10px)}
         .btn-secondary:hover{background:rgba(255,255,255,0.15);transform:translateY(-1px)}
+        /* Новая кнопка Telegram */
+        .btn-telegram{background:linear-gradient(135deg,#0088cc,#2c7cb0);color:white;margin-bottom:15px;position:relative;overflow:hidden}
+        .btn-telegram:hover{transform:translateY(-2px);opacity:0.95}
+        .btn-telegram::before{content:"📱";margin-right:10px;font-size:18px}
         .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+        .divider{display:flex;align-items:center;text-align:center;margin:20px 0;color:rgba(255,255,255,0.4);font-size:12px}
+        .divider::before,.divider::after{content:'';flex:1;border-bottom:0.5px solid rgba(255,255,255,0.1)}
+        .divider::before{margin-right:10px}
+        .divider::after{margin-left:10px}
         .form-switch{text-align:center;margin-top:25px;padding-top:25px;border-top:0.5px solid rgba(255,255,255,0.1)}
         .switch-text{color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:10px}
         .switch-link{color:#667eea;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;text-decoration:underline}
@@ -47,6 +55,14 @@
         .error{background:rgba(255,59,48,0.15);color:#ff3b30;border-color:rgba(255,59,48,0.3)}
         .info{background:rgba(0,122,255,0.15);color:#007aff;border-color:rgba(0,122,255,0.3)}
         .loading{text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:14px;display:none}
+        /* Модальное окно для Telegram */
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:2000;align-items:center;justify-content:center}
+        .modal-content{background:rgba(28,28,30,0.95);border-radius:24px;padding:30px;max-width:320px;width:90%;text-align:center;border:0.5px solid rgba(255,255,255,0.2)}
+        .modal-content h3{font-size:22px;margin-bottom:15px}
+        .modal-content p{color:rgba(255,255,255,0.7);margin-bottom:25px;font-size:14px}
+        .telegram-login-btn{display:inline-flex;align-items:center;gap:10px;background:#0088cc;padding:14px 28px;border-radius:50px;color:white;text-decoration:none;font-weight:600;margin:10px 0;transition:all 0.2s}
+        .telegram-login-btn:hover{transform:scale(1.02);background:#0099ee}
+        .close-modal{background:rgba(255,255,255,0.1);border:none;padding:12px 24px;border-radius:40px;color:white;margin-top:15px;cursor:pointer;width:100%}
         @media (max-width:768px){.container{padding:130px 15px 40px}.dynamic-island{width:110px;height:32px;top:10px}.auth-card{padding:25px}.logo{font-size:32px}.form-title{font-size:22px}.btn{padding:16px;font-size:15px}.input-field{padding:14px}}
         @media (max-width:480px){.container{padding:120px 12px 30px}.auth-card{padding:20px}.logo{font-size:28px}.form-title{font-size:20px;margin-bottom:25px}.btn{padding:15px}}
         @media (max-width:360px){.container{padding:110px 10px 20px}.dynamic-island{width:100px;height:30px;font-size:13px}.logo{font-size:24px}}
@@ -98,6 +114,10 @@
             
             <button class="btn btn-primary" onclick="login()" id="loginButton">Войти в аккаунт</button>
             
+            <!-- Новая кнопка Telegram -->
+            <div class="divider">ИЛИ</div>
+            <button class="btn btn-telegram" onclick="showTelegramModal()">Войти через Telegram</button>
+            
             <div class="form-switch">
                 <div class="switch-text">Нет аккаунта?</div>
                 <button class="switch-link" onclick="showRegisterForm()">Создать новый аккаунт</button>
@@ -137,7 +157,31 @@
         <div id="message" class="message"></div>
     </div>
 
+    <!-- Модальное окно для Telegram входа -->
+    <div id="telegramModal" class="modal">
+        <div class="modal-content">
+            <h3>📱 Вход через Telegram</h3>
+            <p>Нажмите на кнопку ниже, чтобы авторизоваться через Telegram. Вы будете перенаправлены в бота.</p>
+            <a href="#" id="telegramLoginLink" class="telegram-login-btn" target="_blank">
+                <span>🤖</span> Войти через Telegram
+            </a>
+            <button class="close-modal" onclick="closeTelegramModal()">Закрыть</button>
+        </div>
+    </div>
+
     <script>
+        // ===== НАСТРОЙКИ TELEGRAM =====
+        // 🔴 ЗДЕСЬ ВСТАВЬТЕ ТОКЕН ВАШЕГО БОТА 🔴
+        const TELEGRAM_BOT_TOKEN = "8784459113:AAFuPtSkQiZtj9T644JEKahFLgo8OXoC1So
+";  // <-- ЗАМЕНИТЕ НА ВАШ ТОКЕН!
+        
+        // ID вашего бота (можно получить из токена: часть до двоеточия)
+        const BOT_ID = TELEGRAM_BOT_TOKEN.split(':')[0];
+        const BOT_USERNAME = "CZHMASSbot"; // Укажите username вашего бота
+        
+        // Ссылка на бота для входа
+        const TELEGRAM_LOGIN_URL = `https://t.me/${CZHMASSbot}?start=auth`;
+        
         // ===== FIREBASE КОНФИГУРАЦИЯ =====
         const firebaseConfig = {
             apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
@@ -156,27 +200,187 @@
         db = firebase.firestore();
         auth = firebase.auth();
         
-        // Локальный кэш username (без загрузки из Firestore для избежания permission errors)
+        // Локальный кэш username
         let usernameCache = new Map();
         
-        // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С USERNAME (без permission errors) =====
+        // ===== ФУНКЦИИ ДЛЯ TELEGRAM =====
         
-        // Получение email по username (только для авторизованных пользователей)
+        // Показать модальное окно
+        window.showTelegramModal = function() {
+            const modal = document.getElementById('telegramModal');
+            const link = document.getElementById('telegramLoginLink');
+            
+            // Генерируем уникальный ID для сессии
+            const sessionId = generateSessionId();
+            localStorage.setItem('telegram_auth_session', sessionId);
+            
+            // Создаем ссылку с параметром start (глубокое открытие бота)
+            // Бот должен обработать команду /start auth_<sessionId>
+            link.href = `https://t.me/${BOT_USERNAME}?start=auth_${sessionId}`;
+            
+            modal.style.display = 'flex';
+        };
+        
+        // Закрыть модальное окно
+        window.closeTelegramModal = function() {
+            document.getElementById('telegramModal').style.display = 'none';
+        };
+        
+        // Генерация случайного ID сессии
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Проверка статуса авторизации через Telegram
+        // Эту функцию нужно вызывать периодически после открытия бота
+        async function checkTelegramAuth() {
+            const sessionId = localStorage.getItem('telegram_auth_session');
+            if (!sessionId) return;
+            
+            try {
+                // Здесь должен быть запрос к вашему серверу или Firebase Function
+                // В данном примере мы проверяем localStorage (для демонстрации)
+                // В реальном проекте вам понадобится Cloud Function для верификации данных от бота
+                
+                const telegramData = localStorage.getItem('telegram_auth_data');
+                if (telegramData) {
+                    const userData = JSON.parse(telegramData);
+                    await processTelegramUser(userData);
+                    localStorage.removeItem('telegram_auth_session');
+                    localStorage.removeItem('telegram_auth_data');
+                    closeTelegramModal();
+                }
+            } catch (e) {
+                console.error('Ошибка проверки Telegram авторизации:', e);
+            }
+        }
+        
+        // Обработка пользователя Telegram
+        async function processTelegramUser(tgUser) {
+            showMessage('Авторизация через Telegram...', 'info');
+            
+            try {
+                const { id, first_name, last_name, username, photo_url, auth_date } = tgUser;
+                const tgId = id.toString();
+                const displayName = username || `${first_name} ${last_name || ''}`.trim();
+                const email = `${tgId}@telegram.czhmass.com`; // Уникальный email на основе Telegram ID
+                
+                // Пытаемся найти существующего пользователя по telegramId
+                let userRecord = null;
+                
+                // Ищем в Firestore
+                try {
+                    const querySnapshot = await db.collection('users').where('telegramId', '==', tgId).get();
+                    if (!querySnapshot.empty) {
+                        userRecord = querySnapshot.docs[0];
+                    }
+                } catch (e) {
+                    console.warn('Ошибка поиска в Firestore:', e);
+                }
+                
+                if (userRecord) {
+                    // Пользователь существует - выполняем вход
+                    const userEmail = userRecord.data().email;
+                    // Для входа через Telegram нам нужен способ аутентификации
+                    // Проще всего использовать signInWithCustomToken
+                    // В демо версии используем существующий email + пароль (нужно сохранять пароль)
+                    // Для простоты покажем сообщение о необходимости обычного входа
+                    showMessage('Аккаунт Telegram найден! Используйте обычный вход.', 'info');
+                    return;
+                } else {
+                    // Новый пользователь - регистрируем
+                    const newUsername = username || `tg_${tgId.slice(-6)}`;
+                    const tempPassword = generateTempPassword();
+                    
+                    // Проверяем уникальность username
+                    let finalUsername = newUsername;
+                    let counter = 1;
+                    while (!(await isUsernameAvailable(finalUsername))) {
+                        finalUsername = `${newUsername}${counter}`;
+                        counter++;
+                    }
+                    
+                    // Создаем пользователя в Firebase Auth
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, tempPassword);
+                    const user = userCredential.user;
+                    
+                    // Сохраняем данные в Firestore
+                    try {
+                        await db.collection('users').doc(user.uid).set({
+                            username: finalUsername,
+                            username_lower: finalUsername.toLowerCase(),
+                            email: email,
+                            telegramId: tgId,
+                            telegramUsername: username || '',
+                            telegramName: displayName,
+                            telegramPhoto: photo_url || '',
+                            createdAt: new Date().toISOString(),
+                            lastLogin: new Date().toISOString(),
+                            displayName: displayName,
+                            bio: '',
+                            avatar: photo_url || ''
+                        });
+                    } catch (e) {
+                        console.warn('Ошибка сохранения в Firestore:', e);
+                    }
+                    
+                    // Сохраняем mapping
+                    saveUsernameMapping(finalUsername, email, user.uid);
+                    
+                    // Сохраняем Telegram данные
+                    const telegramUsers = JSON.parse(localStorage.getItem('czhmass_telegram') || '{}');
+                    telegramUsers[tgId] = {
+                        uid: user.uid,
+                        username: finalUsername,
+                        email: email
+                    };
+                    localStorage.setItem('czhmass_telegram', JSON.stringify(telegramUsers));
+                    
+                    localStorage.setItem('czhmass_user', JSON.stringify({
+                        uid: user.uid,
+                        username: finalUsername,
+                        email: email
+                    }));
+                    
+                    showMessage(`Аккаунт создан через Telegram! Добро пожаловать, ${displayName}!`, 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/feed.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Ошибка Telegram авторизации:', error);
+                showMessage('Ошибка авторизации через Telegram: ' + error.message, 'error');
+            }
+        }
+        
+        // Генерация временного пароля
+        function generateTempPassword() {
+            return 'tg_' + Math.random().toString(36).substr(2, 15);
+        }
+        
+        // Функция для ручного входа через Telegram (вызывается после редиректа с бота)
+        // Добавьте эту функцию в глобальный объект window
+        window.completeTelegramAuth = function(tgData) {
+            try {
+                // Проверяем подпись данных (в реальном проекте нужно верифицировать на сервере)
+                const userData = typeof tgData === 'string' ? JSON.parse(tgData) : tgData;
+                processTelegramUser(userData);
+            } catch (e) {
+                console.error('Ошибка завершения Telegram авторизации:', e);
+            }
+        };
+        
+        // ===== ФУНКЦИИ ДЛЯ РАБОТЫ С USERNAME =====
+        
         async function getEmailByUsername(username) {
             const normalized = username.toLowerCase().trim();
             
-            // Сначала проверяем локальный кэш
             if (usernameCache.has(normalized)) {
                 return usernameCache.get(normalized);
             }
             
-            // Если пользователь не авторизован, используем Firebase Functions или другие методы
-            // Но для входа нам нужно проверить существование пользователя
-            // Вместо прямого запроса к Firestore используем специальный подход
-            
             try {
-                // Пытаемся найти пользователя через auth (не работает напрямую)
-                // Поэтому используем localStorage для временного хранения
                 const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
                 if (users[normalized]) {
                     usernameCache.set(normalized, users[normalized]);
@@ -189,7 +393,6 @@
             return null;
         }
         
-        // Сохранение username в localStorage (временное решение до настройки правил Firestore)
         function saveUsernameMapping(username, email, uid) {
             try {
                 const normalized = username.toLowerCase();
@@ -203,21 +406,11 @@
             }
         }
         
-        // Проверка уникальности username через localStorage
         async function isUsernameAvailable(username) {
             const normalized = username.toLowerCase();
-            
-            // Проверяем в localStorage
             const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            if (users[normalized]) {
-                return false;
-            }
-            
-            // Также проверяем в кэше
-            if (usernameCache.has(normalized)) {
-                return false;
-            }
-            
+            if (users[normalized]) return false;
+            if (usernameCache.has(normalized)) return false;
             return true;
         }
         
@@ -240,7 +433,6 @@
             clearErrors();
         }
         
-        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
@@ -259,13 +451,13 @@
             inputs.forEach(input => input.classList.remove('error'));
         }
         
-        function showLoginForm() {
+        window.showLoginForm = function() {
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('registerForm').style.display = 'none';
             clearErrors();
         }
         
-        function showRegisterForm() {
+        window.showRegisterForm = function() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
             clearErrors();
@@ -300,7 +492,6 @@
             const registerButton = document.getElementById('registerButton');
             const loading = document.getElementById('registerLoading');
             
-            // Валидация
             if (!username) { showError('usernameError', 'Введите имя пользователя'); return; }
             if (!validateUsername(username)) { 
                 showError('usernameError', 'Только буквы, цифры и _, от 3 до 20 символов'); 
@@ -316,7 +507,6 @@
             loading.style.display = 'block';
             
             try {
-                // Проверяем уникальность username (локально)
                 const available = await isUsernameAvailable(username);
                 if (!available) {
                     showError('usernameError', 'Это имя пользователя уже занято');
@@ -325,11 +515,9 @@
                     return;
                 }
                 
-                // Создаем пользователя в Firebase Auth
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                // Пытаемся сохранить данные в Firestore, но не критично если не получится
                 try {
                     await db.collection('users').doc(user.uid).set({
                         username: username,
@@ -343,14 +531,10 @@
                     });
                     console.log('✅ Данные сохранены в Firestore');
                 } catch (firestoreError) {
-                    console.warn('⚠️ Не удалось сохранить в Firestore, используем localStorage:', firestoreError.message);
-                    // Если Firestore недоступен, сохраняем локально
+                    console.warn('⚠️ Не удалось сохранить в Firestore:', firestoreError.message);
                 }
                 
-                // Сохраняем mapping username -> email в localStorage
                 saveUsernameMapping(username, email, user.uid);
-                
-                // Сохраняем данные пользователя в localStorage
                 localStorage.setItem('czhmass_user', JSON.stringify({
                     uid: user.uid,
                     username: username,
@@ -359,7 +543,6 @@
                 
                 showMessage(`Аккаунт создан! Добро пожаловать, ${username}!`, 'success');
                 
-                // Перенаправляем на ленту
                 setTimeout(() => { 
                     window.location.href = '/feed.html'; 
                 }, 1500);
@@ -406,7 +589,6 @@
                 username = document.getElementById('loginUsername').value.trim();
             }
             
-            // Валидация
             if (isEmailTab) {
                 if (!email) { showError('loginEmailError', 'Введите email'); return; }
                 if (!validateEmail(email)) { showError('loginEmailError', 'Некорректный email'); return; }
@@ -424,15 +606,12 @@
             loading.style.display = 'block';
             
             try {
-                // Если вход по username - получаем email
                 if (!isEmailTab) {
                     const mapping = await getEmailByUsername(username);
                     
                     if (mapping?.email) {
                         email = mapping.email;
                     } else {
-                        // Если не нашли в localStorage, пробуем альтернативный метод
-                        // Показываем подсказку пользователю
                         showError('loginUsernameError', 'Пользователь не найден. Попробуйте войти по email');
                         loginButton.disabled = false;
                         loading.style.display = 'none';
@@ -440,16 +619,12 @@
                     }
                 }
                 
-                // Вход в Firebase Auth
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                // Получаем username пользователя
                 let displayUsername = username || email.split('@')[0];
                 
-                // Пытаемся получить сохраненный username
                 try {
-                    // Ищем в localStorage
                     const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
                     for (const [uname, data] of Object.entries(users)) {
                         if (data.email === email) {
@@ -461,7 +636,6 @@
                     console.error('Ошибка чтения localStorage:', e);
                 }
                 
-                // Обновляем время последнего входа в Firestore (не критично если не получится)
                 try {
                     await db.collection('users').doc(user.uid).update({
                         lastLogin: new Date().toISOString()
@@ -470,7 +644,6 @@
                     console.warn('⚠️ Не удалось обновить lastLogin:', e.message);
                 }
                 
-                // Сохраняем данные пользователя в localStorage
                 localStorage.setItem('czhmass_user', JSON.stringify({
                     uid: user.uid,
                     username: displayUsername,
@@ -479,7 +652,6 @@
                 
                 showMessage(`Добро пожаловать, ${displayUsername}!`, 'success');
                 
-                // Перенаправляем
                 setTimeout(() => { 
                     window.location.href = '/feed.html'; 
                 }, 1500);
@@ -508,63 +680,10 @@
             }
         }
         
-        // ===== СМЕНА USERNAME =====
-        window.updateUsername = async function(newUsername, userId) {
-            if (!validateUsername(newUsername)) {
-                throw new Error('Некорректное имя пользователя');
-            }
-            
-            const available = await isUsernameAvailable(newUsername);
-            if (!available) {
-                throw new Error('Имя пользователя занято');
-            }
-            
-            try {
-                // Пытаемся обновить в Firestore
-                await db.collection('users').doc(userId).update({
-                    username: newUsername,
-                    username_lower: newUsername.toLowerCase(),
-                    displayName: newUsername
-                });
-            } catch (e) {
-                console.warn('⚠️ Не удалось обновить в Firestore:', e.message);
-            }
-            
-            // Обновляем localStorage
-            const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            const userData = JSON.parse(localStorage.getItem('czhmass_user') || '{}');
-            
-            // Удаляем старый username
-            if (userData.username) {
-                delete users[userData.username.toLowerCase()];
-            }
-            
-            // Добавляем новый
-            users[newUsername.toLowerCase()] = {
-                email: userData.email,
-                uid: userId
-            };
-            
-            localStorage.setItem('czhmass_users', JSON.stringify(users));
-            
-            // Обновляем текущего пользователя
-            userData.username = newUsername;
-            localStorage.setItem('czhmass_user', JSON.stringify(userData));
-            
-            // Обновляем кэш
-            usernameCache.set(newUsername.toLowerCase(), {
-                email: userData.email,
-                uid: userId
-            });
-            
-            return true;
-        };
-        
         // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
         auth.onAuthStateChanged((user) => {
             if (user) {
                 console.log('✅ Пользователь авторизован:', user.email);
-                // Если пользователь уже вошел и находится на странице входа - редирект
                 if (window.location.pathname.includes('login') || 
                     window.location.pathname.includes('register') || 
                     window.location.pathname === '/' || 
@@ -586,7 +705,6 @@
         
         // ===== ЗАГРУЗКА ПРИ СТАРТЕ =====
         window.addEventListener('load', () => {
-            // Загружаем сохраненные username из localStorage
             try {
                 const users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
                 for (const [username, data] of Object.entries(users)) {
@@ -598,6 +716,9 @@
             }
             
             clearErrors();
+            
+            // Проверяем Telegram авторизацию при загрузке
+            checkTelegramAuth();
         });
     </script>
 </body>

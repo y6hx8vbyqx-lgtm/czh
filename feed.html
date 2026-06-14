@@ -1671,42 +1671,73 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"Inter","SF Pro Display","Segoe UI",sans-serif;
 }
 #snowflakes-container,.snowflake{display:none!important}
-.dynamic-island{
-  width:154px;height:38px;top:10px;
-  background:#060708;
-  border:1px solid var(--border);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 12px 40px rgba(0,0,0,.45);
-}
+.dynamic-island{display:none!important}
 .navbar{
-  top:60px;width:calc(100% - 28px);max-width:720px;
-  background:rgba(5,6,7,.82);
-  border:1px solid var(--border-soft);
+  top:0;left:0;right:0;transform:none;
+  width:100%;max-width:none;
+  min-height:74px;
+  background:rgba(5,6,7,.84);
+  border:0;
+  border-bottom:1px solid var(--border-soft);
   border-radius:0;
-  border-left:0;border-right:0;
-  padding:16px 6px;
+  padding:14px max(18px,calc((100vw - 720px)/2 + 20px));
   backdrop-filter:blur(22px);
   -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 60px rgba(0,0,0,.26);
 }
 .logo{
-  font-size:34px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:24px;
   line-height:1;
   font-weight:850;
   color:var(--text);
   background:none;
   -webkit-text-fill-color:var(--text);
 }
+.logo::before{
+  content:"C";
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,var(--accent),#3858ff);
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+  box-shadow:0 10px 28px rgba(10,132,255,.28);
+}
 .nav-btns{gap:10px;align-items:center}
 .nav-btn,.chats-btn{
-  width:42px;height:42px;
+  height:40px;
   padding:0;
-  border-radius:50%;
-  background:var(--accent-soft);
-  border:1px solid rgba(10,132,255,.28);
-  color:var(--accent-2);
+  border-radius:999px;
+  background:rgba(255,255,255,.045);
+  border:1px solid var(--border-soft);
+  color:var(--text);
   box-shadow:none;
+  font-weight:750;
+  transition:background .18s ease,border-color .18s ease,transform .18s ease;
 }
-.chats-btn{width:auto;height:42px;border-radius:999px;padding:0 16px;color:var(--text)}
+.nav-btn{
+  width:40px;
+  font-size:15px;
+}
+.chats-btn{
+  width:auto;
+  padding:0 15px;
+  gap:8px;
+  background:rgba(10,132,255,.16);
+  border-color:rgba(10,132,255,.32);
+}
 .chats-btn .icon{background-color:var(--text)}
+.nav-btn:hover,.chats-btn:hover{
+  background:rgba(255,255,255,.075);
+  border-color:rgba(255,255,255,.14);
+  transform:translateY(-1px);
+}
 .tab-bar{
   width:calc(100% - 32px);max-width:520px;height:72px;bottom:18px;
   padding:7px;
@@ -1732,7 +1763,7 @@ body{
 .container{
   width:min(100%,720px);
   max-width:720px;
-  padding:132px 14px 112px;
+  padding:94px 14px 112px;
 }
 .create,.search,.post,.hashtags-list,.hashtag-header,.profile-bio{
   background:linear-gradient(180deg,rgba(21,24,29,.96),rgba(12,14,17,.96));
@@ -1901,9 +1932,11 @@ body{
   .post,.create,.search{border-radius:30px}
 }
 @media (max-width:480px){
-  .navbar{width:100%;top:54px;padding:15px 18px}
-  .logo{font-size:32px}
-  .container{padding-top:128px}
+  .navbar{min-height:68px;padding:12px 14px}
+  .logo{font-size:22px}
+  .logo::before{width:32px;height:32px;border-radius:11px}
+  .chats-btn span:last-child{display:none}
+  .container{padding-top:84px}
   .post-actions{justify-content:space-between}
   .action{padding:0 10px}
   .profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1915,17 +1948,15 @@ body{
 <!-- ВСЯ РАЗМЕТКА HTML ПОЛНОСТЬЮ СОХРАНЕНА -->
 <div id="snowflakes-container"></div>
 
-<div class="dynamic-island" id="time"></div>
-
 <div class="navbar">
   <div class="logo">CZH</div>
   <div class="nav-btns">
-    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'">👑</button>
+    <button class="nav-btn" id="adminBtn" style="display:none" onclick="location.href='admin.html'" title="Админ">A</button>
     <button class="chats-btn" onclick="location.href='chats.html'">
       <span class="icon"></span>
       <span>Чаты</span>
     </button>
-    <button class="nav-btn" onclick="logout()">🚪</button>
+    <button class="nav-btn" onclick="logout()" title="Выйти">↗</button>
   </div>
 </div>
 

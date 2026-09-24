@@ -11,8 +11,9 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+html,body{height:100%;overflow:hidden}
 body{min-height:100vh}
-.app{max-width:430px;margin:auto;padding:20px 15px 100px}
+.app{max-width:430px;height:100dvh;margin:auto;padding:20px 15px 90px;display:flex;flex-direction:column;overflow:hidden}
 .header{height:92px;display:flex;align-items:center;justify-content:space-between}
 .avatar{width:40px;height:40px;border-radius:50%;background:#914000;display:grid;place-items:center;font-weight:750;font-size:17px;position:relative}
 .avatar:after{content:"";width:9px;height:9px;border-radius:50%;background:#8e9098;position:absolute;right:0;bottom:2px;border:2px solid var(--bg)}
@@ -23,7 +24,7 @@ body{min-height:100vh}
 .toolbar{display:flex;align-items:center;gap:11px;margin-bottom:8px}
 .pill{background:#2b2c31;border:0;color:#f7f7f8;font:700 15px inherit;border-radius:9px;padding:9px 11px;cursor:pointer}
 .spacer{flex:1}.iconbtn{min-width:43px;padding:9px}
-.schedule{padding-bottom:5px}
+.schedule{padding:0 0 18px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;flex:1;min-height:0}
 .card{background:var(--card);border-radius:17px;padding:18px 27px;margin:8px 0;position:relative;overflow:hidden;cursor:pointer}
 .card:before{content:"";position:absolute;left:0;top:15px;width:8px;height:52px;background:var(--card-side);border-radius:0 8px 8px 0}
 .card.current{border:2px solid var(--blue);padding:16px 25px}
@@ -42,7 +43,13 @@ body{min-height:100vh}
 .modal{display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:flex-end}.modal.show{display:flex}
 .sheet{background:#25262b;width:min(430px,100%);margin:auto;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
 .sheet h2{font-size:21px;margin:0 0 16px}.sheet label{display:block;color:#aaa;font-size:13px;margin:11px 0 5px}.sheet input,.sheet textarea{width:100%;border:0;background:#34353b;color:#fff;border-radius:10px;padding:11px;font-size:16px}.sheet textarea{min-height:90px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sheet-actions{display:flex;gap:8px;margin-top:17px}.save,.cancel,.delete{border:0;border-radius:10px;padding:11px 13px;color:#fff;font-weight:700}.save{background:#526fea;flex:1}.cancel{background:#3a3b41}.delete{background:#9c3540}
-.empty{text-align:center;color:#888;padding:70px 10px}
+.pdficon,.runicon,.homeicon{color:#a6a7ad;font-family:Arial,sans-serif;font-style:normal}
+.pdficon{font-size:22px}.runicon{display:inline-block;font-size:17px;transform:rotate(-12deg)}
+.homeicon{font-size:11px}
+.empty{height:100%;min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#8f9096;padding:25px 0}
+.empty-face{font-size:54px;color:#ffc83d;margin-bottom:20px}
+.empty b{font-size:18px;color:#f3f3f5}.empty p{font-size:15px;line-height:1.45;margin:12px 0 25px}
+.create-event{width:100%;border:0;border-radius:13px;background:#292a2f;color:#5578f6;font-size:17px;font-weight:700;padding:15px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -58,7 +65,7 @@ body{min-height:100vh}
    <button class="pill">Сентябрь</button>
    <button class="pill" onclick="selected=24;render()">Сегодня</button>
    <span class="spacer"></span>
-   <button class="pill iconbtn">📄</button>
+   <button class="pill iconbtn"><span class="pdficon">▱</span></button>
    <button class="pill iconbtn" onclick="openEditor()">•••</button>
  </div>
 
@@ -126,7 +133,7 @@ function renderWeek(){
 function render(){
  renderWeek();
  const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
- if(!arr.length){root.innerHTML='<div class="empty">На этот день уроков нет</div>';return}
+ if(!arr.length){root.innerHTML='<div class="empty"><div class="empty-face">☺</div><b>Уроков и мероприятий нет</b><p>Уроков и мероприятий на этот день<br>не найдено</p><button class="create-event" onclick="openEditor()">⊕ &nbsp; Создать мероприятие</button></div>';return}
  arr.forEach((x,i)=>{
    let c=document.createElement("section");
    c.className="card"+(x.current?" current":"");
@@ -137,7 +144,7 @@ function render(){
     <div class="subject">${esc(x.subject)}</div>
     ${x.type==="extra"
       ?`<div class="home">${esc(x.homework)}</div>`
-      :`<div class="home-title">⌂ &nbsp;Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
+      :`<div class="home-title"><span class="homeicon">◆</span>&nbsp; Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
         ${x.homework==="Домашнее задание не задано"?"":`<div class="home">${esc(x.homework)}</div>`}
         ${x.note?`<div class="todo ${x.current?"orange":""}">${esc(x.note)}</div>`:""}`
     }`;
@@ -146,7 +153,7 @@ function render(){
       const gap=mins(arr[i+1].start)-mins(x.end);
       if(gap>=0){
        let b=document.createElement("div");b.className="break";
-       b.innerHTML=`<span>🏃 Перемена ${gap} минут</span><span>${x.end}–${arr[i+1].start}</span>`;
+       b.innerHTML=`<span><span class="runicon">↗</span> Перемена ${gap} минут</span><span>${x.end}–${arr[i+1].start}</span>`;
        root.appendChild(b)
       }
    }

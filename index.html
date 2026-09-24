@@ -1,679 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>czhmass - Вход / Регистрация</title>
-    <meta name="theme-color" content="#24292e">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/icon-192.png">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif}
-        body{background:#000;color:#fff;min-height:100vh;overflow-x:hidden;padding-top:10px}
-        .dynamic-island{position:fixed;top:15px;left:50%;transform:translateX(-50%);width:120px;height:35px;background:rgba(40,40,40,0.95);border-radius:20px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.1);box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:1000}
-        .island-time{font-size:15px;font-weight:600;color:white}
-        .container{padding:140px 20px 60px;max-width:400px;margin:0 auto}
-        .header{text-align:center;margin-bottom:40px}
-        .logo{font-size:36px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
-        .subtitle{color:rgba(255,255,255,0.6);font-size:16px;line-height:1.5}
-        .auth-card{background:rgba(28,28,30,0.8);border-radius:20px;padding:30px;margin-bottom:20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.1);position:relative;overflow:hidden}
-        .form-title{font-size:24px;font-weight:700;color:white;margin-bottom:30px;text-align:center}
-        .form-group{margin-bottom:20px}
-        .input-label{display:block;font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:8px;font-weight:500}
-        .input-field{width:100%;padding:16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:white;font-size:16px;transition:all 0.2s}
-        .input-field:focus{outline:none;border-color:#667eea;background:rgba(255,255,255,0.07)}
-        .input-field.error{border-color:#ff3b30}
-        .error-message{color:#ff3b30;font-size:13px;margin-top:6px;display:none}
-        .checkbox-group{display:flex;align-items:center;margin-bottom:25px}
-        .checkbox{margin-right:10px;width:18px;height:18px;accent-color:#667eea}
-        .checkbox-label{color:rgba(255,255,255,0.7);font-size:14px;line-height:1.4}
-        .btn{width:100%;padding:18px;border:none;border-radius:15px;cursor:pointer;font-size:16px;font-weight:600;transition:all 0.2s;text-align:center;margin-bottom:15px}
-        .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:white}
-        .btn-primary:hover{transform:translateY(-2px);opacity:0.9}
-        .btn-secondary{background:rgba(255,255,255,0.1);color:white;backdrop-filter:blur(10px)}
-        .btn-secondary:hover{background:rgba(255,255,255,0.15);transform:translateY(-1px)}
-        .btn-telegram{background:linear-gradient(135deg,#0088cc,#2c7cb0);color:white;margin-bottom:15px;position:relative;overflow:hidden}
-        .btn-telegram:hover{transform:translateY(-2px);opacity:0.95}
-        .btn-telegram::before{content:"📱";margin-right:10px;font-size:18px}
-        .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
-        .divider{display:flex;align-items:center;text-align:center;margin:20px 0;color:rgba(255,255,255,0.4);font-size:12px}
-        .divider::before,.divider::after{content:'';flex:1;border-bottom:0.5px solid rgba(255,255,255,0.1)}
-        .divider::before{margin-right:10px}
-        .divider::after{margin-left:10px}
-        .form-switch{text-align:center;margin-top:25px;padding-top:25px;border-top:0.5px solid rgba(255,255,255,0.1)}
-        .switch-text{color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:10px}
-        .switch-link{color:#667eea;background:none;border:none;font-size:14px;font-weight:600;cursor:pointer;text-decoration:underline}
-        .switch-link:hover{color:#764ba2}
-        .message{padding:14px;border-radius:12px;margin:20px 0;display:none;font-size:14px;text-align:center;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.1);animation:slideDown 0.3s ease}
-        @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
-        .success{background:rgba(52,199,89,0.15);color:#34c759;border-color:rgba(52,199,89,0.3)}
-        .error{background:rgba(255,59,48,0.15);color:#ff3b30;border-color:rgba(255,59,48,0.3)}
-        .info{background:rgba(0,122,255,0.15);color:#007aff;border-color:rgba(0,122,255,0.3)}
-        .loading{text-align:center;padding:20px;color:rgba(255,255,255,0.5);font-size:14px;display:none}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:2000;align-items:center;justify-content:center}
-        .modal-content{background:rgba(28,28,30,0.95);border-radius:24px;padding:30px;max-width:320px;width:90%;text-align:center;border:0.5px solid rgba(255,255,255,0.2)}
-        .modal-content h3{font-size:22px;margin-bottom:15px}
-        .modal-content p{color:rgba(255,255,255,0.7);margin-bottom:25px;font-size:14px}
-        .telegram-login-btn{display:inline-flex;align-items:center;gap:10px;background:#0088cc;padding:14px 28px;border-radius:50px;color:white;text-decoration:none;font-weight:600;margin:10px 0;transition:all 0.2s}
-        .telegram-login-btn:hover{transform:scale(1.02);background:#0099ee}
-        .close-modal{background:rgba(255,255,255,0.1);border:none;padding:12px 24px;border-radius:40px;color:white;margin-top:15px;cursor:pointer;width:100%}
-        @media (max-width:768px){.container{padding:130px 15px 40px}.dynamic-island{width:110px;height:32px;top:10px}.auth-card{padding:25px}.logo{font-size:32px}.form-title{font-size:22px}.btn{padding:16px;font-size:15px}.input-field{padding:14px}}
-        @media (max-width:480px){.container{padding:120px 12px 30px}.auth-card{padding:20px}.logo{font-size:28px}.form-title{font-size:20px;margin-bottom:25px}.btn{padding:15px}}
-        @media (max-width:360px){.container{padding:110px 10px 20px}.dynamic-island{width:100px;height:30px;font-size:13px}.logo{font-size:24px}}
-        
-        .login-tabs{display:flex;margin-bottom:25px;border-bottom:1px solid rgba(255,255,255,0.1)}
-        .login-tab{flex:1;text-align:center;padding:12px;cursor:pointer;color:rgba(255,255,255,0.5);font-weight:600;transition:all 0.2s}
-        .login-tab.active{color:#667eea;border-bottom:2px solid #667eea}
-        .tab-content{display:none}
-        .tab-content.active{display:block}
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Расписание</title>
+<style>
+:root{--bg:#09090b;--card:#202024;--card2:#2b2b30;--text:#f4f4f6;--muted:#9b9ba2;--blue:#5d78f2;--orange:#ff7900;--red:#ef5661}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.app{max-width:820px;margin:auto;min-height:100vh;padding:28px 30px 120px}
+.top{display:flex;justify-content:space-between;align-items:center;margin:10px 0 30px}
+.avatar{width:76px;height:76px;border-radius:50%;background:#8d3e00;display:grid;place-items:center;font-size:29px;font-weight:700}
+.icons{font-size:30px;letter-spacing:12px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;text-align:center;color:var(--muted)}
+.day{padding:8px 2px;border-radius:30px;cursor:pointer}.day b{display:block;font-size:20px;font-weight:500}.day span{display:inline-grid;place-items:center;width:52px;height:52px;font-size:26px;color:var(--text);margin-top:8px}
+.day.active span{background:var(--blue);border-radius:50%}.day.sun span{color:var(--red)}
+.actions{display:flex;gap:22px;margin:28px 0 15px}.btn{border:0;background:var(--card2);color:#fff;border-radius:14px;padding:14px 17px;font-size:22px;font-weight:650;cursor:pointer}.btn.add{margin-left:auto;background:#4058c9}
+.lesson{background:var(--card);border-radius:28px;padding:30px 50px;margin:14px 0;position:relative;cursor:pointer}
+.lesson.current{outline:3px solid #7e9cff}.meta{color:var(--muted);font-size:23px}.subject{font-size:27px;font-weight:750;margin:14px 0 40px}.hw-title{font-size:24px;font-weight:700;color:#b6b6bc;margin-bottom:10px}.hw{font-size:23px;color:var(--muted);line-height:1.4}.todo{font-size:22px;color:var(--muted);margin-top:10px}.todo.hot{color:var(--orange)}
+.break{display:flex;justify-content:space-between;color:var(--muted);font-size:23px;padding:15px 5px}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#2a2a2f;border-top:1px solid #49494d;height:105px;display:flex;justify-content:space-around;align-items:center;color:#aaa;z-index:3}.nav{text-align:center;font-size:15px}.nav i{display:block;font-style:normal;font-size:29px;margin-bottom:6px}.nav.active{color:#fff}
+.empty{text-align:center;color:#777;padding:70px 20px;font-size:21px}
+.modal{display:none;position:fixed;inset:0;background:#000a;z-index:10;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{width:min(820px,100%);background:#242429;border-radius:28px 28px 0 0;padding:25px 25px calc(25px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}.sheet h2{margin:0 0 20px}
+label{display:block;color:#aaa;margin:13px 0 6px}input,textarea{width:100%;border:0;border-radius:12px;background:#34343a;color:#fff;padding:13px;font-size:18px}textarea{min-height:100px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sheet-actions{display:flex;gap:10px;margin-top:20px}.danger{background:#9c3340}.grow{flex:1}
+@media(max-width:600px){.app{padding:18px 15px 115px}.avatar{width:55px;height:55px;font-size:22px}.week{gap:1px}.day b{font-size:16px}.day span{width:43px;height:43px;font-size:22px}.actions{gap:10px}.btn{font-size:18px;padding:12px}.lesson{padding:23px 26px}.meta,.hw,.break{font-size:18px}.subject{font-size:23px;margin-bottom:30px}.hw-title{font-size:20px}}
+</style>
 </head>
 <body>
-    <div class="dynamic-island"><span class="island-time" id="currentTime">--:--</span></div>
-    <div class="container">
-        <div class="header">
-            <div class="logo">czhmass</div>
-            <div class="subtitle">Анонимная социальная сеть.<br>Ваша приватность — наш приоритет.</div>
-        </div>
-        
-        <div class="auth-card" id="loginForm">
-            <h2 class="form-title">Вход в аккаунт</h2>
-            
-            <div class="login-tabs">
-                <div class="login-tab active" onclick="switchLoginTab('email')">Email</div>
-                <div class="login-tab" onclick="switchLoginTab('username')">Username</div>
-            </div>
-            
-            <div id="loginEmailTab" class="tab-content active">
-                <div class="form-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" id="loginEmail" class="input-field" placeholder="your@email.com">
-                    <div class="error-message" id="loginEmailError"></div>
-                </div>
-            </div>
-            
-            <div id="loginUsernameTab" class="tab-content">
-                <div class="form-group">
-                    <label class="input-label">Имя пользователя</label>
-                    <input type="text" id="loginUsername" class="input-field" placeholder="@username">
-                    <div class="error-message" id="loginUsernameError"></div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="input-label">Пароль</label>
-                <input type="password" id="loginPassword" class="input-field" placeholder="••••••••">
-                <div class="error-message" id="loginPasswordError"></div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="login()" id="loginButton">Войти в аккаунт</button>
-            
-            <div class="divider">ИЛИ</div>
-            <button class="btn btn-telegram" onclick="showTelegramModal()">Войти через Telegram</button>
-            
-            <div class="form-switch">
-                <div class="switch-text">Нет аккаунта?</div>
-                <button class="switch-link" onclick="showRegisterForm()">Создать новый аккаунт</button>
-            </div>
-            <div class="loading" id="loginLoading">Вход...</div>
-        </div>
-        
-        <div class="auth-card" id="registerForm" style="display:none">
-            <h2 class="form-title">Создать аккаунт</h2>
-            <div class="form-group">
-                <label class="input-label">Имя пользователя</label>
-                <input type="text" id="registerUsername" class="input-field" placeholder="@username" maxlength="20">
-                <div class="error-message" id="usernameError"></div>
-            </div>
-            <div class="form-group">
-                <label class="input-label">Email</label>
-                <input type="email" id="registerEmail" class="input-field" placeholder="your@email.com">
-                <div class="error-message" id="emailError"></div>
-            </div>
-            <div class="form-group">
-                <label class="input-label">Пароль</label>
-                <input type="password" id="registerPassword" class="input-field" placeholder="Минимум 6 символов">
-                <div class="error-message" id="passwordError"></div>
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="termsCheckbox" class="checkbox">
-                <label for="termsCheckbox" class="checkbox-label">Я согласен с условиями использования и политикой конфиденциальности</label>
-            </div>
-            <button class="btn btn-primary" onclick="register()" id="registerButton">Создать аккаунт</button>
-            <div class="form-switch">
-                <div class="switch-text">Уже есть аккаунт?</div>
-                <button class="switch-link" onclick="showLoginForm()">Войти в существующий</button>
-            </div>
-            <div class="loading" id="registerLoading">Регистрация...</div>
-        </div>
-        
-        <div id="message" class="message"></div>
-    </div>
+<div class="app">
+ <div class="top"><div class="avatar">ДИ</div><div class="icons">♧ ☰</div></div>
+ <div class="week" id="week"></div>
+ <div class="actions"><button class="btn">Сентябрь</button><button class="btn" onclick="selectToday()">Сегодня</button><button class="btn add" onclick="openEditor()">＋ урок</button></div>
+ <main id="schedule"></main>
+</div>
+<div class="bottom">
+ <div class="nav active"><i>▰</i>Расписание</div><div class="nav"><i>☆</i>Оценки</div><div class="nav"><i>✓</i>Задания</div><div class="nav"><i>⌘</i>Школа</div><div class="nav"><i>▱</i>Портфолио</div>
+</div>
 
-    <div id="telegramModal" class="modal">
-        <div class="modal-content">
-            <h3>📱 Вход через Telegram</h3>
-            <p>Нажмите на кнопку ниже, чтобы авторизоваться через Telegram. Вы будете перенаправлены в бота.</p>
-            <a href="#" id="telegramLoginLink" class="telegram-login-btn" target="_blank">
-                <span>🤖</span> Войти через Telegram
-            </a>
-            <button class="close-modal" onclick="closeTelegramModal()">Закрыть</button>
-        </div>
-    </div>
+<div class="modal" id="modal" onclick="if(event.target===this)closeEditor()">
+ <div class="sheet">
+  <h2 id="formTitle">Урок</h2>
+  <label>Предмет</label><input id="subject">
+  <div class="row"><div><label>Начало</label><input id="start" type="time"></div><div><label>Конец</label><input id="end" type="time"></div></div>
+  <label>Кабинет</label><input id="room">
+  <label>Домашнее задание</label><textarea id="homework"></textarea>
+  <label>Количество заданий</label><input id="todo" type="number" min="0" value="1">
+  <div class="sheet-actions"><button class="btn danger" id="deleteBtn" onclick="removeLesson()">Удалить</button><button class="btn" onclick="closeEditor()">Отмена</button><button class="btn add grow" onclick="saveLesson()">Сохранить</button></div>
+ </div>
+</div>
 
-    <script>
-        // ===== НАСТРОЙКИ TELEGRAM =====
-        // 🔴 ЗДЕСЬ ВСТАВЬТЕ ТОКЕН ВАШЕГО БОТА 🔴
-        // Пример: const TELEGRAM_BOT_TOKEN = "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz";
-        const TELEGRAM_BOT_TOKEN = "234567890:ABCdefGHIjklMNOpqrsTUVwxyz";  // <-- ЗАМЕНИТЕ НА ВАШ ТОКЕН!
-        
-        // Username вашего бота (без @)
-        // Пример: const BOT_USERNAME = "my_cool_bot";
-        const BOT_USERNAME = "CZHMASSbot"; // Укажите username вашего бота
-        
-        // ===== FIREBASE КОНФИГУРАЦИЯ =====
-        const firebaseConfig = {
-            apiKey: "AIzaSyBn-gM0CM2NPMGZ6OpytlPkiIOSIm54hcY",
-            authDomain: "czhmass.firebaseapp.com",
-            projectId: "czhmass",
-            storageBucket: "czhmass.firebasestorage.app",
-            messagingSenderId: "1064257019843",
-            appId: "1:1064257019843:web:65488b45be2f86838ca776"
-        };
-        
-        let db, auth;
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase initialized');
-        }
-        db = firebase.firestore();
-        auth = firebase.auth();
-        
-        // Local cache
-        let usernameCache = new Map();
-        
-        // ===== TELEGRAM FUNCTIONS =====
-        window.showTelegramModal = function() {
-            var modal = document.getElementById('telegramModal');
-            var link = document.getElementById('telegramLoginLink');
-            
-            var sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('telegram_auth_session', sessionId);
-            
-            var botUrl = 'https://t.me/' + BOT_USERNAME + '?start=auth_' + sessionId;
-            link.href = botUrl;
-            
-            modal.style.display = 'flex';
-        };
-        
-        window.closeTelegramModal = function() {
-            document.getElementById('telegramModal').style.display = 'none';
-        };
-        
-        function generateTempPassword() {
-            return 'tg_' + Math.random().toString(36).substr(2, 15);
-        }
-        
-        async function isUsernameAvailable(username) {
-            var normalized = username.toLowerCase();
-            var users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-            if (users[normalized]) return false;
-            if (usernameCache.has(normalized)) return false;
-            return true;
-        }
-        
-        function saveUsernameMapping(username, email, uid) {
-            try {
-                var normalized = username.toLowerCase();
-                var users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-                users[normalized] = { email: email, uid: uid };
-                localStorage.setItem('czhmass_users', JSON.stringify(users));
-                usernameCache.set(normalized, { email: email, uid: uid });
-                console.log('Saved username: ' + username + ' -> ' + email);
-            } catch (e) {
-                console.error('Error saving to localStorage:', e);
-            }
-        }
-        
-        async function processTelegramUser(tgUser) {
-            showMessage('Authorization via Telegram...', 'info');
-            
-            try {
-                var tgId = tgUser.id.toString();
-                var displayName = tgUser.username || (tgUser.first_name + ' ' + (tgUser.last_name || '')).trim();
-                var email = tgId + '@telegram.czhmass.com';
-                
-                // Check if user exists
-                var userRecord = null;
-                try {
-                    var querySnapshot = await db.collection('users').where('telegramId', '==', tgId).get();
-                    if (!querySnapshot.empty) {
-                        userRecord = querySnapshot.docs[0];
-                    }
-                } catch (e) {
-                    console.warn('Firestore search error:', e);
-                }
-                
-                if (userRecord) {
-                    showMessage('Telegram account found! Please use regular login.', 'info');
-                    return;
-                } else {
-                    // Create new user
-                    var newUsername = tgUser.username || ('tg_' + tgId.slice(-6));
-                    var tempPassword = generateTempPassword();
-                    
-                    var finalUsername = newUsername;
-                    var counter = 1;
-                    while (!(await isUsernameAvailable(finalUsername))) {
-                        finalUsername = newUsername + counter;
-                        counter++;
-                    }
-                    
-                    var userCredential = await auth.createUserWithEmailAndPassword(email, tempPassword);
-                    var user = userCredential.user;
-                    
-                    try {
-                        await db.collection('users').doc(user.uid).set({
-                            username: finalUsername,
-                            username_lower: finalUsername.toLowerCase(),
-                            email: email,
-                            telegramId: tgId,
-                            telegramUsername: tgUser.username || '',
-                            telegramName: displayName,
-                            telegramPhoto: tgUser.photo_url || '',
-                            createdAt: new Date().toISOString(),
-                            lastLogin: new Date().toISOString(),
-                            displayName: displayName,
-                            bio: '',
-                            avatar: tgUser.photo_url || ''
-                        });
-                    } catch (e) {
-                        console.warn('Firestore save error:', e);
-                    }
-                    
-                    saveUsernameMapping(finalUsername, email, user.uid);
-                    
-                    localStorage.setItem('czhmass_user', JSON.stringify({
-                        uid: user.uid,
-                        username: finalUsername,
-                        email: email
-                    }));
-                    
-                    showMessage('Account created via Telegram! Welcome, ' + displayName + '!', 'success');
-                    
-                    setTimeout(function() {
-                        window.location.href = '/feed.html';
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('Telegram auth error:', error);
-                showMessage('Telegram authorization error: ' + error.message, 'error');
-            }
-        }
-        
-        window.completeTelegramAuth = function(tgData) {
-            try {
-                var userData = typeof tgData === 'string' ? JSON.parse(tgData) : tgData;
-                processTelegramUser(userData);
-            } catch (e) {
-                console.error('Complete Telegram auth error:', e);
-            }
-        };
-        
-        function checkTelegramAuth() {
-            var sessionId = localStorage.getItem('telegram_auth_session');
-            if (!sessionId) return;
-            
-            try {
-                var telegramData = localStorage.getItem('telegram_auth_data');
-                if (telegramData) {
-                    var userData = JSON.parse(telegramData);
-                    processTelegramUser(userData);
-                    localStorage.removeItem('telegram_auth_session');
-                    localStorage.removeItem('telegram_auth_data');
-                    closeTelegramModal();
-                }
-            } catch (e) {
-                console.error('Check Telegram auth error:', e);
-            }
-        }
-        
-        // ===== HELPER FUNCTIONS =====
-        function showMessage(text, type) {
-            var messageDiv = document.getElementById('message');
-            messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type;
-            messageDiv.style.display = 'block';
-            setTimeout(function() { 
-                messageDiv.style.display = 'none'; 
-            }, 4000);
-        }
-        
-        function clearErrors() {
-            var errors = document.querySelectorAll('.error-message');
-            errors.forEach(function(error) {
-                error.style.display = 'none';
-                error.textContent = '';
-            });
-            var inputs = document.querySelectorAll('.input-field');
-            inputs.forEach(function(input) {
-                input.classList.remove('error');
-            });
-        }
-        
-        window.switchLoginTab = function(tab) {
-            var tabs = document.querySelectorAll('.login-tab');
-            var contents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(function(t) {
-                t.classList.remove('active');
-            });
-            contents.forEach(function(c) {
-                c.classList.remove('active');
-            });
-            
-            if (tab === 'email') {
-                tabs[0].classList.add('active');
-                document.getElementById('loginEmailTab').classList.add('active');
-            } else {
-                tabs[1].classList.add('active');
-                document.getElementById('loginUsernameTab').classList.add('active');
-            }
-            
-            clearErrors();
-        };
-        
-        window.showLoginForm = function() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            clearErrors();
-        };
-        
-        window.showRegisterForm = function() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-            clearErrors();
-        };
-        
-        function validateEmail(email) {
-            var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-        
-        function validateUsername(username) {
-            var re = /^[a-zA-Z0-9_]{3,20}$/;
-            return re.test(username);
-        }
-        
-        function showError(elementId, message) {
-            var errorElement = document.getElementById(elementId);
-            var inputElement = document.getElementById(elementId.replace('Error', ''));
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            if (inputElement) inputElement.classList.add('error');
-        }
-        
-        async function getEmailByUsername(username) {
-            var normalized = username.toLowerCase().trim();
-            
-            if (usernameCache.has(normalized)) {
-                return usernameCache.get(normalized);
-            }
-            
-            try {
-                var users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-                if (users[normalized]) {
-                    usernameCache.set(normalized, users[normalized]);
-                    return users[normalized];
-                }
-            } catch (e) {
-                console.error('Error reading localStorage:', e);
-            }
-            
-            return null;
-        }
-        
-        // ===== REGISTER =====
-        async function register() {
-            clearErrors();
-            
-            var username = document.getElementById('registerUsername').value.trim();
-            var email = document.getElementById('registerEmail').value.trim();
-            var password = document.getElementById('registerPassword').value;
-            var termsCheckbox = document.getElementById('termsCheckbox');
-            var registerButton = document.getElementById('registerButton');
-            var loading = document.getElementById('registerLoading');
-            
-            if (!username) { showError('usernameError', 'Enter username'); return; }
-            if (!validateUsername(username)) { 
-                showError('usernameError', 'Only letters, numbers and _, 3-20 characters'); 
-                return; 
-            }
-            if (!email) { showError('emailError', 'Enter email'); return; }
-            if (!validateEmail(email)) { showError('emailError', 'Invalid email'); return; }
-            if (!password) { showError('passwordError', 'Enter password'); return; }
-            if (password.length < 6) { showError('passwordError', 'Password must be at least 6 characters'); return; }
-            if (!termsCheckbox.checked) { showMessage('Accept the terms of use', 'error'); return; }
-            
-            registerButton.disabled = true;
-            loading.style.display = 'block';
-            
-            try {
-                var available = await isUsernameAvailable(username);
-                if (!available) {
-                    showError('usernameError', 'Username already taken');
-                    registerButton.disabled = false;
-                    loading.style.display = 'none';
-                    return;
-                }
-                
-                var userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                var user = userCredential.user;
-                
-                try {
-                    await db.collection('users').doc(user.uid).set({
-                        username: username,
-                        username_lower: username.toLowerCase(),
-                        email: email,
-                        createdAt: new Date().toISOString(),
-                        lastLogin: new Date().toISOString(),
-                        displayName: username,
-                        bio: '',
-                        avatar: ''
-                    });
-                    console.log('Data saved to Firestore');
-                } catch (firestoreError) {
-                    console.warn('Could not save to Firestore:', firestoreError.message);
-                }
-                
-                saveUsernameMapping(username, email, user.uid);
-                localStorage.setItem('czhmass_user', JSON.stringify({
-                    uid: user.uid,
-                    username: username,
-                    email: email
-                }));
-                
-                showMessage('Account created! Welcome, ' + username + '!', 'success');
-                
-                setTimeout(function() { 
-                    window.location.href = '/feed.html'; 
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Registration error:', error);
-                var errorMessage = 'Registration error';
-                
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Email already in use';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'Password too weak';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Invalid email';
-                } else if (error.code === 'auth/network-request-failed') {
-                    errorMessage = 'Network error. Check your connection';
-                }
-                
-                showMessage(errorMessage, 'error');
-                
-            } finally {
-                registerButton.disabled = false;
-                loading.style.display = 'none';
-            }
-        }
-        
-        // ===== LOGIN =====
-        async function login() {
-            clearErrors();
-            
-            var password = document.getElementById('loginPassword').value;
-            var loginButton = document.getElementById('loginButton');
-            var loading = document.getElementById('loginLoading');
-            
-            var activeTab = document.querySelector('.login-tab.active');
-            var isEmailTab = activeTab && activeTab.textContent === 'Email';
-            
-            var email;
-            var username;
-            
-            if (isEmailTab) {
-                email = document.getElementById('loginEmail').value.trim();
-            } else {
-                username = document.getElementById('loginUsername').value.trim();
-            }
-            
-            if (isEmailTab) {
-                if (!email) { showError('loginEmailError', 'Enter email'); return; }
-                if (!validateEmail(email)) { showError('loginEmailError', 'Invalid email'); return; }
-            } else {
-                if (!username) { showError('loginUsernameError', 'Enter username'); return; }
-                if (!validateUsername(username)) {
-                    showError('loginUsernameError', 'Invalid username');
-                    return;
-                }
-            }
-            
-            if (!password) { showError('loginPasswordError', 'Enter password'); return; }
-            
-            loginButton.disabled = true;
-            loading.style.display = 'block';
-            
-            try {
-                if (!isEmailTab) {
-                    var mapping = await getEmailByUsername(username);
-                    
-                    if (mapping && mapping.email) {
-                        email = mapping.email;
-                    } else {
-                        showError('loginUsernameError', 'User not found. Try logging in with email');
-                        loginButton.disabled = false;
-                        loading.style.display = 'none';
-                        return;
-                    }
-                }
-                
-                var userCredential = await auth.signInWithEmailAndPassword(email, password);
-                var user = userCredential.user;
-                
-                var displayUsername = username || email.split('@')[0];
-                
-                try {
-                    var users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-                    for (var uname in users) {
-                        if (users[uname].email === email) {
-                            displayUsername = uname;
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error reading localStorage:', e);
-                }
-                
-                try {
-                    await db.collection('users').doc(user.uid).update({
-                        lastLogin: new Date().toISOString()
-                    });
-                } catch (e) {
-                    console.warn('Could not update lastLogin:', e.message);
-                }
-                
-                localStorage.setItem('czhmass_user', JSON.stringify({
-                    uid: user.uid,
-                    username: displayUsername,
-                    email: user.email
-                }));
-                
-                showMessage('Welcome, ' + displayUsername + '!', 'success');
-                
-                setTimeout(function() { 
-                    window.location.href = '/feed.html'; 
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                var errorMessage = 'Login error';
-                
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'User not found';
-                } else if (error.code === 'auth/wrong-password') {
-                    errorMessage = 'Wrong password';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Invalid email';
-                } else if (error.code === 'auth/too-many-requests') {
-                    errorMessage = 'Too many attempts. Try again later';
-                } else if (error.code === 'auth/network-request-failed') {
-                    errorMessage = 'Network error. Check your connection';
-                }
-                
-                showMessage(errorMessage, 'error');
-                
-            } finally {
-                loginButton.disabled = false;
-                loading.style.display = 'none';
-            }
-        }
-        
-        // ===== AUTH STATE =====
-        auth.onAuthStateChanged(function(user) {
-            if (user) {
-                console.log('User authenticated:', user.email);
-                if (window.location.pathname.includes('login') || 
-                    window.location.pathname.includes('register') || 
-                    window.location.pathname === '/' || 
-                    window.location.pathname === '/index.html') {
-                    window.location.href = '/feed.html';
-                }
-            }
-        });
-        
-        // ===== CLOCK =====
-        function updateTime() {
-            var now = new Date();
-            var timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('currentTime').textContent = timeString;
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
-        
-        // ===== LOAD =====
-        window.addEventListener('load', function() {
-            try {
-                var users = JSON.parse(localStorage.getItem('czhmass_users') || '{}');
-                for (var username in users) {
-                    usernameCache.set(username, users[username]);
-                }
-                console.log('Loaded ' + usernameCache.size + ' usernames from localStorage');
-            } catch (e) {
-                console.error('Error loading from localStorage:', e);
-            }
-            
-            clearErrors();
-            checkTelegramAuth();
-        });
-    </script>
+<script>
+const weekDays=[["Пн",21],["Вт",22],["Ср",23],["Чт",24],["Пт",25],["Сб",26],["Вс",27]];
+let selected=24, editing=null;
+const defaults={
+  24:[
+   {subject:"География",start:"12:55",end:"13:40",room:"",homework:"Цифровое домашнее задание",todo:1},
+   {subject:"Химия",start:"13:50",end:"14:35",room:"502",homework:"Закончить конспект параграфа №2 2) посчитать степени окисления элементов в оксидах калия, ст...",todo:1}
+  ]
+};
+let data=JSON.parse(localStorage.getItem("mySchedule")||"null")||defaults;
+
+function persist(){localStorage.setItem("mySchedule",JSON.stringify(data))}
+function renderWeek(){
+ const w=document.getElementById("week"); w.innerHTML="";
+ weekDays.forEach(([name,n])=>{
+  const d=document.createElement("div");d.className="day "+(n===selected?"active ":"")+(name==="Вс"?"sun":"");
+  d.innerHTML=`<b>${name}</b><span>${n}</span>`;d.onclick=()=>{selected=n;render()};w.appendChild(d);
+ });
+}
+function render(){
+ renderWeek(); const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
+ if(!arr.length){root.innerHTML='<div class="empty">На этот день уроков нет.<br>Нажми «＋ урок», чтобы добавить.</div>';return}
+ arr.forEach((x,i)=>{
+   const card=document.createElement("div");card.className="lesson";
+   card.innerHTML=`<div class="meta">${i+1} урок&nbsp;&nbsp; ${x.start} – ${x.end}${x.room?` &nbsp;каб. ${x.room}`:""}</div>
+   <div class="subject">${esc(x.subject)}</div>
+   <div class="hw-title">⌂ &nbsp;Домашнее задание</div><div class="hw">${esc(x.homework||"Нет домашнего задания")}</div>
+   <div class="todo ${x.todo?"hot":""}">${x.todo||0} для выполнения</div>`;
+   card.onclick=()=>openEditor(i);root.appendChild(card);
+   if(i<arr.length-1){
+    const mins=timeToMin(arr[i+1].start)-timeToMin(x.end);
+    if(mins>=0){const b=document.createElement("div");b.className="break";b.innerHTML=`<span>🏃 Перемена ${mins} минут</span><span>${x.end}–${arr[i+1].start}</span>`;root.appendChild(b)}
+   }
+ });
+}
+function openEditor(i=null){
+ editing=i;const x=i===null?{subject:"",start:"08:30",end:"09:15",room:"",homework:"",todo:1}:(data[selected]||[])[i];
+ ["subject","start","end","room","homework","todo"].forEach(k=>document.getElementById(k).value=x[k]??"");
+ document.getElementById("formTitle").textContent=i===null?"Добавить урок":"Изменить урок";
+ document.getElementById("deleteBtn").style.display=i===null?"none":"block";
+ document.getElementById("modal").classList.add("show");
+}
+function closeEditor(){document.getElementById("modal").classList.remove("show")}
+function saveLesson(){
+ const x={};["subject","start","end","room","homework"].forEach(k=>x[k]=document.getElementById(k).value.trim());x.todo=+document.getElementById("todo").value||0;
+ if(!x.subject)return alert("Введи название предмета");
+ data[selected]=data[selected]||[];
+ if(editing===null)data[selected].push(x);else data[selected][editing]=x;
+ data[selected].sort((a,b)=>a.start.localeCompare(b.start));persist();closeEditor();render();
+}
+function removeLesson(){if(editing===null)return;if(confirm("Удалить этот урок?")){data[selected].splice(editing,1);persist();closeEditor();render()}}
+function selectToday(){selected=24;render()}
+function timeToMin(s){const [h,m]=(s||"0:0").split(":").map(Number);return h*60+m}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+render();
+</script>
 </body>
 </html>

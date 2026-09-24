@@ -5,125 +5,175 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Расписание</title>
 <style>
-:root{--bg:#09090b;--card:#202024;--card2:#2b2b30;--text:#f4f4f6;--muted:#9b9ba2;--blue:#5d78f2;--orange:#ff7900;--red:#ef5661}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-.app{max-width:820px;margin:auto;min-height:100vh;padding:28px 30px 120px}
-.top{display:flex;justify-content:space-between;align-items:center;margin:10px 0 30px}
-.avatar{width:76px;height:76px;border-radius:50%;background:#8d3e00;display:grid;place-items:center;font-size:29px;font-weight:700}
-.icons{font-size:30px;letter-spacing:12px}
-.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;text-align:center;color:var(--muted)}
-.day{padding:8px 2px;border-radius:30px;cursor:pointer}.day b{display:block;font-size:20px;font-weight:500}.day span{display:inline-grid;place-items:center;width:52px;height:52px;font-size:26px;color:var(--text);margin-top:8px}
-.day.active span{background:var(--blue);border-radius:50%}.day.sun span{color:var(--red)}
-.actions{display:flex;gap:22px;margin:28px 0 15px}.btn{border:0;background:var(--card2);color:#fff;border-radius:14px;padding:14px 17px;font-size:22px;font-weight:650;cursor:pointer}.btn.add{margin-left:auto;background:#4058c9}
-.lesson{background:var(--card);border-radius:28px;padding:30px 50px;margin:14px 0;position:relative;cursor:pointer}
-.lesson.current{outline:3px solid #7e9cff}.meta{color:var(--muted);font-size:23px}.subject{font-size:27px;font-weight:750;margin:14px 0 40px}.hw-title{font-size:24px;font-weight:700;color:#b6b6bc;margin-bottom:10px}.hw{font-size:23px;color:var(--muted);line-height:1.4}.todo{font-size:22px;color:var(--muted);margin-top:10px}.todo.hot{color:var(--orange)}
-.break{display:flex;justify-content:space-between;color:var(--muted);font-size:23px;padding:15px 5px}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#2a2a2f;border-top:1px solid #49494d;height:105px;display:flex;justify-content:space-around;align-items:center;color:#aaa;z-index:3}.nav{text-align:center;font-size:15px}.nav i{display:block;font-style:normal;font-size:29px;margin-bottom:6px}.nav.active{color:#fff}
-.empty{text-align:center;color:#777;padding:70px 20px;font-size:21px}
-.modal{display:none;position:fixed;inset:0;background:#000a;z-index:10;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{width:min(820px,100%);background:#242429;border-radius:28px 28px 0 0;padding:25px 25px calc(25px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}.sheet h2{margin:0 0 20px}
-label{display:block;color:#aaa;margin:13px 0 6px}input,textarea{width:100%;border:0;border-radius:12px;background:#34343a;color:#fff;padding:13px;font-size:18px}textarea{min-height:100px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sheet-actions{display:flex;gap:10px;margin-top:20px}.danger{background:#9c3340}.grow{flex:1}
-@media(max-width:600px){
-.app{padding:17px 15px 94px}
-.top{margin:4px 0 20px}
-.avatar{width:39px;height:39px;font-size:16px}
-.icons{font-size:20px;letter-spacing:8px}
-.week{gap:1px}
-.day{padding:4px 1px}
-.day b{font-size:13px}
-.day span{width:31px;height:31px;font-size:16px;margin-top:5px}
-.actions{gap:11px;margin:16px 0 8px}
-.btn{font-size:15px;padding:9px 11px;border-radius:9px}
-.lesson{border-radius:17px;padding:17px 26px;margin:8px 0}
-.meta{font-size:14px}
-.subject{font-size:16px;margin:8px 0 24px}
-.hw-title{font-size:15px;margin-bottom:7px}
-.hw{font-size:14px;line-height:1.35}
-.todo{font-size:14px;margin-top:7px}
-.break{font-size:14px;padding:9px 3px}
-.bottom{height:74px}
-.nav{font-size:11px}
-.nav i{font-size:20px;margin-bottom:4px}
+:root{
+ --bg:#08090b; --card:#202125; --card-side:#292a30; --panel:#2c2d32;
+ --text:#f4f4f6; --muted:#9b9ba2; --blue:#7799ff; --orange:#ff7900; --red:#f05260;
 }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+body{min-height:100vh}
+.app{max-width:430px;margin:auto;padding:20px 15px 100px}
+.header{height:92px;display:flex;align-items:center;justify-content:space-between}
+.avatar{width:40px;height:40px;border-radius:50%;background:#914000;display:grid;place-items:center;font-weight:750;font-size:17px;position:relative}
+.avatar:after{content:"";width:9px;height:9px;border-radius:50%;background:#8e9098;position:absolute;right:0;bottom:2px;border:2px solid var(--bg)}
+.header-icons{display:flex;gap:18px;align-items:center;font-size:22px}
+.bell{position:relative}.badge{position:absolute;right:-7px;top:-8px;background:#df3848;border-radius:20px;font-size:10px;padding:2px 5px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:#96979d;margin:2px 0 18px}
+.day{cursor:pointer}.dow{font-size:13px}.num{width:31px;height:31px;margin:8px auto 0;display:grid;place-items:center;font-size:17px;color:#eee;border-radius:50%}.day.active .num{background:#526fea}.day.sun .num{color:#f15b65}
+.toolbar{display:flex;align-items:center;gap:11px;margin-bottom:8px}
+.pill{background:#2b2c31;border:0;color:#f7f7f8;font:700 15px inherit;border-radius:9px;padding:9px 11px;cursor:pointer}
+.spacer{flex:1}.iconbtn{min-width:43px;padding:9px}
+.schedule{padding-bottom:5px}
+.card{background:var(--card);border-radius:17px;padding:18px 27px;margin:8px 0;position:relative;overflow:hidden;cursor:pointer}
+.card:before{content:"";position:absolute;left:0;top:15px;width:8px;height:52px;background:var(--card-side);border-radius:0 8px 8px 0}
+.card.current{border:2px solid var(--blue);padding:16px 25px}
+.card.current:before{background:#9099b4}
+.meta{font-size:14px;color:#9c9da3;display:flex;gap:8px;flex-wrap:wrap}
+.subject{font-size:16px;font-weight:720;color:#9c9ca2;margin:9px 0 24px;line-height:1.35}
+.current .subject,.current .home-title{color:#fff}
+.home-title{font-size:15px;font-weight:700;color:#a7a8ae;margin-bottom:7px}
+.home{font-size:14px;color:#96979c;line-height:1.35}
+.todo{font-size:14px;color:#a2a3a8;margin-top:7px}.todo.orange{color:var(--orange)}
+.break{height:34px;padding:7px 3px;display:flex;align-items:center;justify-content:space-between;color:#98999f;font-size:14px}
+.grade{position:absolute;right:15px;top:14px;background:#303137;border-radius:13px;width:39px;height:36px;display:grid;place-items:center;font-weight:700;font-size:17px}.grade small{font-size:9px;position:absolute;right:7px;bottom:4px;font-weight:400}
+.replace{font-weight:700;font-size:12px;margin-right:5px}
+.bottom{position:fixed;z-index:8;bottom:0;left:0;right:0;height:90px;padding-bottom:env(safe-area-inset-bottom);background:#2b2c31;border-top:1px solid #4a4b50;display:flex;justify-content:center}
+.bottom-inner{width:min(430px,100%);display:grid;grid-template-columns:repeat(5,1fr);align-items:center}.nav{text-align:center;color:#9fa0a6;font-size:11px}.nav i{display:block;font-style:normal;font-size:22px;margin-bottom:5px}.nav.active{color:#fff}
+.modal{display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:flex-end}.modal.show{display:flex}
+.sheet{background:#25262b;width:min(430px,100%);margin:auto;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.sheet h2{font-size:21px;margin:0 0 16px}.sheet label{display:block;color:#aaa;font-size:13px;margin:11px 0 5px}.sheet input,.sheet textarea{width:100%;border:0;background:#34353b;color:#fff;border-radius:10px;padding:11px;font-size:16px}.sheet textarea{min-height:90px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sheet-actions{display:flex;gap:8px;margin-top:17px}.save,.cancel,.delete{border:0;border-radius:10px;padding:11px 13px;color:#fff;font-weight:700}.save{background:#526fea;flex:1}.cancel{background:#3a3b41}.delete{background:#9c3540}
+.empty{text-align:center;color:#888;padding:70px 10px}
 </style>
 </head>
 <body>
 <div class="app">
- <div class="top"><div class="avatar">ДИ</div><div class="icons">♧ ☰</div></div>
+ <header class="header">
+   <div class="avatar">ДИ</div>
+   <div class="header-icons"><span class="bell">♧<b class="badge">1</b></span><span>☰</span></div>
+ </header>
+
  <div class="week" id="week"></div>
- <div class="actions"><button class="btn">Сентябрь</button><button class="btn" onclick="selectToday()">Сегодня</button><button class="btn add" onclick="openEditor()">＋ урок</button></div>
- <main id="schedule"></main>
+
+ <div class="toolbar">
+   <button class="pill">Сентябрь</button>
+   <button class="pill" onclick="selected=24;render()">Сегодня</button>
+   <span class="spacer"></span>
+   <button class="pill iconbtn">📄</button>
+   <button class="pill iconbtn" onclick="openEditor()">•••</button>
+ </div>
+
+ <main class="schedule" id="schedule"></main>
 </div>
-<div class="bottom">
- <div class="nav active"><i>▰</i>Расписание</div><div class="nav"><i>☆</i>Оценки</div><div class="nav"><i>✓</i>Задания</div><div class="nav"><i>⌘</i>Школа</div><div class="nav"><i>▱</i>Портфолио</div>
-</div>
+
+<nav class="bottom">
+ <div class="bottom-inner">
+  <div class="nav active"><i>▰</i>Расписание</div>
+  <div class="nav"><i>☆</i>Оценки</div>
+  <div class="nav"><i>◉</i>Задания</div>
+  <div class="nav"><i>⌘</i>Школа</div>
+  <div class="nav"><i>▱</i>Портфолио</div>
+ </div>
+</nav>
 
 <div class="modal" id="modal" onclick="if(event.target===this)closeEditor()">
  <div class="sheet">
-  <h2 id="formTitle">Урок</h2>
+  <h2 id="formTitle">Изменить урок</h2>
   <label>Предмет</label><input id="subject">
-  <div class="row"><div><label>Начало</label><input id="start" type="time"></div><div><label>Конец</label><input id="end" type="time"></div></div>
+  <div class="row">
+   <div><label>Начало</label><input id="start" type="time"></div>
+   <div><label>Конец</label><input id="end" type="time"></div>
+  </div>
   <label>Кабинет</label><input id="room">
   <label>Домашнее задание</label><textarea id="homework"></textarea>
-  <label>Количество заданий</label><input id="todo" type="number" min="0" value="1">
-  <div class="sheet-actions"><button class="btn danger" id="deleteBtn" onclick="removeLesson()">Удалить</button><button class="btn" onclick="closeEditor()">Отмена</button><button class="btn add grow" onclick="saveLesson()">Сохранить</button></div>
+  <label>Статус / дополнительная строка</label><input id="note">
+  <div class="sheet-actions">
+   <button class="delete" id="deleteBtn" onclick="removeLesson()">Удалить</button>
+   <button class="cancel" onclick="closeEditor()">Отмена</button>
+   <button class="save" onclick="saveLesson()">Сохранить</button>
+  </div>
  </div>
 </div>
 
 <script>
-const weekDays=[["Пн",21],["Вт",22],["Ср",23],["Чт",24],["Пт",25],["Сб",26],["Вс",27]];
+const days=[["Пн",21],["Вт",22],["Ср",23],["Чт",24],["Пт",25],["Сб",26],["Вс",27]];
 let selected=24, editing=null;
-const defaults={
-  24:[
-   {subject:"География",start:"12:55",end:"13:40",room:"",homework:"Цифровое домашнее задание",todo:1},
-   {subject:"Химия",start:"13:50",end:"14:35",room:"502",homework:"Закончить конспект параграфа №2 2) посчитать степени окисления элементов в оксидах калия, ст...",todo:1}
-  ]
-};
-let data=JSON.parse(localStorage.getItem("mySchedule")||"null")||defaults;
 
-function persist(){localStorage.setItem("mySchedule",JSON.stringify(data))}
+/* Расписание со скриншотов. Последний урок можно удалить/вернуть через редактор. */
+const initial={
+24:[
+ {n:1,start:"08:00",end:"08:45",room:"506",subject:"Группа «Россия - мои горизонты» 9 класс 25",homework:"Внеурочная деятельность",note:"",type:"extra"},
+ {n:2,start:"08:55",end:"09:40",room:"202",subject:"Биология",homework:"Выполнить тест ЦДЗ, подготовиться к СР на 10 баллов по темам параграфов 1-4 и 6.",note:"1 для выполнения"},
+ {n:3,start:"10:00",end:"10:45",room:"208",subject:"Русский язык",homework:"Файл прикреплен. Сократить текст до размера 70-90 слов. Выделить 3 абзаца, уметь определить...",note:"",replace:true},
+ {n:4,start:"10:55",end:"11:40",room:"100",subject:"Физическая культура",homework:"Домашнее задание не задано",note:""},
+ {n:5,start:"11:50",end:"12:35",room:"207",subject:"Геометрия",homework:"Повторить по тетради пройденный материал. Выполнить тест.",note:"2 для изучения  1 для выполнения"},
+ {n:6,start:"12:55",end:"13:40",room:"302",subject:"География",homework:"Цифровое домашнее задание",note:"1 для выполнения",grade:"3"},
+ {n:7,start:"13:50",end:"14:35",room:"502",subject:"Химия",homework:"Закончить конспект параграфа №2 2) посчитать степени окисления элементов в оксидах калия, ст...",note:"1 для выполнения"},
+ {n:8,start:"14:45",end:"15:30",room:"501",subject:"Физика",homework:"Выполнить все упражнения П.П. 9 и 10 и усвоить соответствующий материал по теме - Относитель...",note:"1 для выполнения",current:true}
+]};
+let data=JSON.parse(localStorage.getItem("meshExactSchedule")||"null")||initial;
+
+function mins(t){let [h,m]=t.split(":").map(Number);return h*60+m}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function persist(){localStorage.setItem("meshExactSchedule",JSON.stringify(data))}
 function renderWeek(){
- const w=document.getElementById("week"); w.innerHTML="";
- weekDays.forEach(([name,n])=>{
-  const d=document.createElement("div");d.className="day "+(n===selected?"active ":"")+(name==="Вс"?"sun":"");
-  d.innerHTML=`<b>${name}</b><span>${n}</span>`;d.onclick=()=>{selected=n;render()};w.appendChild(d);
- });
+ let e=document.getElementById("week");e.innerHTML="";
+ days.forEach(([d,n])=>{
+   let x=document.createElement("div");x.className="day "+(n===selected?"active ":"")+(n===27?"sun":"");
+   x.innerHTML=`<div class="dow">${d}</div><div class="num">${n}</div>`;
+   x.onclick=()=>{selected=n;render()};e.appendChild(x)
+ })
 }
 function render(){
- renderWeek(); const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
- if(!arr.length){root.innerHTML='<div class="empty">На этот день уроков нет.<br>Нажми «＋ урок», чтобы добавить.</div>';return}
+ renderWeek();
+ const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
+ if(!arr.length){root.innerHTML='<div class="empty">На этот день уроков нет</div>';return}
  arr.forEach((x,i)=>{
-   const card=document.createElement("div");card.className="lesson";
-   card.innerHTML=`<div class="meta">${i+1} урок&nbsp;&nbsp; ${x.start} – ${x.end}${x.room?` &nbsp;каб. ${x.room}`:""}</div>
-   <div class="subject">${esc(x.subject)}</div>
-   <div class="hw-title">⌂ &nbsp;Домашнее задание</div><div class="hw">${esc(x.homework||"Нет домашнего задания")}</div>
-   <div class="todo ${x.todo?"hot":""}">${x.todo||0} для выполнения</div>`;
-   card.onclick=()=>openEditor(i);root.appendChild(card);
+   let c=document.createElement("section");
+   c.className="card"+(x.current?" current":"");
+   let head=x.replace?`<span class="replace">↪ Замена учителя</span>`:`<span>${x.n||i+1} урок</span>`;
+   c.innerHTML=`
+    ${x.grade?`<div class="grade">${esc(x.grade)}<small>1</small></div>`:""}
+    <div class="meta">${head}<span>${x.start} – ${x.end}</span><span>каб. ${esc(x.room)}</span></div>
+    <div class="subject">${esc(x.subject)}</div>
+    ${x.type==="extra"
+      ?`<div class="home">${esc(x.homework)}</div>`
+      :`<div class="home-title">⌂ &nbsp;Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
+        ${x.homework==="Домашнее задание не задано"?"":`<div class="home">${esc(x.homework)}</div>`}
+        ${x.note?`<div class="todo ${x.current?"orange":""}">${esc(x.note)}</div>`:""}`
+    }`;
+   c.onclick=()=>openEditor(i);root.appendChild(c);
    if(i<arr.length-1){
-    const mins=timeToMin(arr[i+1].start)-timeToMin(x.end);
-    if(mins>=0){const b=document.createElement("div");b.className="break";b.innerHTML=`<span>🏃 Перемена ${mins} минут</span><span>${x.end}–${arr[i+1].start}</span>`;root.appendChild(b)}
+      const gap=mins(arr[i+1].start)-mins(x.end);
+      if(gap>=0){
+       let b=document.createElement("div");b.className="break";
+       b.innerHTML=`<span>🏃 Перемена ${gap} минут</span><span>${x.end}–${arr[i+1].start}</span>`;
+       root.appendChild(b)
+      }
    }
- });
+ })
 }
 function openEditor(i=null){
- editing=i;const x=i===null?{subject:"",start:"08:30",end:"09:15",room:"",homework:"",todo:1}:(data[selected]||[])[i];
- ["subject","start","end","room","homework","todo"].forEach(k=>document.getElementById(k).value=x[k]??"");
- document.getElementById("formTitle").textContent=i===null?"Добавить урок":"Изменить урок";
+ editing=i;
+ const x=i===null?{subject:"",start:"08:00",end:"08:45",room:"",homework:"",note:""}:(data[selected]||[])[i];
+ ["subject","start","end","room","homework","note"].forEach(k=>document.getElementById(k).value=x[k]||"");
  document.getElementById("deleteBtn").style.display=i===null?"none":"block";
- document.getElementById("modal").classList.add("show");
+ document.getElementById("formTitle").textContent=i===null?"Добавить урок":"Изменить урок";
+ document.getElementById("modal").classList.add("show")
 }
 function closeEditor(){document.getElementById("modal").classList.remove("show")}
 function saveLesson(){
- const x={};["subject","start","end","room","homework"].forEach(k=>x[k]=document.getElementById(k).value.trim());x.todo=+document.getElementById("todo").value||0;
- if(!x.subject)return alert("Введи название предмета");
+ let x={};["subject","start","end","room","homework","note"].forEach(k=>x[k]=document.getElementById(k).value.trim());
+ if(!x.subject)return alert("Введи предмет");
  data[selected]=data[selected]||[];
- if(editing===null)data[selected].push(x);else data[selected][editing]=x;
- data[selected].sort((a,b)=>a.start.localeCompare(b.start));persist();closeEditor();render();
+ if(editing===null)data[selected].push(x);else x={...data[selected][editing],...x},data[selected][editing]=x;
+ data[selected].sort((a,b)=>a.start.localeCompare(b.start));
+ data[selected].forEach((x,i)=>x.n=i+1);
+ persist();closeEditor();render()
 }
-function removeLesson(){if(editing===null)return;if(confirm("Удалить этот урок?")){data[selected].splice(editing,1);persist();closeEditor();render()}}
-function selectToday(){selected=24;render()}
-function timeToMin(s){const [h,m]=(s||"0:0").split(":").map(Number);return h*60+m}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function removeLesson(){
+ if(editing===null)return;
+ if(confirm("Удалить урок?")){data[selected].splice(editing,1);data[selected].forEach((x,i)=>x.n=i+1);persist();closeEditor();render()}
+}
 render();
 </script>
 </body>

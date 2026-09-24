@@ -23,7 +23,28 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,B
 .empty{text-align:center;color:#777;padding:70px 20px;font-size:21px}
 .modal{display:none;position:fixed;inset:0;background:#000a;z-index:10;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{width:min(820px,100%);background:#242429;border-radius:28px 28px 0 0;padding:25px 25px calc(25px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}.sheet h2{margin:0 0 20px}
 label{display:block;color:#aaa;margin:13px 0 6px}input,textarea{width:100%;border:0;border-radius:12px;background:#34343a;color:#fff;padding:13px;font-size:18px}textarea{min-height:100px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sheet-actions{display:flex;gap:10px;margin-top:20px}.danger{background:#9c3340}.grow{flex:1}
-@media(max-width:600px){.app{padding:18px 15px 115px}.avatar{width:55px;height:55px;font-size:22px}.week{gap:1px}.day b{font-size:16px}.day span{width:43px;height:43px;font-size:22px}.actions{gap:10px}.btn{font-size:18px;padding:12px}.lesson{padding:23px 26px}.meta,.hw,.break{font-size:18px}.subject{font-size:23px;margin-bottom:30px}.hw-title{font-size:20px}}
+@media(max-width:600px){
+.app{padding:17px 15px 94px}
+.top{margin:4px 0 20px}
+.avatar{width:39px;height:39px;font-size:16px}
+.icons{font-size:20px;letter-spacing:8px}
+.week{gap:1px}
+.day{padding:4px 1px}
+.day b{font-size:13px}
+.day span{width:31px;height:31px;font-size:16px;margin-top:5px}
+.actions{gap:11px;margin:16px 0 8px}
+.btn{font-size:15px;padding:9px 11px;border-radius:9px}
+.lesson{border-radius:17px;padding:17px 26px;margin:8px 0}
+.meta{font-size:14px}
+.subject{font-size:16px;margin:8px 0 24px}
+.hw-title{font-size:15px;margin-bottom:7px}
+.hw{font-size:14px;line-height:1.35}
+.todo{font-size:14px;margin-top:7px}
+.break{font-size:14px;padding:9px 3px}
+.bottom{height:74px}
+.nav{font-size:11px}
+.nav i{font-size:20px;margin-bottom:4px}
+}
 </style>
 </head>
 <body>

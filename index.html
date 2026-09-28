@@ -389,12 +389,12 @@ body{overscroll-behavior:none}
 .profile-cancel{background:#3a3b41}.profile-save{background:#526fea;flex:1}
 </style>
 
-</head>
+<style>.main-status-dot{position:absolute;right:0;bottom:2px;width:9px;height:9px;border-radius:50%;background:#8e9098;border:2px solid #08090b}.main-status-dot.school{background:#65a86b}.grades-page{display:none;position:fixed;inset:0 0 90px;z-index:80;background:#08090b;padding:20px 15px;color:#f4f4f6}.grades-page.show{display:block}.grades-head{height:92px;display:flex;align-items:center;justify-content:space-between}.grades-user{display:flex;align-items:center;gap:10px}.grades-av{width:40px;height:40px;border-radius:50%;background:#914000;display:grid;place-items:center;font-weight:750;position:relative}.grades-dot{position:absolute;right:0;bottom:1px;width:9px;height:9px;border-radius:50%;background:#8e9098;border:2px solid #08090b}.grades-dot.school{background:#65a86b}.grades-name{font-size:16px;font-weight:650}.grades-status{font-size:13px;font-weight:650;color:#81838a;margin-top:3px}.grades-status.school{color:#65a86b}.grades-period{display:flex;gap:8px}.grades-range,.grades-today{height:48px;border:0;border-radius:14px;background:#202125;color:#f5f5f7;font-size:16px}.grades-range{flex:1;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-weight:600}.grades-today{width:94px}.grades-empty{position:absolute;left:15px;right:15px;top:48%;transform:translateY(-50%);text-align:center}.grades-smile{font-size:54px;color:#ffc83d}.grades-empty h2{font-size:18px;margin:22px 0 10px}.grades-empty p{font-size:15px;color:#929399}.grades-toggle{position:absolute;left:15px;right:15px;bottom:8px;height:48px;background:#3a3b40;border-radius:24px;display:grid;grid-template-columns:1fr 1fr;padding:2px}.grades-toggle button{border:0;border-radius:22px;background:transparent;color:#eee;font-size:15px}.grades-toggle .on{background:#2b2c31;box-shadow:inset 0 0 0 2px #45464c}</style></head>
 <body>
 <div class="app">
  <div class="fixed-top">
 <header class="header">
-   <div class="avatar" id="mainAvatar" onclick="openDiary()">ДИ</div>
+   <div class="avatar" id="mainAvatar" onclick="openDiary()">ДИ<span id="mainStatusDot" class="main-status-dot"></span></div>
 
    <div class="stories" aria-label="Истории">
      <button class="story story-map" aria-label="История 1">
@@ -448,10 +448,10 @@ body{overscroll-behavior:none}
  <main class="schedule" id="schedule"></main>
 </div>
 
-<nav class="bottom">
+<div class="grades-page" id="gradesPage"><div class="grades-head"><div class="grades-user"><div class="grades-av" id="gradesAvatar">ДИ<span id="gradesDot" class="grades-dot"></span></div><div><div id="gradesName" class="grades-name">Денис Иванов</div><div id="gradesStatus" class="grades-status">НЕ В ШКОЛЕ</div></div></div><div class="header-icons"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span onclick="closeGrades()">☰</span></div></div><div class="grades-period"><button class="grades-range"><span>‹</span><span>28 сен – 4 окт</span><span>›</span></button><button class="grades-today">Сегодня</button></div><div class="grades-empty"><div class="grades-smile">☺</div><h2>Оценок пока нет</h2><p>За выбранный период оценок пока нет</p></div><div class="grades-toggle"><button class="on">По дате</button><button>По предмету</button></div></div><nav class="bottom">
  <div class="bottom-inner">
   <div class="nav active"><svg class="ico" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="7" rx="1"/><rect x="5" y="14" width="14" height="7" rx="1"/></svg>Расписание</div>
-  <div class="nav"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></svg>Оценки</div>
+  <div class="nav" id="navGrades" onclick="openGrades()"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></svg>Оценки</div>
   <div class="nav"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>Задания</div>
   <div class="nav"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>Школа</div>
   <div class="nav"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8h12a2 2 0 0 1 2 2v9H4v-9a2 2 0 0 1 2-2z"/><path d="M9 8V5h6v3"/></svg>Портфолио</div>
@@ -635,6 +635,7 @@ function removeLesson(){
  if(confirm("Удалить урок?")){data[selected].splice(editing,1);data[selected].forEach((x,i)=>x.n=i+1);persist();closeEditor();render()}
 }
 
+function openGrades(){document.getElementById('gradesPage').classList.add('show');renderProfile();} function closeGrades(){document.getElementById('gradesPage').classList.remove('show');}
 const defaultProfile={name:"Денис Иванов",className:"9-А",atSchool:false};
 let profile=JSON.parse(localStorage.getItem("meshStudentProfile")||"null")||defaultProfile;
 let editSchool=profile.atSchool;
@@ -645,7 +646,7 @@ function renderProfile(){
  document.getElementById("studentAvatar").childNodes[0].nodeValue=ini;
  document.getElementById("studentNameView").textContent=profile.name+(profile.className?", "+profile.className:"");
  const st=document.getElementById("studentStatusView"),dot=document.getElementById("studentDot");
- st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool);
+ st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool); const md=document.getElementById("mainStatusDot");if(md)md.classList.toggle("school",profile.atSchool); const ga=document.getElementById("gradesAvatar");if(ga)ga.childNodes[0].nodeValue=ini; const gd=document.getElementById("gradesDot");if(gd)gd.classList.toggle("school",profile.atSchool); const gn=document.getElementById("gradesName");if(gn)gn.textContent=profile.name; const gs=document.getElementById("gradesStatus");if(gs){gs.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";gs.classList.toggle("school",profile.atSchool);}
 }
 function openDiary(){renderProfile();document.getElementById("diaryOverlay").classList.add("show")}
 function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show")}

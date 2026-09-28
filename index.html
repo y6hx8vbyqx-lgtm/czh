@@ -562,6 +562,56 @@ body.grades-open .toolbar{visibility:hidden!important;pointer-events:none!import
 .bottom .nav.active .ico{color:#fff!important;stroke:#fff!important}
 </style>
 
+
+<style id="v17-diary-position-fix">
+/* v17 — экран "Выбор дневника" больше не зависит от открытой вкладки */
+.diary-overlay{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100dvh!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 54px)
+    15px
+    calc(env(safe-area-inset-bottom, 0px) + 24px)!important;
+  box-sizing:border-box!important;
+  transform:none!important;
+  z-index:200!important;
+  background:#08090b!important;
+}
+.diary-overlay .diary-shell{
+  width:min(430px,100%)!important;
+  max-width:430px!important;
+  margin:0 auto!important;
+  transform:none!important;
+}
+.diary-overlay .diary-head{
+  height:56px!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+}
+.diary-overlay .student-card{
+  margin-top:19px!important;
+}
+
+/* Когда открыт выбор дневника, никакие стили вкладки "Оценки"
+   не могут сдвинуть или масштабировать его содержимое. */
+body.diary-open .grades-page,
+body.diary-open #scheduleView,
+body.diary-open .bottom,
+body.diary-open .fixed-top{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+body.diary-open .diary-overlay{
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -841,8 +891,8 @@ function renderProfile(){
  const mpn=document.getElementById("mainProfileName");if(mpn)mpn.textContent=profile.name;
  const mps=document.getElementById("mainProfileStatus");if(mps){mps.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";mps.classList.toggle("school",profile.atSchool);} const ga=document.getElementById("gradesAvatar");if(ga)ga.childNodes[0].nodeValue=ini; const gd=document.getElementById("gradesDot");if(gd)gd.classList.toggle("school",profile.atSchool); const gn=document.getElementById("gradesName");if(gn)gn.textContent=profile.name; const gs=document.getElementById("gradesStatus");if(gs){gs.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";gs.classList.toggle("school",profile.atSchool);}
 }
-function openDiary(){renderProfile();document.getElementById("diaryOverlay").classList.add("show")}
-function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show")}
+function openDiary(){renderProfile();document.body.classList.add("diary-open");document.getElementById("diaryOverlay").classList.add("show")}
+function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show");document.body.classList.remove("diary-open")}
 function openProfileEditor(){document.getElementById("profileName").value=profile.name;document.getElementById("profileClass").value=profile.className;editSchool=profile.atSchool;renderStatusChoice();document.getElementById("profileModal").classList.add("show")}
 function closeProfileEditor(){document.getElementById("profileModal").classList.remove("show")}
 function setProfileStatus(v){editSchool=v;renderStatusChoice()}

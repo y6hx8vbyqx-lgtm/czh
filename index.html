@@ -403,12 +403,63 @@ body{overscroll-behavior:none}
 .grades-empty{top:44%!important}.grades-empty h2{font-weight:560!important}.grades-empty p{font-weight:400!important}
 .grades-toggle button{font-weight:480!important}
 </style>
+
+<style>
+/* v15 — one shared top bar on every tab */
+.fixed-top{z-index:95!important}
+.header{position:relative}
+.profile-anchor{display:flex;align-items:center;gap:9px;min-width:0}
+.main-profile-text{display:none;min-width:0}
+body.grades-open .main-profile-text{display:block}
+body.grades-open .stories{display:none}
+body.grades-open .week,
+body.grades-open .toolbar{display:none}
+body.grades-open .fixed-top:after{display:none}
+body.grades-open .fixed-top{position:fixed;left:50%;transform:translateX(-50%);top:0;width:min(430px,100%);padding-left:15px;padding-right:15px}
+body.grades-open .header{height:116px}
+
+/* Same avatar/bell/menu coordinates come from the same header elements */
+.main-profile-name{
+ font-size:15.5px;
+ line-height:18px;
+ font-weight:590;
+ letter-spacing:-.15px;
+ color:#f3f3f5;
+ white-space:nowrap;
+}
+.main-profile-status{
+ margin-top:2px;
+ font-size:12.5px;
+ line-height:15px;
+ font-weight:560;
+ letter-spacing:.05px;
+ color:#85868c;
+ text-transform:uppercase;
+}
+.main-profile-status.school{color:#66a96d}
+
+/* Remove old duplicate grades header completely */
+.grades-head,.grades-fixed-header{display:none!important}
+.grades-page{
+ top:0!important;
+ padding:116px 15px 0!important;
+ z-index:80!important;
+}
+.grades-period{margin-top:7px!important}
+</style>
+
 </head>
 <body>
 <div class="app">
  <div class="fixed-top">
 <header class="header">
-   <div class="avatar" id="mainAvatar" onclick="openDiary()">ДИ<span id="mainStatusDot" class="main-status-dot"></span></div>
+   <div class="profile-anchor">
+ <div class="avatar" id="mainAvatar" onclick="openDiary()">ДИ<span id="mainStatusDot" class="main-status-dot"></span></div>
+ <div class="main-profile-text" id="mainProfileText">
+  <div class="main-profile-name" id="mainProfileName"></div>
+  <div class="main-profile-status" id="mainProfileStatus"></div>
+ </div>
+</div>
 
    <div class="stories" aria-label="Истории">
      <button class="story story-map" aria-label="История 1">
@@ -462,7 +513,11 @@ body{overscroll-behavior:none}
  <main class="schedule" id="schedule"></main>
 </div>
 
-<div class="grades-page" id="gradesPage"><div class="grades-head"><div class="grades-user"><div class="grades-av" id="gradesAvatar">ДИ<span id="gradesDot" class="grades-dot"></span></div><div><div id="gradesName" class="grades-name">Денис Иванов</div><div id="gradesStatus" class="grades-status">НЕ В ШКОЛЕ</div></div></div><div class="header-icons"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span onclick="closeGrades()">☰</span></div></div><div class="grades-period"><button class="grades-range"><span>‹</span><span>28 сен – 4 окт</span><span>›</span></button><button class="grades-today">Сегодня</button></div><div class="grades-empty"><div class="grades-smile">☺</div><h2>Оценок пока нет</h2><p>За выбранный период оценок пока нет</p></div><div class="grades-toggle"><button class="on">По дате</button><button>По предмету</button></div></div><nav class="bottom">
+<div class="grades-page" id="gradesPage">
+<div class="grades-fixed-header">
+ <div class="grades-profile-spacer"></div>
+</div>
+<div class="grades-period"><button class="grades-range"><span>‹</span><span>28 сен – 4 окт</span><span>›</span></button><button class="grades-today">Сегодня</button></div><div class="grades-empty"><div class="grades-smile">☺</div><h2>Оценок пока нет</h2><p>За выбранный период оценок пока нет</p></div><div class="grades-toggle"><button class="on">По дате</button><button>По предмету</button></div></div><nav class="bottom">
  <div class="bottom-inner">
   <div class="nav active" id="navSchedule" onclick="showTab('schedule')"><svg class="ico" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="7" rx="1"/><rect x="5" y="14" width="14" height="7" rx="1"/></svg>Расписание</div>
   <div class="nav" id="navGrades" onclick="showTab('grades')"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></svg>Оценки</div>
@@ -668,7 +723,9 @@ function renderProfile(){
  document.getElementById("studentAvatar").childNodes[0].nodeValue=ini;
  document.getElementById("studentNameView").textContent=profile.name+(profile.className?", "+profile.className:"");
  const st=document.getElementById("studentStatusView"),dot=document.getElementById("studentDot");
- st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool); const md=document.getElementById("mainStatusDot");if(md)md.classList.toggle("school",profile.atSchool); const ga=document.getElementById("gradesAvatar");if(ga)ga.childNodes[0].nodeValue=ini; const gd=document.getElementById("gradesDot");if(gd)gd.classList.toggle("school",profile.atSchool); const gn=document.getElementById("gradesName");if(gn)gn.textContent=profile.name; const gs=document.getElementById("gradesStatus");if(gs){gs.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";gs.classList.toggle("school",profile.atSchool);}
+ st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool); const md=document.getElementById("mainStatusDot");if(md)md.classList.toggle("school",profile.atSchool);
+ const mpn=document.getElementById("mainProfileName");if(mpn)mpn.textContent=profile.name;
+ const mps=document.getElementById("mainProfileStatus");if(mps){mps.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";mps.classList.toggle("school",profile.atSchool);} const ga=document.getElementById("gradesAvatar");if(ga)ga.childNodes[0].nodeValue=ini; const gd=document.getElementById("gradesDot");if(gd)gd.classList.toggle("school",profile.atSchool); const gn=document.getElementById("gradesName");if(gn)gn.textContent=profile.name; const gs=document.getElementById("gradesStatus");if(gs){gs.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";gs.classList.toggle("school",profile.atSchool);}
 }
 function openDiary(){renderProfile();document.getElementById("diaryOverlay").classList.add("show")}
 function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show")}

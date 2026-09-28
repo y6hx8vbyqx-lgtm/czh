@@ -283,6 +283,29 @@ body{overscroll-behavior:none}
 #duplicateBtn{display:none}
 </style>
 
+
+<style>
+/* v10 — точная логика состояния уроков */
+.card{opacity:1;filter:none}
+.card.past{
+  opacity:.56;
+  filter:saturate(.68);
+  border-color:transparent;
+}
+.card.current{
+  opacity:1!important;
+  filter:none!important;
+  border:2px solid #7d9cff!important;
+  padding:16px 25px!important;
+}
+.card.current .subject,
+.card.current .home-title{color:#fff!important}
+.card:not(.past):not(.current){
+  opacity:1!important;
+  filter:none!important;
+}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -406,24 +429,27 @@ function updateRealtimeStates(){
  const cards=[...document.querySelectorAll("#schedule .card")];
  const arr=data[selected]||[];
  cards.forEach(c=>c.classList.remove("past","current"));
- // Only apply live states to the selected date if it represents today in this demo.
- // The UI's "Сегодня" button selects day 28 in the current Sep-Oct week.
- const todayDay=28;
- if(selected!==todayDay) return;
+
  const now=new Date();
  const nowMin=now.getHours()*60+now.getMinutes();
+
+ // 1) Уже закончившиеся уроки — серые.
+ // 2) Только урок, который идёт ПРЯМО СЕЙЧАС — синяя обводка.
+ // 3) Все будущие уроки — обычные, без затемнения.
  let active=-1;
  for(let i=0;i<arr.length;i++){
-   const st=mins(arr[i].start), en=mins(arr[i].end);
-   if(nowMin>=st && nowMin<en){active=i;break}
+   const start=mins(arr[i].start);
+   const end=mins(arr[i].end);
+   if(nowMin>=start && nowMin<end){
+     active=i;
+     break;
+   }
  }
- // During a break, highlight the lesson that is about to start.
- if(active<0){
-   active=arr.findIndex(x=>mins(x.start)>nowMin);
- }
- cards.forEach((c,i)=>{
-   if(i<active)c.classList.add("past");
-   if(i===active)c.classList.add("current");
+
+ cards.forEach((card,i)=>{
+   const end=mins(arr[i].end);
+   if(end<=nowMin) card.classList.add("past");
+   if(i===active) card.classList.add("current");
  });
 }
 

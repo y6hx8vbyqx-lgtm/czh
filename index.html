@@ -448,6 +448,120 @@ body.grades-open .header{height:116px}
 .grades-period{margin-top:7px!important}
 </style>
 
+
+<style id="v16-fidelity-fix">
+/* === v16: stable tabs / shared header / tighter MЭШ proportions === */
+html,body{overflow-x:hidden}
+.fixed-top{
+  box-sizing:border-box!important;
+  width:min(430px,100%)!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+}
+body.grades-open .fixed-top{
+  width:min(430px,100%)!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+}
+
+/* Avatar never changes size/position */
+.profile-anchor{position:relative;display:flex;align-items:center;gap:9px}
+.avatar{
+  position:relative!important;
+  flex:0 0 40px!important;
+  width:40px!important;height:40px!important;
+  min-width:40px!important;max-width:40px!important;
+  border-radius:50%!important;
+  overflow:visible!important;
+}
+
+/* Status dot: small, clean, tucked into lower-right like the reference */
+.main-status-dot{
+  position:absolute!important;
+  right:-1px!important;
+  bottom:1px!important;
+  width:9px!important;height:9px!important;
+  box-sizing:border-box!important;
+  border-radius:50%!important;
+  background:#85878e!important;
+  border:2px solid #08090b!important;
+  box-shadow:none!important;
+}
+.main-status-dot.school{background:#62a66a!important}
+
+/* Profile text shown only on Grades without moving avatar */
+.main-profile-text{display:none;position:absolute;left:49px;top:3px;width:190px}
+body.grades-open .main-profile-text{display:block}
+.main-profile-name{
+  font-size:15px!important;line-height:17px!important;
+  font-weight:580!important;letter-spacing:-.18px!important;
+}
+.main-profile-status{
+  margin-top:3px!important;
+  font-size:11.5px!important;line-height:13px!important;
+  font-weight:570!important;letter-spacing:.12px!important;
+}
+
+/* Keep bell/menu anchored at exactly same right side */
+.header-icons{margin-left:auto!important;flex:0 0 auto!important}
+body.grades-open .header-icons{margin-left:auto!important}
+
+/* Grades begins under the same header */
+body.grades-open .stories,
+body.grades-open .week,
+body.grades-open .toolbar{visibility:hidden!important;pointer-events:none!important}
+.grades-page{padding-top:116px!important}
+
+/* Period controls — compact rounded rectangles from reference */
+.grades-period{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 94px!important;
+  gap:8px!important;
+  margin:7px 0 0!important;
+}
+.grades-period button{
+  height:47px!important;
+  background:#202125!important;
+  border:0!important;
+  border-radius:14px!important;
+  color:#f3f3f5!important;
+  box-shadow:none!important;
+  font-size:15.5px!important;
+  font-weight:450!important;
+}
+.period-main{padding:0 17px!important}
+.period-main span{font-weight:500!important;letter-spacing:-.1px!important}
+.period-main b{font-size:27px!important;font-weight:280!important;line-height:1!important}
+.period-today{font-weight:450!important}
+
+/* Bottom segmented buttons */
+.grades-switch{
+  height:45px!important;
+  left:16px!important;right:16px!important;bottom:8px!important;
+  padding:2px!important;
+  border-radius:23px!important;
+  background:#3a3b40!important;
+  box-shadow:none!important;
+}
+.grades-switch button{
+  border-radius:21px!important;
+  font-size:14px!important;
+  font-weight:470!important;
+  color:#f0f0f2!important;
+}
+.grades-switch button.selected{
+  background:#2c2d32!important;
+  box-shadow:inset 0 0 0 2px #44464d!important;
+}
+
+/* Bottom tabs: active icon + text bright white, inactive muted */
+.bottom .nav{color:#94969d!important}
+.bottom .nav .ico{color:inherit!important;stroke:currentColor!important}
+.bottom .nav.active{color:#fff!important}
+.bottom .nav.active .ico{color:#fff!important;stroke:#fff!important}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -738,6 +852,18 @@ function saveProfile(){profile={name:document.getElementById("profileName").valu
 renderProfile();
 render();
 setInterval(updateRealtimeStates,5000);
+
+function setMainTab(tab){
+ const grades=tab==="grades";
+ document.body.classList.toggle("grades-open",grades);
+ const gp=document.getElementById("gradesPage");if(gp)gp.classList.toggle("show",grades);
+ const sv=document.getElementById("scheduleView");if(sv)sv.style.display=grades?"none":"";
+ const ns=document.getElementById("navSchedule"),ng=document.getElementById("navGrades");
+ if(ns)ns.classList.toggle("active",!grades);if(ng)ng.classList.toggle("active",grades);
+ if(grades)renderProfile();
+}
+function showGradesView(){setMainTab("grades")}
+function showScheduleView(){setMainTab("schedule")}
 </script>
 </body>
 </html>

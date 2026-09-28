@@ -179,12 +179,120 @@ body{overscroll-behavior:none}
 }
 </style>
 
+
+<style>
+/* v8 — stories in the center of the top panel; all other UI unchanged */
+.header{position:relative}
+.stories{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  gap:0;
+  height:34px;
+  z-index:3;
+}
+.story{
+  position:relative;
+  width:31px;
+  height:31px;
+  padding:0;
+  margin:0 -1px;
+  overflow:hidden;
+  border-radius:8px;
+  border:1.25px solid #7b65ff;
+  background:#18284e;
+  box-shadow:
+    0 0 0 .55px #20a6cf inset,
+    0 0 0 .4px rgba(255,73,214,.85);
+  appearance:none;
+  -webkit-appearance:none;
+}
+.story-art{position:absolute;inset:1px;border-radius:6px;overflow:hidden}
+
+/* blue map tile */
+.story-map .story-art{
+  background:linear-gradient(145deg,#173f77 0%,#24518c 55%,#172f5b 100%);
+}
+.map-land{position:absolute;background:#e7a929;filter:saturate(1.05)}
+.land-a{width:13px;height:8px;left:3px;top:4px;border-radius:60% 35% 55% 40%;transform:rotate(-10deg)}
+.land-b{width:10px;height:11px;right:3px;top:9px;border-radius:45% 60% 35% 55%;transform:rotate(18deg)}
+.map-dot{position:absolute;width:3px;height:3px;border-radius:50%;background:#f0c441;left:15px;bottom:5px}
+
+/* purple notebook tile */
+.story-book .story-art{
+  background:linear-gradient(180deg,#a8a0ff 0%,#7467e9 100%);
+}
+.book-page{
+  position:absolute;left:6px;top:4px;width:17px;height:21px;
+  border-radius:2px 4px 4px 2px;
+  background:linear-gradient(90deg,#eeeaff,#c9c2ef);
+  transform:rotate(-5deg);
+  box-shadow:-2px 0 0 rgba(57,44,118,.35);
+}
+.book-page:after{
+  content:"";position:absolute;left:3px;right:3px;top:6px;height:1px;
+  background:#a39cc9;box-shadow:0 4px #aaa2cf,0 8px #aaa2cf;
+}
+.book-mark{position:absolute;width:4px;height:9px;background:#8775c9;right:6px;top:5px;transform:rotate(-5deg)}
+
+/* teal clock/paper tile */
+.story-clock .story-art{
+  background:linear-gradient(145deg,#3c665f 0%,#193e45 100%);
+}
+.paper{
+  position:absolute;width:18px;height:24px;left:4px;top:2px;
+  background:#d8c39f;border-radius:2px;transform:rotate(-9deg);
+  box-shadow:0 1px 3px #0005;
+}
+.clock-face{
+  position:absolute;width:17px;height:17px;right:2px;top:6px;
+  border-radius:50%;background:#cbb98e;border:1.4px solid #66563d;
+  box-shadow:0 0 0 1px #e2d1a7 inset;
+}
+.clock-face:after{
+  content:"";position:absolute;width:2px;height:2px;border-radius:50%;
+  background:#574a38;left:6px;top:6px;
+}
+.clock-hand{position:absolute;background:#574a38;transform-origin:bottom center;left:6.5px;bottom:8px;border-radius:2px}
+.clock-hand.h1{width:1px;height:5px;transform:rotate(8deg)}
+.clock-hand.h2{width:1px;height:4px;transform:rotate(105deg)}
+</style>
+
 </head>
 <body>
 <div class="app">
  <div class="fixed-top">
 <header class="header">
    <div class="avatar">ДИ</div>
+
+   <div class="stories" aria-label="Истории">
+     <button class="story story-map" aria-label="История 1">
+       <span class="story-art">
+         <span class="map-land land-a"></span>
+         <span class="map-land land-b"></span>
+         <span class="map-dot"></span>
+       </span>
+     </button>
+     <button class="story story-book" aria-label="История 2">
+       <span class="story-art">
+         <span class="book-page"></span>
+         <span class="book-mark"></span>
+       </span>
+     </button>
+     <button class="story story-clock" aria-label="История 3">
+       <span class="story-art">
+         <span class="paper"></span>
+         <span class="clock-face">
+           <span class="clock-hand h1"></span>
+           <span class="clock-hand h2"></span>
+         </span>
+       </span>
+     </button>
+   </div>
+
    <div class="header-icons">
 <span class="bell">
 <svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>

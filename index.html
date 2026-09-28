@@ -562,206 +562,6 @@ body.grades-open .toolbar{visibility:hidden!important;pointer-events:none!import
 .bottom .nav.active .ico{color:#fff!important;stroke:#fff!important}
 </style>
 
-
-<style id="v17-diary-position-fix">
-/* v17 — экран "Выбор дневника" больше не зависит от открытой вкладки */
-.diary-overlay{
-  position:fixed!important;
-  inset:0!important;
-  width:100%!important;
-  height:100dvh!important;
-  max-width:none!important;
-  margin:0!important;
-  padding:
-    calc(env(safe-area-inset-top, 0px) + 54px)
-    15px
-    calc(env(safe-area-inset-bottom, 0px) + 24px)!important;
-  box-sizing:border-box!important;
-  transform:none!important;
-  z-index:200!important;
-  background:#08090b!important;
-}
-.diary-overlay .diary-shell{
-  width:min(430px,100%)!important;
-  max-width:430px!important;
-  margin:0 auto!important;
-  transform:none!important;
-}
-.diary-overlay .diary-head{
-  height:56px!important;
-  margin:0!important;
-  padding:0!important;
-  transform:none!important;
-}
-.diary-overlay .student-card{
-  margin-top:19px!important;
-}
-
-/* Когда открыт выбор дневника, никакие стили вкладки "Оценки"
-   не могут сдвинуть или масштабировать его содержимое. */
-body.diary-open .grades-page,
-body.diary-open #scheduleView,
-body.diary-open .bottom,
-body.diary-open .fixed-top{
-  visibility:hidden!important;
-  pointer-events:none!important;
-}
-body.diary-open .diary-overlay{
-  visibility:visible!important;
-  pointer-events:auto!important;
-}
-</style>
-
-
-<style id="v18-tabs-status-animations">
-:root{
-  --ease-soft:cubic-bezier(.22,.61,.36,1);
-}
-
-/* Stable page switching */
-#scheduleView,
-.grades-page{
-  transition:opacity .18s var(--ease-soft), transform .18s var(--ease-soft);
-  will-change:opacity,transform;
-}
-#scheduleView.tab-hidden{
-  opacity:0;
-  transform:translateX(-6px);
-  pointer-events:none;
-  position:absolute!important;
-  inset:0;
-}
-.grades-page{
-  display:block!important;
-  opacity:0;
-  transform:translateX(6px);
-  pointer-events:none;
-  visibility:hidden;
-}
-.grades-page.show{
-  opacity:1;
-  transform:none;
-  pointer-events:auto;
-  visibility:visible;
-}
-
-/* Active bottom tab */
-.bottom .nav{
-  transition:color .16s var(--ease-soft), transform .16s var(--ease-soft);
-}
-.bottom .nav .ico{
-  transition:stroke .16s var(--ease-soft), transform .16s var(--ease-soft);
-}
-.bottom .nav.active{
-  color:#fff!important;
-}
-.bottom .nav.active .ico{
-  stroke:#fff!important;
-  transform:translateY(-1px);
-}
-.bottom .nav:active{transform:scale(.97)}
-
-/* Main online dot: exact, visible, animated softly */
-.main-status-dot,
-.student-status-dot,
-.grades-dot{
-  transition:background-color .18s var(--ease-soft), box-shadow .18s var(--ease-soft), transform .18s var(--ease-soft);
-}
-.main-status-dot.school,
-.student-status-dot.school,
-.grades-dot.school{
-  background:#61a96b!important;
-  box-shadow:0 0 0 1px rgba(97,169,107,.08);
-}
-.main-status-dot.school{
-  transform:scale(1.03);
-}
-
-/* Buttons: light MЭШ-like motion */
-.pill,
-.iconbtn,
-.period-main,
-.period-today,
-.grades-switch button,
-.status-btn,
-.profile-actions button,
-.student-card{
-  transition:
-    background-color .16s var(--ease-soft),
-    border-color .16s var(--ease-soft),
-    color .16s var(--ease-soft),
-    transform .12s var(--ease-soft),
-    opacity .16s var(--ease-soft);
-}
-.pill:active,
-.iconbtn:active,
-.period-main:active,
-.period-today:active,
-.grades-switch button:active,
-.status-btn:active,
-.profile-actions button:active,
-.student-card:active{
-  transform:scale(.985);
-}
-
-/* Card state transitions */
-.card{
-  transition:
-    background-color .2s var(--ease-soft),
-    border-color .2s var(--ease-soft),
-    color .2s var(--ease-soft),
-    opacity .2s var(--ease-soft);
-}
-.card.current{
-  animation:meshCurrentIn .22s var(--ease-soft);
-}
-@keyframes meshCurrentIn{
-  from{transform:scale(.994);border-color:rgba(125,156,255,.25)}
-  to{transform:none;border-color:#7d9cff}
-}
-
-/* Diary overlay motion */
-.diary-overlay{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-  transition:opacity .18s var(--ease-soft), visibility .18s step-end;
-}
-.diary-overlay.show{
-  opacity:1;
-  visibility:visible;
-  pointer-events:auto;
-  transition:opacity .18s var(--ease-soft), visibility 0s;
-}
-.diary-shell{
-  transition:transform .2s var(--ease-soft), opacity .18s var(--ease-soft);
-}
-.diary-overlay:not(.show) .diary-shell{
-  transform:translateY(6px);
-  opacity:.96;
-}
-
-/* Profile editor motion */
-.profile-modal{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-  display:flex!important;
-  transition:opacity .18s var(--ease-soft), visibility .18s step-end;
-}
-.profile-modal.show{
-  opacity:1;
-  visibility:visible;
-  pointer-events:auto;
-  transition:opacity .18s var(--ease-soft), visibility 0s;
-}
-.profile-sheet{
-  transform:translateY(14px);
-  transition:transform .2s var(--ease-soft);
-}
-.profile-modal.show .profile-sheet{transform:none}
-</style>
-
 </head>
 <body>
 <div class="app">
@@ -1032,121 +832,38 @@ let profile=JSON.parse(localStorage.getItem("meshStudentProfile")||"null")||defa
 let editSchool=profile.atSchool;
 function profileInitials(name){const p=name.trim().split(/\s+/);return ((p[0]?.[0]||"Д")+(p[1]?.[0]||"И")).toUpperCase()}
 function renderProfile(){
-  const ini=profileInitials(profile.name);
-
-  const mainAvatar=document.getElementById("mainAvatar");
-  if(mainAvatar){
-    const dot=mainAvatar.querySelector(".main-status-dot");
-    mainAvatar.childNodes[0].nodeValue=ini;
-    if(dot) dot.classList.toggle("school",profile.atSchool);
-  }
-
-  const studentAvatar=document.getElementById("studentAvatar");
-  if(studentAvatar){
-    studentAvatar.childNodes[0].nodeValue=ini;
-  }
-
-  const studentName=document.getElementById("studentNameView");
-  if(studentName){
-    studentName.textContent=profile.name+(profile.className?", "+profile.className:"");
-  }
-
-  const studentStatus=document.getElementById("studentStatusView");
-  const studentDot=document.getElementById("studentDot");
-  if(studentStatus){
-    studentStatus.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";
-    studentStatus.classList.toggle("school",profile.atSchool);
-  }
-  if(studentDot) studentDot.classList.toggle("school",profile.atSchool);
-
-  const mainName=document.getElementById("mainProfileName");
-  const mainStatus=document.getElementById("mainProfileStatus");
-  if(mainName) mainName.textContent=profile.name;
-  if(mainStatus){
-    mainStatus.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";
-    mainStatus.classList.toggle("school",profile.atSchool);
-  }
-
-  const gradesAvatar=document.getElementById("gradesAvatar");
-  const gradesDot=document.getElementById("gradesDot");
-  const gradesName=document.getElementById("gradesName");
-  const gradesStatus=document.getElementById("gradesStatus");
-  if(gradesAvatar) gradesAvatar.childNodes[0].nodeValue=ini;
-  if(gradesDot) gradesDot.classList.toggle("school",profile.atSchool);
-  if(gradesName) gradesName.textContent=profile.name;
-  if(gradesStatus){
-    gradesStatus.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";
-    gradesStatus.classList.toggle("school",profile.atSchool);
-  }
+ const ini=profileInitials(profile.name);
+ const ma=document.getElementById("mainAvatar"); if(ma && ma.firstChild) ma.firstChild.nodeValue=ini;
+ document.getElementById("studentAvatar").childNodes[0].nodeValue=ini;
+ document.getElementById("studentNameView").textContent=profile.name+(profile.className?", "+profile.className:"");
+ const st=document.getElementById("studentStatusView"),dot=document.getElementById("studentDot");
+ st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool); const md=document.getElementById("mainStatusDot");if(md)md.classList.toggle("school",profile.atSchool);
+ const mpn=document.getElementById("mainProfileName");if(mpn)mpn.textContent=profile.name;
+ const mps=document.getElementById("mainProfileStatus");if(mps){mps.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";mps.classList.toggle("school",profile.atSchool);} const ga=document.getElementById("gradesAvatar");if(ga)ga.childNodes[0].nodeValue=ini; const gd=document.getElementById("gradesDot");if(gd)gd.classList.toggle("school",profile.atSchool); const gn=document.getElementById("gradesName");if(gn)gn.textContent=profile.name; const gs=document.getElementById("gradesStatus");if(gs){gs.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";gs.classList.toggle("school",profile.atSchool);}
 }
-
-function openDiary(){
-  renderProfile();
-  document.body.classList.add("diary-open");
-  const d=document.getElementById("diaryOverlay");
-  if(d) requestAnimationFrame(()=>d.classList.add("show"));
-}
-function closeDiary(){
-  const d=document.getElementById("diaryOverlay");
-  if(d) d.classList.remove("show");
-  document.body.classList.remove("diary-open");
-}
+function openDiary(){renderProfile();document.getElementById("diaryOverlay").classList.add("show")}
+function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show")}
 function openProfileEditor(){document.getElementById("profileName").value=profile.name;document.getElementById("profileClass").value=profile.className;editSchool=profile.atSchool;renderStatusChoice();document.getElementById("profileModal").classList.add("show")}
 function closeProfileEditor(){document.getElementById("profileModal").classList.remove("show")}
-function setProfileStatus(v){
-  editSchool=!!v;
-  renderStatusChoice();
-}
+function setProfileStatus(v){editSchool=v;renderStatusChoice()}
 function renderStatusChoice(){document.getElementById("statusSchool").classList.toggle("active",editSchool);document.getElementById("statusAway").classList.toggle("active",!editSchool)}
-function saveProfile(){
-  profile={
-    name:document.getElementById("profileName").value.trim()||"Ученик",
-    className:document.getElementById("profileClass").value.trim(),
-    atSchool:!!editSchool
-  };
-  localStorage.setItem("meshStudentProfile",JSON.stringify(profile));
-  renderProfile();
-  closeProfileEditor();
-};localStorage.setItem("meshStudentProfile",JSON.stringify(profile));renderProfile();closeProfileEditor()}
+function saveProfile(){profile={name:document.getElementById("profileName").value.trim()||"Ученик",className:document.getElementById("profileClass").value.trim(),atSchool:editSchool};localStorage.setItem("meshStudentProfile",JSON.stringify(profile));renderProfile();closeProfileEditor()}
 
 renderProfile();
 render();
 setInterval(updateRealtimeStates,5000);
 
-let currentMainTab="schedule";
 function setMainTab(tab){
-  if(tab!=="schedule" && tab!=="grades") return;
-  currentMainTab=tab;
-  const grades = tab==="grades";
-
-  const schedule=document.getElementById("scheduleView");
-  const gradesPage=document.getElementById("gradesPage");
-  const navSchedule=document.getElementById("navSchedule");
-  const navGrades=document.getElementById("navGrades");
-
-  document.body.classList.toggle("grades-open",grades);
-
-  if(schedule){
-    schedule.classList.toggle("tab-hidden",grades);
-    schedule.style.display="";
-  }
-  if(gradesPage){
-    gradesPage.classList.toggle("show",grades);
-  }
-
-  if(navSchedule) navSchedule.classList.toggle("active",!grades);
-  if(navGrades) navGrades.classList.toggle("active",grades);
-
-  if(grades) renderProfile();
+ const grades=tab==="grades";
+ document.body.classList.toggle("grades-open",grades);
+ const gp=document.getElementById("gradesPage");if(gp)gp.classList.toggle("show",grades);
+ const sv=document.getElementById("scheduleView");if(sv)sv.style.display=grades?"none":"";
+ const ns=document.getElementById("navSchedule"),ng=document.getElementById("navGrades");
+ if(ns)ns.classList.toggle("active",!grades);if(ng)ng.classList.toggle("active",grades);
+ if(grades)renderProfile();
 }
 function showGradesView(){setMainTab("grades")}
 function showScheduleView(){setMainTab("schedule")}
-
-document.addEventListener("DOMContentLoaded",()=>{
-  renderProfile();
-  setMainTab(currentMainTab);
-});
-
 </script>
 </body>
 </html>

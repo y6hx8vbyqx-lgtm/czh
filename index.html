@@ -261,6 +261,28 @@ body{overscroll-behavior:none}
 .clock-hand.h2{width:1px;height:4px;transform:rotate(105deg)}
 </style>
 
+
+<style>
+.card.past{opacity:.58;filter:saturate(.72)}
+.card.past .subject,.card.past .home-title{color:#b3b3b8}
+.card.current{
+  opacity:1!important;filter:none!important;
+  border:2px solid #7d9cff!important;
+  padding:16px 25px!important;
+}
+.card.current:before{background:#929bb5!important}
+</style>
+
+
+<style>
+.sheet{border:1px solid #3b3c42;box-shadow:0 -18px 55px #0009}
+.sheet:before{content:"";display:block;width:42px;height:5px;border-radius:10px;background:#666870;margin:-9px auto 13px}
+.sheet input,.sheet textarea{outline:none;border:1px solid transparent}
+.sheet input:focus,.sheet textarea:focus{border-color:#607ff1;background:#393a41}
+.sheet-actions{position:sticky;bottom:0;background:#25262b;padding-top:10px}
+#duplicateBtn{display:none}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -305,7 +327,7 @@ body{overscroll-behavior:none}
 
  <div class="toolbar">
    <button class="pill">Сентябрь</button>
-   <button class="pill" onclick="selected=24;render()">Сегодня</button>
+   <button class="pill" onclick="selected=28;render()">Сегодня</button>
    <span class="spacer"></span>
    <button class="pill iconbtn" aria-label="PDF">
 <svg class="ico" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/></svg>
@@ -343,6 +365,7 @@ body{overscroll-behavior:none}
   <label>Статус / дополнительная строка</label><input id="note">
   <div class="sheet-actions">
    <button class="delete" id="deleteBtn" onclick="removeLesson()">Удалить</button>
+   <button class="cancel" id="duplicateBtn" onclick="duplicateLesson()">Дублировать</button>
    <button class="cancel" onclick="closeEditor()">Отмена</button>
    <button class="save" onclick="saveLesson()">Сохранить</button>
   </div>
@@ -378,13 +401,39 @@ function renderWeek(){
    x.onclick=()=>{selected=n;render()};e.appendChild(x)
  })
 }
+
+function updateRealtimeStates(){
+ const cards=[...document.querySelectorAll("#schedule .card")];
+ const arr=data[selected]||[];
+ cards.forEach(c=>c.classList.remove("past","current"));
+ // Only apply live states to the selected date if it represents today in this demo.
+ // The UI's "Сегодня" button selects day 28 in the current Sep-Oct week.
+ const todayDay=28;
+ if(selected!==todayDay) return;
+ const now=new Date();
+ const nowMin=now.getHours()*60+now.getMinutes();
+ let active=-1;
+ for(let i=0;i<arr.length;i++){
+   const st=mins(arr[i].start), en=mins(arr[i].end);
+   if(nowMin>=st && nowMin<en){active=i;break}
+ }
+ // During a break, highlight the lesson that is about to start.
+ if(active<0){
+   active=arr.findIndex(x=>mins(x.start)>nowMin);
+ }
+ cards.forEach((c,i)=>{
+   if(i<active)c.classList.add("past");
+   if(i===active)c.classList.add("current");
+ });
+}
+
 function render(){
  renderWeek();
  const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
  if(!arr.length){root.innerHTML='<div class="empty"><div class="empty-face">☺</div><b>Уроков и мероприятий нет</b><p>Уроков и мероприятий на этот день<br>не найдено</p><button class="create-event" onclick="openEditor()">⊕ &nbsp; Создать мероприятие</button></div>';return}
  arr.forEach((x,i)=>{
    let c=document.createElement("section");
-   c.className="card"+(x.current?" current":"");
+   c.className="card";
    let head=x.replace?`<span class="replace"><svg class="ico" viewBox="0 0 24 24"><path d="M7 7h10l-3-3M17 17H7l3 3M17 7l3 3-3 3M7 17l-3-3 3-3"/></svg>Замена учителя</span>`:`<span>${x.n||i+1} урок</span>`;
    c.innerHTML=`
     ${x.grade?`<div class="grade">${esc(x.grade)}<small>1</small></div>`:""}
@@ -412,13 +461,14 @@ function render(){
        root.appendChild(b)
       }
    }
- })
+ });
+ updateRealtimeStates();
 }
 function openEditor(i=null){
  editing=i;
  const x=i===null?{subject:"",start:"08:00",end:"08:45",room:"",homework:"",note:""}:(data[selected]||[])[i];
  ["subject","start","end","room","homework","note"].forEach(k=>document.getElementById(k).value=x[k]||"");
- document.getElementById("deleteBtn").style.display=i===null?"none":"block";
+ document.getElementById("deleteBtn").style.display=i===null?"none":"block"; document.getElementById("duplicateBtn").style.display=i===null?"none":"block";
  document.getElementById("formTitle").textContent=i===null?"Добавить урок":"Изменить урок";
  document.getElementById("modal").classList.add("show")
 }
@@ -432,11 +482,23 @@ function saveLesson(){
  data[selected].forEach((x,i)=>x.n=i+1);
  persist();closeEditor();render()
 }
+
+function duplicateLesson(){
+ if(editing===null)return;
+ const original=(data[selected]||[])[editing];
+ if(!original)return;
+ const copy={...original,current:false};
+ data[selected].splice(editing+1,0,copy);
+ data[selected].forEach((x,i)=>x.n=i+1);
+ persist();closeEditor();render();
+}
+
 function removeLesson(){
  if(editing===null)return;
  if(confirm("Удалить урок?")){data[selected].splice(editing,1);data[selected].forEach((x,i)=>x.n=i+1);persist();closeEditor();render()}
 }
 render();
+setInterval(updateRealtimeStates,20000);
 </script>
 </body>
 </html>

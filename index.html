@@ -306,6 +306,57 @@ body{overscroll-behavior:none}
 }
 </style>
 
+
+<style>
+/* v11 — состояние ВСЕЙ карточки, а не только текста */
+.card{
+  opacity:1!important;
+  filter:none!important;
+  border:2px solid transparent;
+  padding:16px 25px;
+}
+.card:not(.past):not(.current){
+  background:#202125!important;
+  border-color:transparent!important;
+}
+.card:not(.past):not(.current) .subject,
+.card:not(.past):not(.current) .home-title{
+  color:#f4f4f6!important;
+}
+.card:not(.past):not(.current) .meta,
+.card:not(.past):not(.current) .home{
+  color:#9b9ba2!important;
+}
+
+.card.past{
+  opacity:1!important;
+  filter:none!important;
+  background:#191a1e!important;
+  border-color:transparent!important;
+}
+.card.past:before{background:#24252a!important}
+.card.past .subject,
+.card.past .home-title,
+.card.past .meta,
+.card.past .home,
+.card.past .todo{
+  color:#74757b!important;
+}
+
+.card.current{
+  opacity:1!important;
+  filter:none!important;
+  background:#202125!important;
+  border:2px solid #7d9cff!important;
+  box-shadow:0 0 0 1px rgba(125,156,255,.08) inset;
+}
+.card.current:before{background:#929bb5!important}
+.card.current .subject,
+.card.current .home-title{color:#fff!important}
+.card.current .meta,
+.card.current .home{color:#a5a6ac!important}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -432,27 +483,33 @@ function updateRealtimeStates(){
 
  const now=new Date();
  const nowMin=now.getHours()*60+now.getMinutes();
-
- // 1) Уже закончившиеся уроки — серые.
- // 2) Только урок, который идёт ПРЯМО СЕЙЧАС — синяя обводка.
- // 3) Все будущие уроки — обычные, без затемнения.
  let active=-1;
+
+ // Урок считается текущим с его начала и до начала следующего урока.
+ // Поэтому на перемене после Биологии она всё ещё остаётся в синей обводке,
+ // как в МЭШ, пока не начнётся следующий урок.
  for(let i=0;i<arr.length;i++){
    const start=mins(arr[i].start);
-   const end=mins(arr[i].end);
-   if(nowMin>=start && nowMin<end){
+   const nextStart=i<arr.length-1 ? mins(arr[i+1].start) : mins(arr[i].end);
+   if(nowMin>=start && nowMin<nextStart){
      active=i;
      break;
    }
  }
 
+ // Если сейчас непосредственно идёт последний урок.
+ if(active<0 && arr.length){
+   const last=arr.length-1;
+   if(nowMin>=mins(arr[last].start) && nowMin<mins(arr[last].end)) active=last;
+ }
+
  cards.forEach((card,i)=>{
-   const end=mins(arr[i].end);
-   if(end<=nowMin) card.classList.add("past");
-   if(i===active) card.classList.add("current");
+   if(active>=0 && i<active) card.classList.add("past");
+   else if(i===active) card.classList.add("current");
+   else if(active<0 && mins(arr[i].end)<=nowMin) card.classList.add("past");
+   // i > active остаются обычными яркими будущими уроками
  });
 }
-
 function render(){
  renderWeek();
  const root=document.getElementById("schedule"), arr=data[selected]||[];root.innerHTML="";
@@ -524,7 +581,7 @@ function removeLesson(){
  if(confirm("Удалить урок?")){data[selected].splice(editing,1);data[selected].forEach((x,i)=>x.n=i+1);persist();closeEditor();render()}
 }
 render();
-setInterval(updateRealtimeStates,20000);
+setInterval(updateRealtimeStates,5000);
 </script>
 </body>
 </html>

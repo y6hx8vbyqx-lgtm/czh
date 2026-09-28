@@ -357,12 +357,44 @@ body{overscroll-behavior:none}
 .card.current .home{color:#a5a6ac!important}
 </style>
 
+
+<style>
+.toolbar .pill{font-weight:650!important}
+.card:not(.past) .home-title.no-home{color:#a5a6ac!important;font-weight:650!important}
+
+.diary-overlay{display:none;position:fixed;inset:0;z-index:100;background:#08090b;color:#f5f5f7;padding:max(42px,env(safe-area-inset-top)) 15px 25px}
+.diary-overlay.show{display:block}.diary-shell{max-width:430px;margin:auto}
+.diary-head{height:58px;position:relative;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:650}
+.diary-close{position:absolute;right:0;width:38px;height:38px;border:0;background:none}
+.diary-close:before,.diary-close:after{content:"";position:absolute;left:8px;top:18px;width:23px;height:2px;background:#eee;border-radius:2px}
+.diary-close:before{transform:rotate(45deg)}.diary-close:after{transform:rotate(-45deg)}
+.student-card{margin-top:20px;min-height:74px;padding:16px 17px;display:flex;align-items:center;gap:11px;background:#292a2e;border:2px solid #5576f4;border-radius:17px}
+.student-avatar{width:40px;height:40px;border-radius:50%;background:#914000;display:grid;place-items:center;font-size:17px;font-weight:750;position:relative;flex:none}
+.student-status-dot{position:absolute;right:-1px;bottom:1px;width:10px;height:10px;border-radius:50%;background:#81838a;border:2px solid #292a2e}
+.student-status-dot.school{background:#65a86b}.student-main{flex:1;min-width:0}
+.student-name{font-size:16px;font-weight:650}.student-status{font-size:13px;font-weight:650;color:#81838a;margin-top:3px}.student-status.school{color:#65a86b}
+.student-wallet{font-size:13px;color:#929399}
+
+.profile-modal{display:none;position:fixed;inset:0;z-index:110;background:#000a;align-items:flex-end;justify-content:center}
+.profile-modal.show{display:flex}
+.profile-sheet{width:min(430px,100%);background:#25262b;border-radius:22px 22px 0 0;border:1px solid #3a3b41;padding:10px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -18px 55px #0009}
+.profile-grab{width:42px;height:5px;border-radius:5px;background:#65676e;margin:0 auto 14px}
+.profile-sheet h2{font-size:20px;margin:0 0 15px}.profile-sheet label{display:block;color:#a7a8ad;font-size:13px;margin:11px 0 5px}
+.profile-sheet input{width:100%;border:1px solid transparent;outline:none;background:#35363c;color:#fff;border-radius:10px;padding:11px;font-size:16px}
+.profile-sheet input:focus{border-color:#607ff1}
+.status-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.status-btn{border:1px solid #44464d;background:#33343a;color:#c8c9cd;border-radius:10px;padding:11px;font-weight:650}
+.status-btn.active{border-color:#607ff1;color:#fff;background:#343b58}.status-btn.school.active{color:#79bd7e}
+.profile-actions{display:flex;gap:8px;margin-top:17px}.profile-actions button{border:0;border-radius:10px;padding:11px 13px;color:#fff;font-weight:700}
+.profile-cancel{background:#3a3b41}.profile-save{background:#526fea;flex:1}
+</style>
+
 </head>
 <body>
 <div class="app">
  <div class="fixed-top">
 <header class="header">
-   <div class="avatar">ДИ</div>
+   <div class="avatar" id="mainAvatar" onclick="openDiary()">ДИ</div>
 
    <div class="stories" aria-label="Истории">
      <button class="story story-map" aria-label="История 1">
@@ -400,7 +432,7 @@ body{overscroll-behavior:none}
  <div class="week" id="week"></div>
 
  <div class="toolbar">
-   <button class="pill">Сентябрь</button>
+   <button class="pill">Сен-Окт</button>
    <button class="pill" onclick="selected=28;render()">Сегодня</button>
    <span class="spacer"></span>
    <button class="pill iconbtn" aria-label="PDF">
@@ -443,6 +475,28 @@ body{overscroll-behavior:none}
    <button class="cancel" onclick="closeEditor()">Отмена</button>
    <button class="save" onclick="saveLesson()">Сохранить</button>
   </div>
+ </div>
+</div>
+
+
+<div class="diary-overlay" id="diaryOverlay">
+ <div class="diary-shell">
+  <div class="diary-head">Выбор дневника<button class="diary-close" onclick="closeDiary()"></button></div>
+  <div class="student-card" onclick="openProfileEditor()">
+   <div class="student-avatar" id="studentAvatar">ДИ<span class="student-status-dot" id="studentDot"></span></div>
+   <div class="student-main"><div class="student-name" id="studentNameView"></div><div class="student-status" id="studentStatusView"></div></div>
+   <div class="student-wallet">177 ₽ &nbsp; ▰</div>
+  </div>
+ </div>
+</div>
+<div class="profile-modal" id="profileModal" onclick="if(event.target===this)closeProfileEditor()">
+ <div class="profile-sheet">
+  <div class="profile-grab"></div><h2>Ученик</h2>
+  <label>Имя и фамилия</label><input id="profileName">
+  <label>Класс</label><input id="profileClass">
+  <label>Статус</label>
+  <div class="status-choice"><button class="status-btn school" id="statusSchool" onclick="setProfileStatus(true)">В школе</button><button class="status-btn" id="statusAway" onclick="setProfileStatus(false)">Не в школе</button></div>
+  <div class="profile-actions"><button class="profile-cancel" onclick="closeProfileEditor()">Отмена</button><button class="profile-save" onclick="saveProfile()">Сохранить</button></div>
  </div>
 </div>
 
@@ -524,7 +578,7 @@ function render(){
     <div class="subject">${esc(x.subject)}</div>
     ${x.type==="extra"
       ?`<div class="home">${esc(x.homework)}</div>`
-      :`<div class="home-title"><svg class="ico" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/></svg>Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
+      :`<div class="home-title ${x.homework==="Домашнее задание не задано"?"no-home":""}"><svg class="ico" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/></svg>Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
         ${x.homework==="Домашнее задание не задано"?"":`<div class="home">${esc(x.homework)}</div>`}
         ${x.note?`<div class="todo ${x.current?"orange":""}">${esc(x.note)}</div>`:""}`
     }`;
@@ -580,6 +634,28 @@ function removeLesson(){
  if(editing===null)return;
  if(confirm("Удалить урок?")){data[selected].splice(editing,1);data[selected].forEach((x,i)=>x.n=i+1);persist();closeEditor();render()}
 }
+
+const defaultProfile={name:"Денис Иванов",className:"9-А",atSchool:false};
+let profile=JSON.parse(localStorage.getItem("meshStudentProfile")||"null")||defaultProfile;
+let editSchool=profile.atSchool;
+function profileInitials(name){const p=name.trim().split(/\s+/);return ((p[0]?.[0]||"Д")+(p[1]?.[0]||"И")).toUpperCase()}
+function renderProfile(){
+ const ini=profileInitials(profile.name);
+ document.getElementById("mainAvatar").textContent=ini;
+ document.getElementById("studentAvatar").childNodes[0].nodeValue=ini;
+ document.getElementById("studentNameView").textContent=profile.name+(profile.className?", "+profile.className:"");
+ const st=document.getElementById("studentStatusView"),dot=document.getElementById("studentDot");
+ st.textContent=profile.atSchool?"В ШКОЛЕ":"НЕ В ШКОЛЕ";st.classList.toggle("school",profile.atSchool);dot.classList.toggle("school",profile.atSchool);
+}
+function openDiary(){renderProfile();document.getElementById("diaryOverlay").classList.add("show")}
+function closeDiary(){document.getElementById("diaryOverlay").classList.remove("show")}
+function openProfileEditor(){document.getElementById("profileName").value=profile.name;document.getElementById("profileClass").value=profile.className;editSchool=profile.atSchool;renderStatusChoice();document.getElementById("profileModal").classList.add("show")}
+function closeProfileEditor(){document.getElementById("profileModal").classList.remove("show")}
+function setProfileStatus(v){editSchool=v;renderStatusChoice()}
+function renderStatusChoice(){document.getElementById("statusSchool").classList.toggle("active",editSchool);document.getElementById("statusAway").classList.toggle("active",!editSchool)}
+function saveProfile(){profile={name:document.getElementById("profileName").value.trim()||"Ученик",className:document.getElementById("profileClass").value.trim(),atSchool:editSchool};localStorage.setItem("meshStudentProfile",JSON.stringify(profile));renderProfile();closeProfileEditor()}
+
+renderProfile();
 render();
 setInterval(updateRealtimeStates,5000);
 </script>

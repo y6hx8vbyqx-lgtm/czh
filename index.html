@@ -78,9 +78,6 @@ scrollbar-width:thin;position:relative;z-index:1
 .modal{display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:flex-end}.modal.show{display:flex}
 .sheet{background:#25262b;width:min(430px,100%);margin:auto;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
 .sheet h2{font-size:21px;margin:0 0 16px}.sheet label{display:block;color:#aaa;font-size:13px;margin:11px 0 5px}.sheet input,.sheet textarea{width:100%;border:0;background:#34353b;color:#fff;border-radius:10px;padding:11px;font-size:16px}.sheet textarea{min-height:90px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sheet-actions{display:flex;gap:8px;margin-top:17px}.save,.cancel,.delete{border:0;border-radius:10px;padding:11px 13px;color:#fff;font-weight:700}.save{background:#526fea;flex:1}.cancel{background:#3a3b41}.delete{background:#9c3540}
-.pdficon,.runicon,.homeicon{color:#a6a7ad;font-family:Arial,sans-serif;font-style:normal}
-.pdficon{font-size:22px}.runicon{display:inline-block;font-size:17px;transform:rotate(-12deg)}
-.homeicon{font-size:11px}
 .empty{height:100%;min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#8f9096;padding:25px 0}
 .empty-face{font-size:54px;color:#ffc83d;margin-bottom:20px}
 .empty b{font-size:18px;color:#f3f3f5}.empty p{font-size:15px;line-height:1.45;margin:12px 0 25px}
@@ -143,13 +140,36 @@ body{overscroll-behavior:none}
 .bottom{z-index:50}
 </style>
 
+
+<style>
+.ico{width:1em;height:1em;display:inline-block;vertical-align:-.15em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.header-icons .ico{width:23px;height:23px}
+.home-title .ico{width:17px;height:17px;margin-right:7px;color:inherit}
+.break .ico{width:19px;height:19px;margin-right:7px;color:#9b9ca2}
+.replace .ico{width:16px;height:16px;margin-right:5px}
+.nav .ico{display:block;width:27px;height:27px;margin:0 auto 5px;stroke-width:1.7}
+.nav.active .ico{stroke-width:2.1}
+.iconbtn .ico{width:21px;height:21px;color:#d7d8dc}
+.pdf-label{position:absolute;font-size:7px;font-weight:800;color:#fff;background:#e63b4c;border-radius:2px;padding:1px 2px;transform:translate(4px,7px)}
+.iconbtn{position:relative}
+.pill{box-shadow:none}
+.toolbar .pill:active{transform:scale(.97);background:#34353b}
+.card{transition:background .12s ease,border-color .12s ease}
+.card:active{background:#24252a}
+</style>
+
 </head>
 <body>
 <div class="app">
  <div class="fixed-top">
 <header class="header">
    <div class="avatar">ДИ</div>
-   <div class="header-icons"><span class="bell">♧<b class="badge">1</b></span><span>☰</span></div>
+   <div class="header-icons">
+<span class="bell">
+<svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+<b class="badge">1</b></span>
+<span><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+</div>
  </header>
 
  <div class="week" id="week"></div>
@@ -158,8 +178,12 @@ body{overscroll-behavior:none}
    <button class="pill">Сентябрь</button>
    <button class="pill" onclick="selected=24;render()">Сегодня</button>
    <span class="spacer"></span>
-   <button class="pill iconbtn"><span class="pdficon">▱</span></button>
-   <button class="pill iconbtn" onclick="openEditor()">•••</button>
+   <button class="pill iconbtn" aria-label="PDF">
+<svg class="ico" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/></svg>
+<span class="pdf-label">PDF</span></button>
+   <button class="pill iconbtn" onclick="openEditor()" aria-label="Меню">
+<svg class="ico" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+</button>
  </div>
 
  </div>
@@ -169,11 +193,11 @@ body{overscroll-behavior:none}
 
 <nav class="bottom">
  <div class="bottom-inner">
-  <div class="nav active"><i>▰</i>Расписание</div>
-  <div class="nav"><i>☆</i>Оценки</div>
-  <div class="nav"><i>◉</i>Задания</div>
-  <div class="nav"><i>⌘</i>Школа</div>
-  <div class="nav"><i>▱</i>Портфолио</div>
+  <div class="nav active"><svg class="ico" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="7" rx="1"/><rect x="5" y="14" width="14" height="7" rx="1"/></svg>Расписание</div>
+  <div class="nav"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></svg>Оценки</div>
+  <div class="nav"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>Задания</div>
+  <div class="nav"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>Школа</div>
+  <div class="nav"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8h12a2 2 0 0 1 2 2v9H4v-9a2 2 0 0 1 2-2z"/><path d="M9 8V5h6v3"/></svg>Портфолио</div>
  </div>
 </nav>
 
@@ -232,14 +256,14 @@ function render(){
  arr.forEach((x,i)=>{
    let c=document.createElement("section");
    c.className="card"+(x.current?" current":"");
-   let head=x.replace?`<span class="replace">↪ Замена учителя</span>`:`<span>${x.n||i+1} урок</span>`;
+   let head=x.replace?`<span class="replace"><svg class="ico" viewBox="0 0 24 24"><path d="M7 7h10l-3-3M17 17H7l3 3M17 7l3 3-3 3M7 17l-3-3 3-3"/></svg>Замена учителя</span>`:`<span>${x.n||i+1} урок</span>`;
    c.innerHTML=`
     ${x.grade?`<div class="grade">${esc(x.grade)}<small>1</small></div>`:""}
     <div class="meta">${head}<span>${x.start} – ${x.end}</span><span>каб. ${esc(x.room)}</span></div>
     <div class="subject">${esc(x.subject)}</div>
     ${x.type==="extra"
       ?`<div class="home">${esc(x.homework)}</div>`
-      :`<div class="home-title"><span class="homeicon">◆</span>&nbsp; Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
+      :`<div class="home-title"><svg class="ico" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/></svg>Домашнее задание${x.homework==="Домашнее задание не задано"?" не задано":""}</div>
         ${x.homework==="Домашнее задание не задано"?"":`<div class="home">${esc(x.homework)}</div>`}
         ${x.note?`<div class="todo ${x.current?"orange":""}">${esc(x.note)}</div>`:""}`
     }`;
@@ -248,7 +272,7 @@ function render(){
       const gap=mins(arr[i+1].start)-mins(x.end);
       if(gap>=0){
        let b=document.createElement("div");b.className="break";
-       b.innerHTML=`<span><span class="runicon">↗</span> Перемена ${gap} минут</span><span>${x.end}–${arr[i+1].start}</span>`;
+       b.innerHTML=`<span><svg class="ico" viewBox="0 0 24 24"><circle cx="14.5" cy="4.5" r="2"/><path d="m12 8-3 4 4 2 2 5M12 8l4 3 3-1M9 12l-4 5"/></svg>Перемена ${gap} минут</span><span>${x.end}–${arr[i+1].start}</span>`;
        root.appendChild(b)
       }
    }
